@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : lk_logger.py
 @Created : 2018-00-00
-@Updated : 2020-09-10
-@Version : 3.6.1
+@Updated : 2020-10-08
+@Version : 3.6.2
 @Desc    :
 
 Abbreviations:
@@ -408,6 +408,7 @@ class LKLogger:
         看到, 为了让指向到达外部函数 fx(), over() 函数中特意将层级参数上调为
         'parent' 了)
     """
+    _code_tracker: dict
     _direct_caller = None
     _self = 'self'  # direct caller hierarchy. 绝大多数情况下, 此值是固定不变的
     #   (始终为 'self'); 少数情况下, 例如开发者想要特意将 direct caller 指向其他
@@ -417,9 +418,10 @@ class LKLogger:
     log_enable = True  # total logger switcher.
     lite_mode = False  # TODO: more works need to be done.
     terminal = None  # None means terminal to console.
+    _log_style: dict
     
-    _start_time = 0
-    _end_time = 0
+    __start_time = 0
+    __end_time = 0
     
     _finder: CallerFinder
     _tag_recorder: MsgRecorder
@@ -427,27 +429,30 @@ class LKLogger:
     _ast_analyser: AstAnalyser
     _path_mgr: PathManager
     
-    def __init__(self, tag_record_level='I'):
+    def __init__(self, tag_record_level='I', enable_recorder=False):
         self._finder = CallerFinder()
-        self._recorder = MsgRecorder(tag_record_level)
         self._ast_analyser = AstAnalyser()
         self._path_mgr = PathManager()
         
-        # fmt: {source_filepath: {source_lineno: [direct_var_name]}}
-        self.code_tracker = {}
+        if enable_recorder:
+            self._recorder = MsgRecorder(tag_record_level)
+        else:
+            self._recorder = None
         
-        self.log_style = {  # related to self.set_log_style
+        # fmt: {source_filepath: {source_lineno: [direct_var_name]}}
+        self._code_tracker = {}
+        
+        self._log_style = {  # related to self.set_log_style
             'show_func'          : True,
             'graphic_progressbar': False,
             'align_counter'      : True,
         }
         
         # start timing
-        self._start_time = time.time()
+        self.__start_time = time.time()
         print('start time = {}'.format(
-            _simple_timestamp('y-m-d h:n:s', self._start_time))
+            _simple_timestamp('y-m-d h:n:s', self.__start_time))
         )
-        self._recorder.record(self._path_mgr.launch_path)
     
     def set_log_style(self, style: dict):
         """ TODO: Overwrite self.log_style configurations.
@@ -470,7 +475,7 @@ class LKLogger:
 
         e.g. style = {'shor_func': False, 'align_counter': False}
         """
-        self.log_style.update(style)
+        self._log_style.update(style)
     
     # --------------------------------------------------------------------------
     
@@ -522,7 +527,8 @@ class LKLogger:
         
         # print it
         print(msg)
-        self._recorder.record(prefix + msg, tag=tag)
+        if self._recorder:
+            self._recorder.record(prefix + msg, tag=tag)
         return msg
     
     # --------------------------------------------------------------------------
@@ -686,17 +692,17 @@ class LKLogger:
         h = 'parent'
         
         self.logd('计时结束', h=h)
-        self._end_time = time.time()
+        self.__end_time = time.time()
         
         self.log('开始运行: {}'.format(
-            _simple_timestamp('y-m-d h:n:s', self._start_time)
+            _simple_timestamp('y-m-d h:n:s', self.__start_time)
         ), h=h)
         self.log('结束运行: {}'.format(
-            _simple_timestamp('y-m-d h:n:s', self._end_time)
+            _simple_timestamp('y-m-d h:n:s', self.__end_time)
         ), h=h)
         
         # calculate duration
-        total_elapsed_time_sec = self._end_time - self._start_time
+        total_elapsed_time_sec = self.__end_time - self.__start_time
         if total_elapsed_time_sec < 0.01:
             duration = '{}ms'.format(round(total_elapsed_time_sec * 1000, 2))
         elif total_elapsed_time_sec < 60:
@@ -724,10 +730,11 @@ class LKLogger:
     # After things
     
     def print_important_msg(self, show_details=True, output='console'):
-        self._self = 'parent'  # prompt
-        self.logd('here collected important messages', h='parent')
-        self._recorder.show_important_messages(show_details, output)
-        self._self = 'self'  # reset
+        if self._recorder:
+            self._self = 'parent'  # prompt
+            self.logd('here collected important messages', h='parent')
+            self._recorder.show_important_messages(show_details, output)
+            self._self = 'self'  # reset
     
     def dump_log(self, output, timestamp=True):
         """
@@ -736,6 +743,9 @@ class LKLogger:
                 输出目标.
             timestamp: Add a time stamp.
         """
+        if not self._recorder:
+            return
+        
         if timestamp:
             from os.path import splitext
             a, b = splitext(output)
@@ -791,7 +801,7 @@ class LKLogger:
                 self._finder.find_caller_by_hierarchy(h)
         
         try:
-            return self.code_tracker[filepath][lineno]
+            return self._code_tracker[filepath][lineno]
         except KeyError:
             var_names = self._extract_vars_from_srcln(srcln)
             # print('[LKTEST]', 'lk_logger.py:810', srcln, var_names)
@@ -803,7 +813,7 @@ class LKLogger:
                     #   它剔除.
                     var_names.pop(0)
             
-            node = self.code_tracker.setdefault(filepath, {})
+            node = self._code_tracker.setdefault(filepath, {})
             node[lineno] = var_names
             
             return var_names
