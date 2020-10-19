@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : lk_logger.py
 @Created : 2018-00-00
-@Updated : 2020-10-08
-@Version : 3.6.2
+@Updated : 2020-10-19
+@Version : 3.6.3
 @Desc    :
 
 Abbreviations:
@@ -686,7 +686,7 @@ class LKLogger:
             return ''
     
     def over(self, total_count=0):
-        total_count = max(total_count, self._denominator, self.counter)
+        total_count = max((total_count, self._denominator, self.counter))
         
         self._self = 'parent'  # prompt
         h = 'parent'

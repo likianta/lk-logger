@@ -10,6 +10,7 @@ current version: 3.6
     - [更新] 默认不打印 DEBUG 级别的信息
     - [更新] 部分变量变为私有变量
     - [变更] 默认关闭 LKLogger._recorder
+    - [修复] LKLogger.over() 取最大值写法错误
 3.5 | 2019-11-06
     - [新增] LKLogger 新增 terminal 类变量, 用于指定输出终端
     - [变更] init_counter() 合并到 wrap_counter()
