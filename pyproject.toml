@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "lk-logger"
-version = "3.6.1"
-description = "Advanced logger with variant-bind value and source code line indicator (Pycharm supports only)."
+version = "3.6.3"
+description = "Advanced logger with source code lineno indicator."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
 
