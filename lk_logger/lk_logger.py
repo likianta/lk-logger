@@ -2,7 +2,7 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : lk_logger.py
 @Created : 2018-00-00
-@Updated : 2020-10-19
+@Updated : 2020-12-13
 @Version : 3.6.3
 @Desc    :
 
@@ -80,7 +80,9 @@ class CallerFinder:
         'parent'            : 5,
         'grand_parent'      : 6,
         'great_grand_parent': 7,
-        # 注: 更高级别的调用者, 请手动传入数字 (数字不可小于 4)
+        #   注意: 1. 数字不可小于 4
+        #         2. 更高级别的调用者, 请手动传入数字: 8, 9, 10, ...
+        #         3. 当传入数字超过最大层级时, 会报 IndexError
     }
     
     SELF_HIERARCHY = hierarchy['self']
@@ -450,9 +452,6 @@ class LKLogger:
         
         # start timing
         self.__start_time = time.time()
-        print('start time = {}'.format(
-            _simple_timestamp('y-m-d h:n:s', self.__start_time))
-        )
     
     def set_log_style(self, style: dict):
         """ TODO: Overwrite self.log_style configurations.
