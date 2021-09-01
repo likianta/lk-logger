@@ -1,4 +1,4 @@
-__version__ = '3.6.1'
+from .lk_logger import lk
+from .sourcemap import lkk
 
-from .lk_logger import *  # A
-# from .lk_logger import lk  # B
+__version__ = '4.0.0a0'
