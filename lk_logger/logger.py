@@ -1,82 +1,133 @@
-from .sourcemap import frame_finder, sourcemap
+from .plugins import Counter
+from .sourcemap import getframe
+from .sourcemap import sourcemap
 
 
-class Logger:
+class BaseLogger(Counter):
     
     def __init__(self, **kwargs):
-        self.var_seg = kwargs.get('var_seg', ';\t')
-    
-    @staticmethod
-    def fmt_msg(data):
-        frame = frame_finder.frame
-        info = sourcemap.get_frame_info(frame)
+        super().__init__(auto_reset_count=kwargs.get('auto_reset_count', True))
         
-        if info.varnames:
-            assert len(info.varnames) == len(data)
-            new_data = []
-            for k, v in zip(info.varnames, data):
-                new_data.append(f'{k} = {v}' if k else v)
-            data = ';\t'.join(new_data)
-        else:
-            data = str(data)[1:-1]
-        
-        out = '{}:{}\t>>\t{}\t>>\t{}'.format(
-            info.filename, info.lineno, info.name, data
-        )
-        return out
-    
-    # noinspection PyUnusedLocal
-    @frame_finder.getframe
-    def loga(self, *data, h='self'):
-        msg = self.fmt_msg(data)
-        print(msg)
-
-
-# TEST
-lkk = Logger()
-
-
-class BaseLogger:
-    
-    def __init__(self, **kwargs):
-        from json import load
-        config = load(open(f'{__file__}/../config/base.json'))  # type: dict
-        config.update(kwargs)
+        # TODO
+        # from json import load
+        # config = load(open(f'{__file__}/../config/base.json'))  # type: dict
+        # config.update(kwargs)
+        config = kwargs
         
         self._var_seg = config.get('var_seg', ';\t')
         self._template = '{filename}:{lineno}\t>>\t{func}\t>>\t{msg}'
-
+        
+        self.__fmt_msg = None
+    
+    # noinspection PyAttributeOutsideInit
+    def enable_lite_mode(self):
+        self.__fmt_msg = self.fmt_msg
+        self.fmt_msg = lambda data, **_: ';\t'.join(map(str, data))
+    
+    # noinspection PyAttributeOutsideInit
+    def disable_lite_mode(self):
+        self.fmt_msg = self.__fmt_msg
+        self.__fmt_msg = None
+    
     def fmt_msg(self, data, **kwargs):
-        frame = frame_finder.frame
+        """
+        
+        Args:
+            data:
+            **kwargs:
+        
+        Keyword Args:
+            advanced
+            tag
+            count
+        """
         info = sourcemap.get_frame_info(
-            frame, advanced=kwargs.get('advanced', False)
+            advanced=kwargs.get('advanced', False)
         )
         
+        # message head
+        msg_head = ' '.join(filter(None, (
+            kwargs.get('tag'),
+            kwargs.get('count'),
+        ))).strip()
+        
+        # message body
         if info.varnames:
             assert len(info.varnames) == len(data)
-            msg = []
+            temp = []
             for k, v in zip(info.varnames, data):
-                msg.append(f'{k} = {v}' if k else v)
-            msg = ';\t'.join(msg)
+                temp.append(f'{k} = {v}' if k else v)
+            msg_body = ';\t'.join(temp)
         else:
-            msg = str(data)[1:-1]
-
+            msg_body = ';\t'.join(map(str, data))
+        
         out = self._template.format(
             filename=info.filename,
             lineno=info.lineno,
             func=info.name,
-            msg=msg
+            msg=f'{msg_head} {msg_body}'.strip()
         )
         return out
     
-    @frame_finder.getframe
+    @getframe
     def log(self, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
+        # msg = self.fmt_msg(data)
         # ...
         raise NotImplementedError
-
-    @frame_finder.getframe
+    
+    @getframe
     def loga(self, *data, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logd(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logt(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logx(self, *data, h='self'):
+        # msg = self.fmt_msg(data)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logtx(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logax(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logdx(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logtx(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logdtx(self, *data, h='self'):
+        # msg = self.fmt_msg(data, advanced=True)
+        # ...
+        raise NotImplementedError
+    
+    def _output(self, msg: str, **kwargs):
         raise NotImplementedError

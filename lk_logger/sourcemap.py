@@ -32,8 +32,8 @@ class FrameFinder:
     
     @property
     def frame(self):
-        assert self._frame, 'You must hold the frame (see `self.hold_frame` ' \
-                            'decorator) before fetching the frame!'
+        assert self._frame, 'You must hold the frame (see `FrameFinder' \
+                            '.hold_frame` decorator) before fetching the frame!'
         return self._frame
 
 
@@ -48,7 +48,9 @@ class SourceMap:
         self.working_dir = os.getcwd()
         # # self.working_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     
-    def get_frame_info(self, frame: FrameType, advanced=False):
+    def get_frame_info(self, advanced=False):
+        frame = _frame_finder.frame
+        
         filename = frame.f_code.co_filename
         lineno = frame.f_lineno
         name = frame.f_code.co_name
@@ -92,5 +94,6 @@ class SourceMap:
                     node[lineno] = tuple(varnames)
 
 
-frame_finder = FrameFinder()
+_frame_finder = FrameFinder()
+getframe = _frame_finder.getframe
 sourcemap = SourceMap()

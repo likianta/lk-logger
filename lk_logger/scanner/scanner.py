@@ -9,8 +9,6 @@ from .const import *
 from .exceptions import *
 from .typehint import *
 
-from lk_logger import lk
-
 
 def get_all_blocks(*lines: str, end_mark='\n'):
     """ Get ALL COMPLETE text blocks.
@@ -113,6 +111,8 @@ def get_variables(line: str):
 
 
 def _debug(linex, line, charx, char, symbols=None):
+    # use `lk.log` from `lk_logger_3_6` or just `print`
+    from lk_logger_3_6 import lk
     lk.log('''
         ┌──────────────────────────────────────────────────────────────────────╣
         │   Tracing linex {}, charx {} (`{}`):
