@@ -118,7 +118,7 @@ def main():
     print_values_with_varnames()
     print_with_linebreaks()
     hierarchy_reflections()
-    # print_with_countings()
+    print_with_countings()
     
     
 if __name__ == '__main__':

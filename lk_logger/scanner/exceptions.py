@@ -49,6 +49,10 @@ class UnreachableCase(ScanningError):
     pass
 
 
+class UnresolvedCase(Exception):
+    pass
+
+
 class UnexpectedReturnCode(Exception):
     pass
 

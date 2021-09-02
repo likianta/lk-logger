@@ -95,15 +95,21 @@ class SourceMap:
                 # FIXME (Warning): in lk-logger v4.0, the varname-detection
                 #   feature only enables when content starts with 'lk.log'.
                 if text.startswith('lk.log'):
+                    from .scanner.exceptions import UnresolvedCase
                     varnames = []
-                    for element, type_ in get_variables(text):
-                        # OPTM: pos_mark turns to use OrderedDict
-                        if type_ == 0:
-                            varnames.append(element)
-                        else:
-                            varnames.append('')
-                    lineno = match.cursor.lineno + 1
-                    node[lineno] = tuple(varnames)
+                    try:
+                        for element, type_ in get_variables(text):
+                            # OPTM: pos_mark turns to use OrderedDict
+                            if type_ == 0:
+                                varnames.append(element)
+                            else:
+                                varnames.append('')
+                        lineno = match.cursor.lineno + 1
+                    except UnresolvedCase:
+                        del varnames
+                        continue
+                    else:
+                        node[lineno] = tuple(varnames)
 
 
 frame_finder = FrameFinder()

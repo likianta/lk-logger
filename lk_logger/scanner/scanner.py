@@ -89,6 +89,7 @@ def get_variables(line: str):
     number_pattern = compile(r'^[\d]+(?:\.\d+)?$')
     kwargs_pattern = compile(r'^\w+ *=')
     nested_pattern = compile(r'^[(\[{]')
+    lambda_pattern = compile(r'^lambda ')
     
     for match0 in get_all_blocks(line):
         start, end = match0.span()  # exterior brackets span
@@ -118,6 +119,41 @@ def get_variables(line: str):
                 continue  # continue or break out
             elif nested_pattern.match(element):
                 yield element, NESTED_STRUCT
+            elif lambda_pattern.match(element):
+                ''' TODO (memo)
+                
+                How it happened?
+                    For example:
+                        line = 'lambda *args, **kwargs: None'
+                        
+                    When scanner goes here:
+                        lambda *args, **kwargs: None
+                                    ^
+                    Because 'lambda *args' is a 'complete' part (no unresolved
+                    brackets, quotes, etc. left), it treats this comma symbol
+                    as an end mark, so scanner thinks it can be submitted and
+                    yields 'lambda *args' as an 'element' to the caller.
+                    
+                    The caller (`lk_logger.sourcemap`) receives 'lambda *args'
+                    and '**kwargs: None' one after another, so caller thinks
+                    there're two elements found. But when logger tries to
+                    demonstrate their number is equivalent (see `lk_logger
+                    .logger.fmt_msg > code:'assert len(info.varnames) ==
+                    len(data)'`), an AssertionError is raised.
+                
+                How to resolve it (in the future)?
+                    Before handling this example line, replace the comma with a
+                    mask symbol. After handling is over, restore it.
+                '''
+                raise UnresolvedCase('''
+                    We didn't find an ideal way to handle lambda expression
+                    without breaking currently designed function.
+                    The caller should catch this exception and it has to
+                    abandon all its collected varnames which came from this
+                    function. Say just take it as nothing received from here.
+                ''')
+                # see `~/lk_logger/sourcemap.py > class:SourceMap > method:
+                # _indexing_filemap`
             else:
                 yield element, VARIABLE_NAME
         
