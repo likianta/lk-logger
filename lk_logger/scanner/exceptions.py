@@ -5,25 +5,36 @@ References:
 """
 
 
-class UnreachableCase(Exception):
+def visualize_line(linex, line, charx, char, symbols=None):
+    return '''
+        ┌──────────────────────────────────────────────────────────────────────╣
+        │   Tracing linex {}, charx {} (`{}`):
+        │       {}
+        │       {}
+        │   Symbols:
+        │       {}
+        └──────────────────────────────────────────────────────────────────────╣
+    '''.format(
+        linex, charx,
+        char.replace('\n', '$'),
+        line.replace('\n', '$'),
+        #   notice: the substitute must be one single char. otherwise the
+        #   indicator will point to a wrong place.
+        ' ' * charx + '^', symbols
+    )
+
+
+class ScanningError(Exception):
     
     def __init__(self, linex, line, charx, char, symbols):
-        # noinspection PyProtectedMember
-        self.msg = '''\
-            Error happened at line {} char {} (`{}`):
-                {}
-                {}
-            Symbols:
-                {}
-        '''.format(
-            linex, charx, char,
-            line,
-            ' ' * charx + '^',
-            symbols
-        )
+        self.msg = visualize_line(linex, line, charx, char, symbols)
     
     def __str__(self):
         return self.msg
+
+
+class UnreachableCase(ScanningError):
+    pass
 
 
 class UnexpectedReturnCode(Exception):

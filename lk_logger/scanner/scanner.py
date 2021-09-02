@@ -3,6 +3,7 @@ README:
     `docs/what-is-block.md`
 """
 from collections import namedtuple
+from re import compile
 
 from .analyser import Analyser
 from .const import *
@@ -26,19 +27,18 @@ def get_all_blocks(*lines: str, end_mark='\n'):
     analyser = Analyser(end=end_mark)
     #   IMPROVEMENT: if `lines:each` contains '\n', which means we can't pass
     #       '\n' to `params:end`, we can use `end=None` instead.
-    #       (MARK@20210901173115 should also be modified to compilance with
-    #        this change.)
+    #       (see reactions at MARK@20210901173115.)
     cursor = Cursor()
     fulltext = end_mark.join(lines)
-    last_submit_no = 0
+    last_submit_idx = 0
     
     def _submit():
-        nonlocal last_submit_no
-        yield Match(cursor.snapshot(last_submit_no),
-                    fulltext[last_submit_no:cursor.x],
+        nonlocal last_submit_idx
+        yield Match(cursor.snapshot(last_submit_idx),
+                    fulltext[last_submit_idx:cursor.x],
                     analyser.symbols.matches_nest)
         analyser.reset()
-        last_submit_no = cursor.x + 1
+        last_submit_idx = cursor.x + 1
     
     for line in lines:
         cursor.update_lineno()
@@ -73,7 +73,6 @@ def get_all_blocks(*lines: str, end_mark='\n'):
                 raise UnexpectedReturnCode(ret_code)
 
 
-# noinspection PyPep8Naming
 def get_variables(line: str):
     """
 
@@ -85,25 +84,36 @@ def get_variables(line: str):
            ['A', '(B, C)']
         4. now we know there are two elements in single_line: `A` and `(B, C)`
     """
-    VARIABLE_NAME = 0  # varname
-    QUOTED_STRING = 1  # qstring
+    quotes_pattern = compile(r'^[bfru]*[\'"]')
+    number_pattern = compile(r'^[\d]+(?:\.\d+)?$')
+    kwargs_pattern = compile(r'^\w+ *=')
     
-    for match in get_all_blocks(line):
-        start, end = match.span()  # exterior brackets span
-        line = line[start + 1:end]
-        # lk.logt('[D3957]', 'strip lk.log arounded', line)
+    for match0 in get_all_blocks(line):
+        start, end = match0.span()  # exterior brackets span
+        line = line[start + 1:end].rstrip(' ,')
+        #   `~.rstrip(' ,')`: for example:
+        #       line = 'a, b, c, ' -> 'a, b, c'
+        # from lk_logger_3_6 import lk
+        # lk.logt('[D3957]', 'stripped lk.log* arounded', line)
         
         for match1 in get_all_blocks(line, end_mark=','):
             element = match1.fulltext.strip()
             # lk.logt('[D5018]', element)
+            
             if not element:
-                raise ValueError(line)
-            if (
-                    len(element) > 1 and element[0] in ('"', "'")
-            ) or (
-                    len(element) > 2 and element.lstrip('bfru')[0] in ('"', "'")
-            ):
+                # continue
+                raise ScanningError(
+                    match1.cursor.lineno, line,
+                    match1.cursor.charno, line[match1.cursor.tileno],
+                    None
+                )
+            
+            if quotes_pattern.match(element):
                 yield element, QUOTED_STRING
+            elif number_pattern.match(element):
+                yield element, SIMPLE_NUMBER
+            elif kwargs_pattern.match(element):
+                continue  # continue or break out
             else:
                 yield element, VARIABLE_NAME
         
@@ -111,20 +121,10 @@ def get_variables(line: str):
 
 
 def _debug(linex, line, charx, char, symbols=None):
-    # use `lk.log` from `lk_logger_3_6` or just `print`
-    from lk_logger_3_6 import lk
-    lk.log('''
-        ┌──────────────────────────────────────────────────────────────────────╣
-        │   Tracing linex {}, charx {} (`{}`):
-        │       {}
-        │       {}
-        │   Symbols:
-        │       {}
-        └──────────────────────────────────────────────────────────────────────╣
-        '''.format(linex, charx,
-                   char.replace('\n', '\\n'),
-                   line.replace('\n', '\\n'),
-                   ' ' * charx + '^', symbols), h='parent')
+    # from lk_logger_3_6 import lk
+    # lk.logt('[D4011]', visualize_line(
+    #     linex, line, charx, char, symbols), h='parent')
+    print(visualize_line(linex, line, charx, char, symbols))
 
 
 class Match:
@@ -173,7 +173,7 @@ class Cursor:
         self._snap = namedtuple(
             'CursorShot', ['lineno', 'charno', 'tileno', 'index']
         )
-        
+    
     def indexing_fulltext(self, lines):
         for line in lines:
             self.update_lineno()

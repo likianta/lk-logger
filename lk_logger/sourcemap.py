@@ -17,31 +17,50 @@ class FrameFinder:
         'great_grand_parent': 4,
     }
     
-    _frame: Optional[FrameType] = None  # frame holder
+    _frame0: Optional[FrameType] = None  # the direct caller frame
+    _frame: Optional[FrameType] = None  # the caller frame (hierarchy unknown)
     
     def getframe(self, func):
         @wraps(func)
         def _wrap(*args, **kwargs):
-            frame = currentframe()
-            for _ in range(self._hierarchy[kwargs.get('h', 'self')]):
+            frame = self._frame0 = currentframe().f_back
+            for _ in range(self._hierarchy.get(
+                    (h := kwargs.get('h', 'self')), h
+            ) - 1):
                 frame = frame.f_back
-            self._frame = frame  # here we hold the frame
+            self._frame = frame
             return func(*args, **kwargs)
         
         return _wrap
     
-    @property
-    def frame(self):
-        assert self._frame, 'You must hold the frame (see `FrameFinder' \
-                            '.hold_frame` decorator) before fetching the frame!'
-        return self._frame
+    def getinfo(self):
+        assert self._frame0 and self._frame, (
+            'You must hold the frame before fetching the frame! '
+            '(see `FrameFinder.hold_frame` decorator)'
+        )
+        struct = namedtuple('FrameInfo', (
+            'direct_filename', 'direct_lineno',
+            'source_filename', 'source_lineno',
+            'source_name',
+        ))
+        return struct(
+            self._frame0.f_code.co_filename, self._frame0.f_lineno,
+            self._frame.f_code.co_filename, self._frame.f_lineno,
+            self._frame.f_code.co_name,
+        )
+    
+    # @property
+    # def frame(self):
+    #     assert self._frame, 'You must hold the frame (see `FrameFinder' \
+    #                         '.hold_frame` decorator) before fetching the frame!'
+    #     return self._frame
 
 
 class SourceMap:
     
     def __init__(self):
         self._info_struct = namedtuple(
-            'InfoStruct', ['filename', 'lineno', 'name', 'varnames']
+            'InfoStruct', ('filename', 'lineno', 'name', 'varnames')
         )
         self._sourcemap = {}
         #   dict[filename, dict[lineno, tuple[varname, ...]]]
@@ -49,25 +68,20 @@ class SourceMap:
         # # self.working_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     
     def get_frame_info(self, advanced=False):
-        frame = _frame_finder.frame
+        info = _frame_finder.getinfo()
         
-        filename = frame.f_code.co_filename
-        lineno = frame.f_lineno
-        name = frame.f_code.co_name
+        filename = os.path.relpath(info.source_filename, self.working_dir)
+        lineno = info.source_lineno
+        name = x if (x := info.source_name).startswith('<') else x + '()'
+        varnames = ()
         
         if advanced:
-            if filename not in self._sourcemap:
-                self._indexing_filemap(filename)
-            varnames = self._sourcemap[filename].get(lineno, ())
-        else:
-            varnames = ()
+            if info.direct_filename not in self._sourcemap:
+                self._indexing_filemap(info.direct_filename)
+            varnames = self._sourcemap[info.direct_filename].get(
+                info.direct_lineno, ())
         
-        return self._info_struct(
-            os.path.relpath(filename, self.working_dir),
-            lineno,
-            name if name.startswith('<') else name + '()',
-            varnames
-        )
+        return self._info_struct(filename, lineno, name, varnames)
     
     def _indexing_filemap(self, filename: str):
         node = self._sourcemap.setdefault(filename, {})
@@ -82,7 +96,7 @@ class SourceMap:
                 
                 # FIXME (Warning): in lk-logger v4.0, the varname-detection
                 #   feature only enables when content starts with 'lk.log'.
-                if text.startswith('lkk.log'):  # TEST: lkk.log
+                if text.startswith('lk.log'):
                     varnames = []
                     for element, type_ in get_variables(text):
                         # OPTM: pos_mark turns to use OrderedDict

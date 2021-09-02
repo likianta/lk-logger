@@ -15,6 +15,11 @@ CONTINUED = 2
 GOTO_END = 3
 UNREACHABLE_CASE = 4
 
+# scanner.py > func:get_variables
+VARIABLE_NAME = 0  # varname
+QUOTED_STRING = 1  # qstring
+SIMPLE_NUMBER = 2
+
 # PAIRED SYMBOLS
 PAIRED_SYMBOLS = {
     '(' : (')', TOKEN_A00),

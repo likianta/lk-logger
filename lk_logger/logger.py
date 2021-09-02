@@ -12,21 +12,28 @@ class BaseLogger(Counter):
         # from json import load
         # config = load(open(f'{__file__}/../config/base.json'))  # type: dict
         # config.update(kwargs)
-        config = kwargs
+        self.config = kwargs
         
-        self._var_seg = config.get('var_seg', ';\t')
-        self._template = '{filename}:{lineno}\t>>\t{func}\t>>\t{msg}'
+        # uplevel most frequent used configurations
+        self._template = self.config.get(
+            'template', '{filename}:{lineno}\t>>\t{func}\t>>\t{msg}')
+        self._var_seg = self.config.get('var_seg', ';\t')
+        self._visualize_linebreaks = self.config.get(  # DEL
+            'visualize_linebreaks', False)
         
         self.__fmt_msg = None
     
-    # noinspection PyAttributeOutsideInit
     def enable_lite_mode(self):
         self.__fmt_msg = self.fmt_msg
-        self.fmt_msg = lambda data, **_: ';\t'.join(map(str, data))
+        # tip: here we use `setattr(...)` not `self.fmt_msg = ...` to avoid
+        # PEP-8 (weak) warnings and fix code navigation problem (and some
+        # intelli-sense problems) when developing in pycharm.
+        setattr(self, 'fmt_msg', lambda data, **_: ';\t'.join(map(str, data)))
+        # # self.fmt_msg = lambda data, **_: ';\t'.join(map(str, data))
     
-    # noinspection PyAttributeOutsideInit
     def disable_lite_mode(self):
-        self.fmt_msg = self.__fmt_msg
+        setattr(self, 'fmt_msg', self.__fmt_msg)
+        # # self.fmt_msg = self.__fmt_msg
         self.__fmt_msg = None
     
     def fmt_msg(self, data, **kwargs):
@@ -40,6 +47,7 @@ class BaseLogger(Counter):
             advanced
             tag
             count
+            divider_line
         """
         info = sourcemap.get_frame_info(
             advanced=kwargs.get('advanced', False)
@@ -49,17 +57,20 @@ class BaseLogger(Counter):
         msg_head = ' '.join(filter(None, (
             kwargs.get('tag'),
             kwargs.get('count'),
+            kwargs.get('divider_line'),
         ))).strip()
         
         # message body
         if info.varnames:
-            assert len(info.varnames) == len(data)
+            assert len(info.varnames) == len(data), (info, data)
             temp = []
             for k, v in zip(info.varnames, data):
-                temp.append(f'{k} = {v}' if k else v)
+                temp.append(f'{k} = {v}' if k else str(v))
             msg_body = ';\t'.join(temp)
         else:
             msg_body = ';\t'.join(map(str, data))
+        if self._visualize_linebreaks:
+            msg_body = msg_body.replace('\n', '\\n')
         
         out = self._template.format(
             filename=info.filename,
@@ -68,6 +79,8 @@ class BaseLogger(Counter):
             msg=f'{msg_head} {msg_body}'.strip()
         )
         return out
+
+    # -------------------------------------------------------------------------
     
     @getframe
     def log(self, *data, h='self'):

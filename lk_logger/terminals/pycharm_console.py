@@ -17,8 +17,12 @@ class PycharmLogger(BaseLogger):
         )
     
     @getframe
-    def logd(self, *data, h='self'):
-        pass
+    def logd(self, *data, symbol='-', length=80, h='self'):
+        self._output(
+            self.fmt_msg(
+                data, advanced=True, divider_line=symbol * length
+            )
+        )
     
     @getframe
     def logt(self, *data, h='self'):
