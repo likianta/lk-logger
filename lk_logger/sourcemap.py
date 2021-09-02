@@ -48,6 +48,10 @@ class FrameFinder:
             self._frame.f_code.co_filename, self._frame.f_lineno,
             self._frame.f_code.co_name,
         )
+    
+    @property
+    def frame(self):
+        return self._frame0
 
 
 class SourceMap:
@@ -62,7 +66,7 @@ class SourceMap:
         # # self.working_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     
     def get_frame_info(self, advanced=False):
-        info = _frame_finder.getinfo()
+        info = frame_finder.getinfo()
         
         filename = os.path.relpath(info.source_filename, self.working_dir)
         lineno = info.source_lineno
@@ -102,6 +106,6 @@ class SourceMap:
                     node[lineno] = tuple(varnames)
 
 
-_frame_finder = FrameFinder()
-getframe = _frame_finder.getframe
+frame_finder = FrameFinder()
+getframe = frame_finder.getframe
 sourcemap = SourceMap()

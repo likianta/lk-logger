@@ -80,7 +80,11 @@ def fmt_count(count, total_count,
     return template.format(**data)
 
 
-def fmt_tag(template='[{t}]'):
+# def fmt_tag(template='[{t}]'):
+#     pass
+
+
+def ratchet_width():
     pass
 
 

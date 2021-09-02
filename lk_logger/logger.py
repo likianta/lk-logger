@@ -145,3 +145,19 @@ class BaseLogger(Counter):
     
     def _output(self, msg: str, **kwargs):
         raise NotImplementedError
+
+    # -------------------------------------------------------------------------
+    
+    @property
+    @getframe
+    def position(self):
+        """
+        
+        Returns:
+            (filename, lineno)
+                - filename is an absolute path.
+                - the lineno starts from 1.
+        """
+        from .sourcemap import frame_finder
+        frame = frame_finder.frame
+        return frame.f_code.co_filename, frame.f_lineno

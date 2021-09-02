@@ -107,6 +107,10 @@ def print_with_countings():
             with lk.counting(b):
                 for j in b:
                     lk.logax(i, j)
+                    
+                    
+def other():
+    lk.loga(lk.position)
 
 
 def main():
@@ -118,9 +122,10 @@ def main():
     
     
 if __name__ == '__main__':
+    # main()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
     # hierarchy_reflections()
-    print_with_countings()
-    # main()
+    # print_with_countings()
+    other()
