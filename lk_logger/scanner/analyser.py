@@ -136,13 +136,13 @@ class Analyser:
                 symbols.consume()
             elif token == TOKEN_D00:
                 symbols.consume()
-                ret_code = GOTO_END
+                ret_code = BREAK_OUT
             else:
                 ret_code = UNREACHABLE_CASE
         else:
             if char in PAIRED_SYMBOLS:
                 if char == '#':
-                    ret_code = GOTO_END
+                    ret_code = BREAK_OUT
                 else:
                     symbols.append(*PAIRED_SYMBOLS[char])
             elif char == self.end:
@@ -152,9 +152,9 @@ class Analyser:
         
         if ret_code == INIT:
             if self.symbols:
-                ret_code = CONTINUED
+                ret_code = CONTINUE
             elif char == self.end:
                 ret_code = SUBMITTABLE
             else:
-                ret_code = CONTINUED
+                ret_code = CONTINUE
         return ret_code

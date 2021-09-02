@@ -6,22 +6,34 @@ References:
 
 
 def visualize_line(linex, line, charx, char, symbols=None):
-    return '''
-        ┌──────────────────────────────────────────────────────────────────────╣
+    block = '''
+        ┌──────────────────────────────────────────────────────────────────────┐
         │   Tracing linex {}, charx {} (`{}`):
         │       {}
         │       {}
         │   Symbols:
         │       {}
-        └──────────────────────────────────────────────────────────────────────╣
+        └──────────────────────────────────────────────────────────────────────┘
     '''.format(
         linex, charx,
-        char.replace('\n', '$'),
-        line.replace('\n', '$'),
-        #   notice: the substitute must be one single char. otherwise the
+        char.replace('\n', '■'),
+        line.replace('\n', '■'),
+        #   notice: the substitute character width must be ONE. otherwise the
         #   indicator will point to a wrong place.
         ' ' * charx + '^', symbols
     )
+    
+    temp = []
+    for i, line in enumerate(block.splitlines()):
+        if i == 0 or i == 7 or i == 8:
+            temp.append(line)
+        else:
+            if len(line) < 80:
+                line += ' ' * (80 - len(line) - 1) + '│'
+            temp.append(line)
+    block = temp
+
+    return '\n'.join(block)
 
 
 class ScanningError(Exception):
@@ -42,8 +54,4 @@ class UnexpectedReturnCode(Exception):
 
 
 class BreakOut(Exception):
-    pass
-
-
-class BreakDown(Exception):
     pass

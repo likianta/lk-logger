@@ -48,12 +48,6 @@ class FrameFinder:
             self._frame.f_code.co_filename, self._frame.f_lineno,
             self._frame.f_code.co_name,
         )
-    
-    # @property
-    # def frame(self):
-    #     assert self._frame, 'You must hold the frame (see `FrameFinder' \
-    #                         '.hold_frame` decorator) before fetching the frame!'
-    #     return self._frame
 
 
 class SourceMap:

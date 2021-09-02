@@ -57,13 +57,9 @@ def get_all_blocks(*lines: str, end_mark='\n'):
             if ret_code == SUBMITTABLE:
                 yield from _submit()
                 # break
-            elif ret_code == CONTINUED:
+            elif ret_code == CONTINUE:
                 continue
-            elif ret_code == GOTO_END:
-                while char != end_mark:
-                    cursor.update_charno()
-                    char = line_[cursor.charno]
-                yield from _submit()
+            elif ret_code == BREAK_OUT:
                 break
             elif ret_code == UNREACHABLE_CASE:
                 raise UnreachableCase(
@@ -87,6 +83,7 @@ def get_variables(line: str):
     quotes_pattern = compile(r'^[bfru]*[\'"]')
     number_pattern = compile(r'^[\d]+(?:\.\d+)?$')
     kwargs_pattern = compile(r'^\w+ *=')
+    nested_pattern = compile(r'^[(\[{]')
     
     for match0 in get_all_blocks(line):
         start, end = match0.span()  # exterior brackets span
@@ -101,10 +98,10 @@ def get_variables(line: str):
             # lk.logt('[D5018]', element)
             
             if not element:
-                # continue
+                # # continue
                 raise ScanningError(
                     match1.cursor.lineno, line,
-                    match1.cursor.charno, line[match1.cursor.tileno],
+                    match1.cursor.charno, (line + ',')[match1.cursor.tileno],
                     None
                 )
             
@@ -114,6 +111,8 @@ def get_variables(line: str):
                 yield element, SIMPLE_NUMBER
             elif kwargs_pattern.match(element):
                 continue  # continue or break out
+            elif nested_pattern.match(element):
+                yield element, NESTED_STRUCT
             else:
                 yield element, VARIABLE_NAME
         
