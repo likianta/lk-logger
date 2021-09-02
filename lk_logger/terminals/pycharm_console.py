@@ -6,51 +6,59 @@ class PycharmLogger(BaseLogger):
     
     @getframe
     def log(self, *data, h='self'):
-        self._output(
-            self.fmt_msg(data)
-        )
+        self._output(self.fmt_msg(
+            data, advanced=False
+        ))
     
     @getframe
     def loga(self, *data, h='self'):
-        self._output(
-            self.fmt_msg(data, advanced=True)
-        )
+        self._output(self.fmt_msg(
+            data, advanced=True
+        ))
     
     @getframe
     def logd(self, *data, symbol='-', length=80, h='self'):
-        self._output(
-            self.fmt_msg(
-                data, advanced=True, divider_line=symbol * length
-            )
-        )
+        self._output(self.fmt_msg(
+            data, advanced=True, divider_line=symbol * length
+        ))
     
     @getframe
-    def logt(self, *data, h='self'):
-        pass
+    def logt(self, tag, *data, h='self'):
+        self._output(self.fmt_msg(
+            data, advanced=True, tag=tag
+        ))
     
     @getframe
     def logx(self, *data, h='self'):
-        pass
+        self._output(self.fmt_msg(
+            data, advanced=False, count=self._fmt_update_count()
+        ))
     
     @getframe
     def logax(self, *data, h='self'):
-        self._output(
-            self.fmt_msg(
-                data, advanced=True, count=self._fmt_update_count()
-            )
-        )
+        self._output(self.fmt_msg(
+            data, advanced=True, count=self._fmt_update_count()
+        ))
     
     @getframe
-    def logdx(self, *data, h='self'):
-        pass
-
+    def logdx(self, *data, symbol='-', length=80, h='self'):
+        self._output(self.fmt_msg(
+            data, advanced=True, divider_line=symbol * length,
+            count=self._fmt_update_count()
+        ))
+    
     @getframe
-    def logtx(self, *data, h='self'):
-        pass
-
+    def logtx(self, tag, *data, h='self'):
+        self._output(self.fmt_msg(
+            data, advanced=True, tag=tag, count=self._fmt_update_count()
+        ))
+    
     @getframe
-    def logdtx(self, *data, h='self'):
-        pass
+    def logdtx(self, tag, *data, symbol='-', length=80, h='self'):
+        self._output(self.fmt_msg(
+            data, advanced=True, divider_line=symbol * length, tag=tag,
+            count=self._fmt_update_count()
+        ))
     
     def _output(self, msg: str, **kwargs):
         print(msg)

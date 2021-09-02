@@ -14,7 +14,8 @@ class BaseLogger(Counter):
         # config.update(kwargs)
         self.config = kwargs
         
-        # uplevel most frequent used configurations
+        # TODO: assign the most frequently used configs to directly acessable
+        #   attributes.
         self._template = self.config.get(
             'template', '{filename}:{lineno}\t>>\t{func}\t>>\t{msg}')
         self._var_seg = self.config.get('var_seg', ';\t')
@@ -95,13 +96,13 @@ class BaseLogger(Counter):
         raise NotImplementedError
     
     @getframe
-    def logd(self, *data, h='self'):
+    def logd(self, *data, symbol='-', length=80, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
         raise NotImplementedError
     
     @getframe
-    def logt(self, *data, h='self'):
+    def logt(self, tag, *data, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
         raise NotImplementedError
@@ -113,7 +114,7 @@ class BaseLogger(Counter):
         raise NotImplementedError
     
     @getframe
-    def logtx(self, *data, h='self'):
+    def logtx(self, tag, *data, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
         raise NotImplementedError
@@ -125,7 +126,7 @@ class BaseLogger(Counter):
         raise NotImplementedError
     
     @getframe
-    def logdx(self, *data, h='self'):
+    def logdx(self, *data, symbol='-', length=80, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
         raise NotImplementedError
@@ -137,7 +138,7 @@ class BaseLogger(Counter):
         raise NotImplementedError
     
     @getframe
-    def logdtx(self, *data, h='self'):
+    def logdtx(self, tag, *data, symbol='-', length=80, h='self'):
         # msg = self.fmt_msg(data, advanced=True)
         # ...
         raise NotImplementedError
