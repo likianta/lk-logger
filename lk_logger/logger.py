@@ -67,9 +67,9 @@ class BaseLogger(Counter):
             temp = []
             for k, v in zip(info.varnames, data):
                 temp.append(f'{k} = {v}' if k else str(v))
-            msg_body = ';\t'.join(temp)
+            msg_body = kwargs.get('sep', ';\t').join(temp)
         else:
-            msg_body = ';\t'.join(map(str, data))
+            msg_body = kwargs.get('sep', ';\t').join(map(str, data))
         if self._visualize_linebreaks:
             msg_body = msg_body.replace('\n', '\\n')
         
@@ -82,65 +82,50 @@ class BaseLogger(Counter):
         return out
 
     # -------------------------------------------------------------------------
+    # Typical implementations see: `lk_logger.terminals.pycharm_console`.
     
     @getframe
     def log(self, *data, h='self'):
-        # msg = self.fmt_msg(data)
-        # ...
         raise NotImplementedError
     
     @getframe
     def loga(self, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logd(self, *data, symbol='-', length=80, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
+        raise NotImplementedError
+    
+    @getframe
+    def logp(self, *data, h='self'):
         raise NotImplementedError
     
     @getframe
     def logt(self, tag, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logx(self, *data, h='self'):
-        # msg = self.fmt_msg(data)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logtx(self, tag, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logax(self, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logdx(self, *data, symbol='-', length=80, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logtx(self, *data, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     @getframe
     def logdtx(self, tag, *data, symbol='-', length=80, h='self'):
-        # msg = self.fmt_msg(data, advanced=True)
-        # ...
         raise NotImplementedError
     
     def _output(self, msg: str, **kwargs):

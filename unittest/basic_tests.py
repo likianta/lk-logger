@@ -57,32 +57,6 @@ def print_with_linebreaks():
     '''.format(b), b)
 
 
-def hierarchy_reflections():
-    def _aaa():
-        def _bbb():
-            def _ccc():
-                def _ddd():
-                    a = 123
-                    lk.loga('assert _ddd.<here>', a, h='self')
-                    lk.loga('assert _ccc._ddd()', a, h='parent')
-                    lk.loga('assert _bbb._ccc()', a, h='grand_parent')
-                    lk.loga('assert _aaa._bbb()', a, h='great_grand_parent')
-                    lk.loga('assert main._aaa()', a, h=5)
-                    lk.loga('assert root.main()', a, h=6)
-                    try:
-                        lk.loga('assert ...', a, h=7)
-                    except AssertionError as e:
-                        lk.loga('assert outbound error happend', e)
-                
-                _ddd()  # _ccc._ddd()
-            
-            _ccc()  # _bbb._ccc()
-        
-        _bbb()  # _aaa._bbb()
-    
-    _aaa()  # main._aaa()
-
-
 def print_with_countings():
     a = [1, 2, 3]
     b = [1, 2, 3, 4, 5, 6]
@@ -108,6 +82,20 @@ def print_with_countings():
                 for j in b:
                     lk.logax(i, j)
                     
+
+def pretty_print():
+    lk.logp({
+        'a': {
+            'aa': {
+                'aaa': 100,
+            },
+            'bb': [
+                200, 300, {400, 500, 600},
+                {700: 7000, 800: 8000},
+            ]
+        }
+    })
+                    
                     
 def other():
     lk.loga(lk.position)
@@ -117,7 +105,6 @@ def main():
     print_values()
     print_values_with_varnames()
     print_with_linebreaks()
-    hierarchy_reflections()
     print_with_countings()
     
     
@@ -126,6 +113,6 @@ if __name__ == '__main__':
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
-    # hierarchy_reflections()
     # print_with_countings()
-    other()
+    pretty_print()
+    # other()
