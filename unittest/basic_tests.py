@@ -1,4 +1,7 @@
 from lk_logger import lk
+# from lk_logger_3_6 import lk
+
+# lk.enable_lite_mode()
 
 
 def print_values():
@@ -106,9 +109,18 @@ def print_with_countings():
                     lk.logax(i, j)
 
 
+def main():
+    print_values()
+    print_values_with_varnames()
+    print_with_linebreaks()
+    hierarchy_reflections()
+    # print_with_countings()
+    
+    
 if __name__ == '__main__':
     # print_values()
     # print_values_with_varnames()
-    print_with_linebreaks()
+    # print_with_linebreaks()
     # hierarchy_reflections()
-    # print_with_countings()
+    print_with_countings()
+    # main()

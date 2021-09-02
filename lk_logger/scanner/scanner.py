@@ -60,6 +60,11 @@ def get_all_blocks(*lines: str, end_mark='\n'):
             elif ret_code == CONTINUE:
                 continue
             elif ret_code == BREAK_OUT:
+                # `BREAK_OUT` is recognized as continuously sending `CONTINUE`
+                # command, until we meet an `end_mark` then break.
+                while char != end_mark:
+                    cursor.update_charno()
+                    char = line_[cursor.charno]
                 break
             elif ret_code == UNREACHABLE_CASE:
                 raise UnreachableCase(
