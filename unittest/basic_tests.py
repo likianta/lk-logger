@@ -34,6 +34,11 @@ def print_with_linebreaks():
         'a': 'aa',
         'b': 'bb',
     })
+    lk.loga({  # commnet A
+        'c': 'cc',
+        # comment B
+        'd': 'dd',
+    })
     lk.loga('''
         """
         xxx
@@ -75,8 +80,35 @@ def hierarchy_reflections():
     _aaa()  # main._aaa()
 
 
+def print_with_countings():
+    a = [1, 2, 3]
+    b = [1, 2, 3, 4, 5, 6]
+    
+    with lk.counting(a):
+        for i in a:
+            lk.logax(i)
+            
+    with lk.counting(a):
+        for i in a:
+            lk.logax(i)
+            
+        with lk.counting(b):
+            for j in b:
+                lk.logax(j)
+
+        for i in a:
+            lk.logax(i)
+
+    with lk.counting(a):
+        for i in a:
+            with lk.counting(b):
+                for j in b:
+                    lk.logax(i, j)
+
+
 if __name__ == '__main__':
     # print_values()
     # print_values_with_varnames()
-    # print_with_linebreaks()
-    hierarchy_reflections()
+    print_with_linebreaks()
+    # hierarchy_reflections()
+    # print_with_countings()

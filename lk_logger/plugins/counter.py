@@ -1,4 +1,3 @@
-import re
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -35,7 +34,7 @@ class Counter:
                     return len(obj)
                 except AttributeError:
                     raise AttributeError(
-                        'Cannot measure an object that doesnot have __len__ '
+                        'Cannot measure an object that doesnot have `__len__` '
                         'attribute', obj
                     )
         else:
@@ -97,51 +96,5 @@ class Counter:
         References:
             https://www.runoob.com/python/att-string-format.html
         """
-        
-        data = {}
-        i, j = self._update_count()
-        p = i / j if j else ''
-        template = template if j else backup_template
-        
-        def _parse_template() -> set[str]:
-            slot = re.compile(r'(?<={)[^}]+')
-            return set(slot.findall(template))
-        
-        for x in _parse_template():
-            if x == 'i':
-                data[x] = i
-            elif x == 'I':
-                if j:
-                    data[x] = '{{:0>{}}}'.format(len(str(j))).format(i)
-                else:
-                    dynamic_width = 3
-                    i_width = len(str(i))
-                    while dynamic_width < i_width:
-                        dynamic_width += 3
-                    data[x] = '0' * (dynamic_width - i_width) + ':,'.format(i)
-            elif x.startswith('I'):
-                data[x] = '{{:0>{}}}'.format(int(x[1:])).format(i)
-            elif x == 'j' and j:
-                data[x] = j
-            elif x == 'p' and p:
-                data[x] = '{:.2%}'.format(p)
-            elif x.startswith('p.') and p:
-                if x == 'p.0':
-                    data[x] = '{}%'.format(round(p))
-                else:
-                    data[x] = '{{:.{}%}}'.format(int(x[2:])).format(p)
-            elif x == 'P' and p:
-                if p < 10:
-                    data[x] = '0' + '{:.2%}'.format(p)
-                else:
-                    data[x] = '{:.2%}'.format(p)
-            elif x.startswith('P.') and p:
-                if p < 10:
-                    data[x] = '0' + '{{:.{}%}}'.format(int(x[2:])).format(p)
-                else:
-                    data[x] = '{{:.{}%}}'.format(int(x[2:])).format(p)
-            else:
-                data[x] = ''
-                # raise ValueError(x, template)
-        
-        return template.format(**data)
+        from .formatter import fmt_count
+        return fmt_count(*self._update_count())

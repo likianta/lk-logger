@@ -7,11 +7,6 @@ Abbreviations:
 import re
 
 
-# class Formatter:
-#
-#     def __init__(self, count, total_count):
-
-
 def fmt_count(count, total_count,
               template='[{i}/{j}]', backup_template='[{i}]'):
     """
