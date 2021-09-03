@@ -24,22 +24,20 @@ class BaseLogger(Counter):
         self._visualize_linebreaks = self.config.get(  # DEL
             'visualize_linebreaks', False)
         
-        self.__fmt_msg = None
+        self.__format = None
     
     def enable_lite_mode(self):
-        self.__fmt_msg = self.fmt_msg
-        # tip: here we use `setattr(...)` not `self.fmt_msg = ...` to avoid
+        self.__format = self.format
+        # tip: here we use `setattr(...)` not `self.format = ...` to avoid
         # PEP-8 (weak) warnings and fix code navigation problem (and some
         # intelli-sense problems) when developing in pycharm.
-        setattr(self, 'fmt_msg', lambda data, **_: ';\t'.join(map(str, data)))
-        # # self.fmt_msg = lambda data, **_: ';\t'.join(map(str, data))
+        setattr(self, 'format', lambda data, **_: ';\t'.join(map(str, data)))
     
     def disable_lite_mode(self):
-        setattr(self, 'fmt_msg', self.__fmt_msg)
-        # # self.fmt_msg = self.__fmt_msg
-        self.__fmt_msg = None
+        setattr(self, 'format', self.__format)
+        self.__format = None
     
-    def fmt_msg(self, data, **kwargs):
+    def format(self, data, **kwargs):
         """
         
         Args:
