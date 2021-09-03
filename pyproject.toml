@@ -1,20 +1,20 @@
 [tool.poetry]
 name = "lk-logger"
 version = "4.0.0a0"
-description = "Advanced logger with source code lineno indicator."
+description = "Advanced and easy-to-use Python logger that prints with varnames."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
 
 [[tool.poetry.source]]
 name = "tsinghua"
 url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
 default = true
 
-[tool.poetry.dependencies]
-python = "^3.8.0"
-
-[tool.poetry.dev-dependencies]
-
 [build-system]
-requires = ["poetry>=1.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
