@@ -24,18 +24,47 @@ class BaseLogger(Counter):
         self._visualize_linebreaks = self.config.get(  # DEL
             'visualize_linebreaks', False)
         
-        self.__format = None
-    
-    def enable_lite_mode(self):
-        self.__format = self.format
+        self.__mode = {
+            'disabled': (
+                lambda *_, **__: None,
+                lambda *_, **__: None,
+            ),
+            'lite_mode': (
+                lambda data, **__: ';\t'.join(map(str, data)),
+                lambda data, **__: print(data)
+            ),
+            'full_mode': (
+                self.format,
+                self._output,
+            ),
+        }
+
+    # -------------------------------------------------------------------------
+    # general control
+
+    def enable(self, lite_mode=False):
+        if lite_mode:
+            a, b = self.__mode['lite_mode']
+        else:
+            a, b = self.__mode['full_mode']
+        setattr(self, 'format', a)
+        setattr(self, '_output', b)
+
+    def disable(self):
+        a, b = self.__mode['disabled']
         # tip: here we use `setattr(...)` not `self.format = ...` to avoid
         # PEP-8 (weak) warnings and fix code navigation problem (and some
         # intelli-sense problems) when developing in pycharm.
-        setattr(self, 'format', lambda data, **_: ';\t'.join(map(str, data)))
-    
+        setattr(self, 'format', a)
+        setattr(self, '_output', b)
+
+    def enable_lite_mode(self):
+        self.enable(lite_mode=True)
+
     def disable_lite_mode(self):
-        setattr(self, 'format', self.__format)
-        self.__format = None
+        self.enable(lite_mode=False)
+
+    # -------------------------------------------------------------------------
     
     def format(self, data, **kwargs):
         """
@@ -65,9 +94,13 @@ class BaseLogger(Counter):
         
         # message body
         if info.varnames:
-            assert len(info.varnames) == len(data), (info, data)
+            if kwargs.get('tag'):
+                varnames = info.varnames[1:]
+            else:
+                varnames = info.varnames
+            assert len(varnames) == len(data), (info, data)
             temp = []
-            for k, v in zip(info.varnames, data):
+            for k, v in zip(varnames, data):
                 temp.append(f'{k} = {v}' if k else str(v))
             msg_body = kwargs.get('sep', ';\t').join(temp)
         else:
