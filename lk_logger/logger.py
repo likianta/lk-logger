@@ -1,3 +1,5 @@
+from textwrap import indent
+
 from .plugins import Counter
 from .sourcemap import getframe
 from .sourcemap import sourcemap
@@ -46,9 +48,11 @@ class BaseLogger(Counter):
         
         Keyword Args:
             advanced
-            tag
             count
             divider_line
+            indent: int[4]
+            start_from_newline: bool[False]
+            tag
         """
         info = sourcemap.get_frame_info(
             advanced=kwargs.get('advanced', False)
@@ -72,12 +76,14 @@ class BaseLogger(Counter):
             msg_body = kwargs.get('sep', ';\t').join(map(str, data))
         if self._visualize_linebreaks:
             msg_body = msg_body.replace('\n', '\\n')
+        if kwargs.get('start_from_newline', False):
+            msg_body = indent('\n' + msg_body, ' ' * kwargs.get('indent', 4))
         
         out = self._template.format(
             filename=info.filename,
             lineno=info.lineno,
             func=info.name,
-            msg=f'{msg_head} {msg_body}'.strip()
+            msg=f'{msg_head} {msg_body}'.strip(' ')
         )
         return out
 
