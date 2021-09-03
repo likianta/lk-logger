@@ -24,6 +24,7 @@ class BaseLogger(Counter):
         self._visualize_linebreaks = self.config.get(  # DEL
             'visualize_linebreaks', False)
         
+        self.mode = 'full_mode'
         self.__mode = {
             'disabled': (
                 lambda *_, **__: None,
@@ -40,28 +41,42 @@ class BaseLogger(Counter):
         }
 
     # -------------------------------------------------------------------------
-    # general control
+    # master control
 
     def enable(self, lite_mode=False):
-        if lite_mode:
-            a, b = self.__mode['lite_mode']
+        mode = 'lite_mode' if lite_mode else 'full_mode'
+        if self.mode == mode:
+            return
         else:
-            a, b = self.__mode['full_mode']
-        setattr(self, 'format', a)
-        setattr(self, '_output', b)
-
-    def disable(self):
-        a, b = self.__mode['disabled']
+            self.mode = mode
+        a, b = self.__mode[self.mode]
         # tip: here we use `setattr(...)` not `self.format = ...` to avoid
         # PEP-8 (weak) warnings and fix code navigation problem (and some
         # intelli-sense problems) when developing in pycharm.
         setattr(self, 'format', a)
         setattr(self, '_output', b)
 
+    def disable(self):
+        if self.mode == 'disabled':
+            return
+        else:
+            self.mode = 'disabled'
+        a, b = self.__mode[self.mode]
+        setattr(self, 'format', a)
+        setattr(self, '_output', b)
+
     def enable_lite_mode(self):
+        # if self.mode == 'lite_mode':
+        #     return
         self.enable(lite_mode=True)
 
     def disable_lite_mode(self):
+        if self.mode == 'disabled':
+            raise Exception(
+                '[lk_logger.logger.BaseLogger]',
+                'lk logger is disabled, you should call `lk.enable()` first to '
+                'reactivate master control.'
+            )
         self.enable(lite_mode=False)
 
     # -------------------------------------------------------------------------

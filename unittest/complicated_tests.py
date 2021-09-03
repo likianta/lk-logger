@@ -30,8 +30,25 @@ def hierarchy_reflections():
 def lambda_occurances():
     lk.loga(lambda *args, **kwargs: (len(args), len(kwargs)))
     lk.loga((lambda *args, **kwargs: (len(args), len(kwargs)))(1, 2, a=3))
+    
+    
+def general_control():
+    lk.enable()
+    lk.loga('enabled')
+    lk.enable_lite_mode()
+    lk.loga('lite mode enabled')
+    lk.disable()
+    lk.loga('nothing print')
+    try:
+        lk.disable_lite_mode()
+    except Exception as e:
+        print(e)
+        lk.enable()
+        lk.disable_lite_mode()
+    lk.loga('full mode enabled')
 
 
 if __name__ == '__main__':
     # hierarchy_reflections()
-    lambda_occurances()
+    # lambda_occurances()
+    general_control()
