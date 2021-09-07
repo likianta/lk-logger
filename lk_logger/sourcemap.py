@@ -36,7 +36,7 @@ class FrameFinder:
     def getinfo(self):
         assert self._frame0 and self._frame, (
             'You must hold the frame before fetching the frame! '
-            '(see `FrameFinder.hold_frame` decorator)'
+            '(see `FrameFinder.getframe` decorator)'
         )
         struct = namedtuple('FrameInfo', (
             'direct_filename', 'direct_lineno',

@@ -26,7 +26,7 @@ class BaseLogger(Counter):
         
         self.mode = 'full_mode'
         self.__mode = {
-            'disabled': (
+            'disabled' : (
                 lambda *_, **__: None,
                 lambda *_, **__: None,
             ),
@@ -36,13 +36,13 @@ class BaseLogger(Counter):
             ),
             'full_mode': (
                 self.format,
-                self._output,
+                self.output,
             ),
         }
-
+    
     # -------------------------------------------------------------------------
     # master control
-
+    
     def enable(self, lite_mode=False):
         mode = 'lite_mode' if lite_mode else 'full_mode'
         if self.mode == mode:
@@ -55,7 +55,7 @@ class BaseLogger(Counter):
         # intelli-sense problems) when developing in pycharm.
         setattr(self, 'format', a)
         setattr(self, '_output', b)
-
+    
     def disable(self):
         if self.mode == 'disabled':
             return
@@ -64,12 +64,12 @@ class BaseLogger(Counter):
         a, b = self.__mode[self.mode]
         setattr(self, 'format', a)
         setattr(self, '_output', b)
-
+    
     def enable_lite_mode(self):
         # if self.mode == 'lite_mode':
         #     return
         self.enable(lite_mode=True)
-
+    
     def disable_lite_mode(self):
         if self.mode == 'disabled':
             raise Exception(
@@ -78,7 +78,7 @@ class BaseLogger(Counter):
                 'reactivate master control.'
             )
         self.enable(lite_mode=False)
-
+    
     # -------------------------------------------------------------------------
     
     def format(self, data, **kwargs):
@@ -132,7 +132,12 @@ class BaseLogger(Counter):
             msg=f'{msg_head} {msg_body}'.strip(' ')
         )
         return out
-
+    
+    @staticmethod
+    def _get_varnames():
+        info = sourcemap.get_frame_info(advanced=True)
+        return info.varnames
+    
     # -------------------------------------------------------------------------
     # Typical implementations see: `lk_logger.terminals.pycharm_console`.
     
@@ -180,9 +185,9 @@ class BaseLogger(Counter):
     def logdtx(self, tag, *data, symbol='-', length=80, h='self'):
         raise NotImplementedError
     
-    def _output(self, msg: str, **kwargs):
+    def output(self, msg: str, **kwargs):
         raise NotImplementedError
-
+    
     # -------------------------------------------------------------------------
     
     @property

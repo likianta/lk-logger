@@ -48,7 +48,14 @@ def general_control():
     lk.loga('full mode enabled')
 
 
+def main():
+    hierarchy_reflections()
+    lambda_occurances()
+    general_control()
+
+
 if __name__ == '__main__':
     # hierarchy_reflections()
     # lambda_occurances()
-    general_control()
+    # general_control()
+    main()

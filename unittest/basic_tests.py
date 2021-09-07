@@ -84,7 +84,7 @@ def print_with_countings():
                     
 
 def pretty_print():
-    lk.logp({
+    lk.logp(a := {
         'a': {
             'aa': {
                 'aaa': 100,
@@ -95,7 +95,12 @@ def pretty_print():
             ]
         }
     })
-                    
+    lk.logp(a,
+            b := [True, False, 0, 1],
+            {'aaa', 'bbb', 'ccc', (
+                'ddd', 'eee', 'fff',
+            )}, b)
+  
                     
 def other():
     lk.loga(lk.position)
@@ -106,13 +111,15 @@ def main():
     print_values_with_varnames()
     print_with_linebreaks()
     print_with_countings()
+    pretty_print()
+    other()
     
     
 if __name__ == '__main__':
-    # main()
+    main()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
     # print_with_countings()
-    pretty_print()
+    # pretty_print()
     # other()

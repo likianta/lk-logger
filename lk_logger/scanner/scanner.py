@@ -90,6 +90,7 @@ def get_variables(line: str):
     kwargs_pattern = compile(r'^\w+ *=')
     nested_pattern = compile(r'^[(\[{]')
     lambda_pattern = compile(r'^lambda ')
+    walrus_pattern = compile(r'^(\w+) ?:=')
     
     for match0 in get_all_blocks(line):
         start, end = match0.span()  # exterior brackets span
@@ -138,7 +139,7 @@ def get_variables(line: str):
                     and '**kwargs: None' one after another, so caller thinks
                     there're two elements found. But when logger tries to
                     demonstrate their number is equivalent (see `lk_logger
-                    .logger.fmt_msg > code:'assert len(info.varnames) ==
+                    .logger.format > code:'assert len(info.varnames) ==
                     len(data)'`), an AssertionError is raised.
                 
                 How to resolve it (in the future)?
@@ -154,6 +155,8 @@ def get_variables(line: str):
                 ''')
                 # see `~/lk_logger/sourcemap.py > class:SourceMap > method:
                 # _indexing_filemap`
+            elif m := walrus_pattern.match(element):
+                yield m.group(1), VARIABLE_NAME
             else:
                 yield element, VARIABLE_NAME
         
@@ -176,16 +179,16 @@ class Match:
         self._matches = matches
         self.spans = list(matches)
     
-    def change_depth(self, d: int):
-        def rec(collector, node: dict, curr_d):
-            if curr_d < d:
+    def change_depth(self, depth: int):
+        def _recurse(collector, node: dict, current_depth):
+            if current_depth < depth:
                 for v in node.values():
-                    rec(collector, v, curr_d + 1)
-            elif curr_d == d:
+                    _recurse(collector, v, current_depth + 1)
+            elif current_depth == depth:
                 collector.extend(node.keys())
             return collector
         
-        self.spans = rec([], self._matches, 0)
+        self.spans = _recurse([], self._matches, 0)
     
     def span(self, idx=0) -> TSpan:
         return self.spans[idx]
