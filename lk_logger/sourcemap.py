@@ -17,24 +17,24 @@ class FrameFinder:
         'great_grand_parent': 4,
     }
     
-    _frame0: Optional[FrameType] = None  # the direct caller frame
-    _frame: Optional[FrameType] = None  # the caller frame (hierarchy unknown)
+    _frame_0: Optional[FrameType] = None  # the direct caller frame
+    _frame_x: Optional[FrameType] = None  # the target caller frame
     
     def getframe(self, func):
         @wraps(func)
         def _wrap(*args, **kwargs):
-            frame = self._frame0 = currentframe().f_back
+            frame = self._frame_0 = currentframe().f_back
             for _ in range(self._hierarchy.get(
                     (h := kwargs.get('h', 'self')), h
             ) - 1):
                 frame = frame.f_back
-            self._frame = frame
+            self._frame_x = frame
             return func(*args, **kwargs)
         
         return _wrap
     
     def getinfo(self):
-        assert self._frame0 and self._frame, (
+        assert self._frame_0 and self._frame_x, (
             'You must hold the frame before fetching the frame! '
             '(see `FrameFinder.getframe` decorator)'
         )
@@ -44,14 +44,14 @@ class FrameFinder:
             'source_name',
         ))
         return struct(
-            self._frame0.f_code.co_filename, self._frame0.f_lineno,
-            self._frame.f_code.co_filename, self._frame.f_lineno,
-            self._frame.f_code.co_name,
+            self._frame_0.f_code.co_filename, self._frame_0.f_lineno,
+            self._frame_x.f_code.co_filename, self._frame_x.f_lineno,
+            self._frame_x.f_code.co_name,
         )
     
     @property
     def frame(self):
-        return self._frame0
+        return self._frame_0
 
 
 class SourceMap:
@@ -82,6 +82,7 @@ class SourceMap:
         return self._info_struct(filename, lineno, name, varnames)
     
     def _indexing_filemap(self, filename: str):
+        from .scanner.exceptions import UnresolvedCase
         node = self._sourcemap.setdefault(filename, {})
         
         with open(filename, 'r', encoding='utf-8') as f:
@@ -93,25 +94,28 @@ class SourceMap:
                     continue
                 
                 # FIXME (Warning): in lk-logger v4.0, the varname-detection
-                #   feature only enables when content starts with 'lk.log'.
-                if text.startswith('lk.log'):
-                    from .scanner.exceptions import UnresolvedCase
-                    varnames = []
-                    try:
-                        for element, type_ in get_variables(text):
-                            # OPTM: pos_mark turns to use OrderedDict
-                            if type_ == 0:
-                                varnames.append(element)
-                            else:
-                                varnames.append('')
-                        lineno = match.cursor.lineno + 1
-                    except UnresolvedCase:
-                        del varnames
-                        continue
-                    else:
-                        node[lineno] = tuple(varnames)
+                #   feature is only enabled when content starts with 'lk.log'.
+                if not text.startswith('lk.log'):
+                    continue
+                    
+                varnames = []
+                try:
+                    for element, type_ in get_variables(text):
+                        # OPTM: pos_mark turns to use OrderedDict
+                        if type_ == 0:
+                            varnames.append(element)
+                        else:
+                            varnames.append('')
+                except UnresolvedCase:
+                    del varnames
+                    continue
+                else:
+                    lineno = match.cursor.lineno + 1
+                    node[lineno] = tuple(varnames)
 
 
 frame_finder = FrameFinder()
 getframe = frame_finder.getframe
 sourcemap = SourceMap()
+
+__all__ = ['frame_finder', 'getframe', 'sourcemap']

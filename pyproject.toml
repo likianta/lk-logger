@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "lk-logger"
 version = "4.0.0a0"
-description = "Advanced and easy-to-use Python logger that prints with varnames."
+description = "Python advanced print with varnames."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
 
