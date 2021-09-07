@@ -54,7 +54,7 @@ class BaseLogger(Counter):
         # PEP-8 (weak) warnings and fix code navigation problem (and some
         # intelli-sense problems) when developing in pycharm.
         setattr(self, 'format', a)
-        setattr(self, '_output', b)
+        setattr(self, 'output', b)
     
     def disable(self):
         if self.mode == 'disabled':
@@ -63,7 +63,7 @@ class BaseLogger(Counter):
             self.mode = 'disabled'
         a, b = self.__mode[self.mode]
         setattr(self, 'format', a)
-        setattr(self, '_output', b)
+        setattr(self, 'output', b)
     
     def enable_lite_mode(self):
         # if self.mode == 'lite_mode':
