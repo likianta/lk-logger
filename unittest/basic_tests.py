@@ -56,6 +56,13 @@ def print_with_linebreaks():
         {}
     '''.format(b), b)
 
+    lk.logp(
+        'overview',
+        (a, b),
+        (b, a),
+        a + b + a,
+    )
+
 
 def print_with_countings():
     a = [1, 2, 3]
@@ -104,6 +111,7 @@ def pretty_print():
                     
 def other():
     lk.loga(lk.position)
+    lk.loga(lk.version)
 
 
 def main():

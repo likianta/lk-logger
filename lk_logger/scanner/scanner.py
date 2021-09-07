@@ -4,6 +4,7 @@ README:
 """
 from collections import namedtuple
 from re import compile
+from string import whitespace
 
 from .analyser import Analyser
 from .const import *
@@ -19,11 +20,19 @@ def get_all_blocks(*lines: str, end_mark='\n'):
     caller.
     
     Args:
-        lines
+        lines:
         end_mark:
-            FIXME: whatever its value is, end_mark will alwayse be measured as
-                one-character width.
+            warnings:
+                1. whatever end_mark's value is, it is alwayse be measured as
+                   one-character width.
+                2. `params:lines:each` mustn't end with end_mark, i.e.
+                    assert(all(not x.rstrip().endswith(end_mark)) for x in lines)
     """
+    assert all(bool(not x.rstrip().endswith(end_mark)) for x in lines), (
+        f'Please make sure each of lines must not end with "{end_mark}". '
+        f'(You need to strip them before calling this function)'
+    )
+    
     analyser = Analyser(end=end_mark)
     #   IMPROVEMENT: if `lines:each` contains '\n', which means we can't pass
     #       '\n' to `params:end`, we can use `end=None` instead.
@@ -46,6 +55,7 @@ def get_all_blocks(*lines: str, end_mark='\n'):
         if end_mark is None:
             line_ = list(line) + [end_mark]
         else:
+            # line_ = line.rstrip(whitespace + end_mark) + end_mark
             line_ = line + end_mark
         for char in line_:  # MARK: 20210901173115
             cursor.update_charno()
@@ -94,9 +104,10 @@ def get_variables(line: str):
     
     for match0 in get_all_blocks(line):
         start, end = match0.span()  # exterior brackets span
-        line = line[start + 1:end].rstrip(' ,')
-        #   `~.rstrip(' ,')`: for example:
-        #       line = 'a, b, c, ' -> 'a, b, c'
+        line = line[start + 1:end].rstrip(whitespace + ',')
+        #   `~.rstrip(...)`: for example:
+        #       line = 'a, b, c, \n' -> 'a, b, c'
+        
         # from lk_logger_3_6 import lk
         # lk.logt('[D3957]', 'stripped lk.log* arounded', line)
         

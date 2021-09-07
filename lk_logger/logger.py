@@ -203,3 +203,8 @@ class BaseLogger(Counter):
         from .sourcemap import frame_finder
         frame = frame_finder.frame
         return frame.f_code.co_filename, frame.f_lineno
+    
+    @property
+    def version(self):
+        from . import __version__
+        return __version__
