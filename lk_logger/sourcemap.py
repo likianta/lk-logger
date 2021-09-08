@@ -82,6 +82,12 @@ class SourceMap:
         return self._info_struct(filename, lineno, name, varnames)
     
     def _indexing_filemap(self, filename: str):
+        if filename.startswith('<'):
+            # e.g. filename = '<string>', that means the caller came from
+            # `eval(<string>)` or `exec<string>`.
+            self._sourcemap.setdefault(filename, {})
+            return
+        
         from .scanner.exceptions import UnresolvedCase
         node = self._sourcemap.setdefault(filename, {})
         
