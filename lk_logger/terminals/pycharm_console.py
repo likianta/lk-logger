@@ -23,7 +23,7 @@ class PycharmLogger(BaseLogger):
         ))
     
     @getframe
-    def logp(self, *data, recursive_depth=10, h='self'):
+    def logp(self, *data, title='', h='self'):
         from pprint import pformat
         from textwrap import indent
         
@@ -33,7 +33,7 @@ class PycharmLogger(BaseLogger):
             temp.append(indent(pformat(d), '    '))
         
         self.output(self.format(
-            temp, advanced=False, sep='\n',
+            temp, advanced=False, sep='\n', title=title,
             start_from_newline=True
         ))
     

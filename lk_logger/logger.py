@@ -93,8 +93,9 @@ class BaseLogger(Counter):
             count
             divider_line
             indent: int[4]
-            start_from_newline: bool[False]
-            tag
+            start_from_newline: bool[False].
+            tag:
+            title: effect when `start_from_newline` is True.
         """
         info = sourcemap.get_frame_info(
             advanced=kwargs.get('advanced', False)
@@ -123,7 +124,10 @@ class BaseLogger(Counter):
         if self._visualize_linebreaks:
             msg_body = msg_body.replace('\n', '\\n')
         if kwargs.get('start_from_newline', False):
-            msg_body = indent('\n' + msg_body, ' ' * kwargs.get('indent', 4))
+            title = kwargs.get('title', '')
+            msg_body = title + indent(
+                '\n' + msg_body, ' ' * kwargs.get('indent', 4)
+            )
         
         out = self._template.format(
             filename=info.filename,

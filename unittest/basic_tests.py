@@ -62,6 +62,17 @@ def print_with_linebreaks():
         (b, a),
         a + b + a,
     )
+    
+
+def long_sub_elements():
+    from textwrap import dedent
+    lk.logt('[I3411]', dedent('''
+        hello world
+        welcome
+        nice to meet you
+        --------------------
+        changelog
+    '''))
 
 
 def print_with_countings():
@@ -107,6 +118,11 @@ def pretty_print():
             {'aaa', 'bbb', 'ccc', (
                 'ddd', 'eee', 'fff',
             )}, b)
+    lk.logp({True, False,
+             str({
+                 'k': 'kkk',
+                 'v': 'vvv',
+             })}, title='HEADER')
   
                     
 def other():
@@ -118,16 +134,18 @@ def main():
     print_values()
     print_values_with_varnames()
     print_with_linebreaks()
+    long_sub_elements()
     print_with_countings()
     pretty_print()
     other()
     
     
 if __name__ == '__main__':
-    main()
+    # main()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
+    # long_print()
     # print_with_countings()
-    # pretty_print()
+    pretty_print()
     # other()
