@@ -34,16 +34,6 @@ def print_with_linebreaks():
     lk.loga(1,
             2,
             3, )
-    lk.loga({
-        'a': 'aa',
-        'b': 'bb',
-        'c': {
-            'cc',
-            (
-                'd', 'dd',
-            )
-        }
-    })
     lk.loga({  # commnet A
         'c': 'cc',
         # comment B

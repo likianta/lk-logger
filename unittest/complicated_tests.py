@@ -1,6 +1,35 @@
 from lk_logger import lk
 
 
+def complicated_nest_structure():
+    lk.loga({
+        'a': 'aa',
+        'b': 'bb',
+        'c': {
+            (x := 'cc'): None,
+            (
+                'd', 'dd',
+            )          : {x: x + x * len(x)}
+        }
+    }, x)
+
+
+def general_control():
+    lk.enable()
+    lk.loga('enabled')
+    lk.enable_lite_mode()
+    lk.loga('lite mode enabled')
+    lk.disable()
+    lk.loga('nothing print')
+    try:
+        lk.disable_lite_mode()
+    except Exception as e:
+        print(e)
+        lk.enable()
+        lk.disable_lite_mode()
+    lk.loga('full mode enabled')
+
+
 def hierarchy_reflections():
     def _aaa():
         def _bbb():
@@ -30,32 +59,18 @@ def hierarchy_reflections():
 def lambda_occurances():
     lk.loga(lambda *args, **kwargs: (len(args), len(kwargs)))
     lk.loga((lambda *args, **kwargs: (len(args), len(kwargs)))(1, 2, a=3))
-    
-    
-def general_control():
-    lk.enable()
-    lk.loga('enabled')
-    lk.enable_lite_mode()
-    lk.loga('lite mode enabled')
-    lk.disable()
-    lk.loga('nothing print')
-    try:
-        lk.disable_lite_mode()
-    except Exception as e:
-        print(e)
-        lk.enable()
-        lk.disable_lite_mode()
-    lk.loga('full mode enabled')
 
 
 def main():
+    complicated_nest_structure()
+    general_control()
     hierarchy_reflections()
     lambda_occurances()
-    general_control()
 
 
 if __name__ == '__main__':
+    # complicated_nest_structure()
+    # general_control()
     # hierarchy_reflections()
     # lambda_occurances()
-    # general_control()
     main()
