@@ -81,14 +81,40 @@ class SourceMap:
         
         return self._info_struct(filename, lineno, name, varnames)
     
-    def _indexing_filemap(self, filename: str):
+    def _indexing_filemap(self, filename: str, shorten_sub_strings=True):
+        """
+        Args:
+            filename
+            shorten_sub_strings:
+                example:
+                    case 1: when captured a "varname" like "xxx('hello world')":
+                        if shorten_sub_strings is True:
+                            varname updated: "xxx('...')"
+                        if shorten_sub_strings is False:
+                            varname updated: "xxx('hello world')"
+                    case 2: when captured a "varname" like "xxx('''hello world\n
+                            hello world\nhello world\nhello world\nhello...''')"
+                            (which is a very long sentense):
+                        if shorten_sub_strings is True:
+                            varname updated: "xxx('...')"
+                        if shorten_sub_strings is False:
+                            varname updated: "xxx('''hello world\nhello world\n
+                                hello world\nhello world\nhello world\n...)"
+                note: the character threshold length to trigger shortening a
+                    string is adjustable, the default threshold is 10 chars and
+                    must with no line break in it.
+        """
         if filename.startswith('<'):
             # e.g. filename = '<string>', that means the caller came from
             # `eval(<string>)` or `exec<string>`.
             self._sourcemap.setdefault(filename, {})
             return
         
+        from .scanner.const import VARIABLE_NAME
+        from .scanner.const import QUOTED_STRING
+        from .scanner.const import SUBSCRIPTABLE
         from .scanner.exceptions import UnresolvedCase
+        
         node = self._sourcemap.setdefault(filename, {})
         
         with open(filename, 'r', encoding='utf-8') as f:
@@ -99,7 +125,7 @@ class SourceMap:
                 if not text:
                     continue
                 
-                # FIXME (Warning): in lk-logger v4.0, the varname-detection
+                # FIXME (Warning): in lk-logger v4.0.*, the varname-detection
                 #   feature is only enabled when content starts with 'lk.log'.
                 if not text.startswith('lk.log'):
                     continue
@@ -107,9 +133,31 @@ class SourceMap:
                 varnames = []
                 try:
                     for element, type_ in get_variables(text):
-                        # OPTM: pos_mark turns to use OrderedDict
-                        if type_ == 0:
+                        if type_ == VARIABLE_NAME:
                             varnames.append(element)
+                        elif type_ == SUBSCRIPTABLE:
+                            if not shorten_sub_strings:
+                                varnames.append(element[1])
+                            else:
+                                sub_varnames = []
+                                for sub_element, sub_type in \
+                                        get_variables(element[1]):
+                                    if sub_type == QUOTED_STRING and (
+                                            '\n' in sub_element or
+                                            len(sub_element) > 10
+                                    ):
+                                        sub_varnames.append('"..."')
+                                    else:
+                                        sub_varnames.append(sub_element)
+                                varnames.append(
+                                    '{head}{bracket_s}{body}{bracket_e}'.format(
+                                        head=(x := element[0]),
+                                        bracket_s=element[1][len(x):len(x) + 1],
+                                        body=', '.join(sub_varnames),
+                                        bracket_e=element[1][-1]
+                                    )
+                                )
+                                del sub_varnames
                         else:
                             varnames.append('')
                 except UnresolvedCase:

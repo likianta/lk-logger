@@ -7,6 +7,7 @@ from lk_logger import lk
 def print_values():
     lk.loga(1)
     lk.loga(1, 2, 3)
+    lk.loga(1 + 2, 2 * 4, 3 / 6)
     lk.loga(1, 2, 3, True)
     lk.loga(1, 2, 3, True, [])
     lk.loga(1, 2, 3, True, {})
@@ -36,6 +37,12 @@ def print_with_linebreaks():
     lk.loga({
         'a': 'aa',
         'b': 'bb',
+        'c': {
+            'cc',
+            (
+                'd', 'dd',
+            )
+        }
     })
     lk.loga({  # commnet A
         'c': 'cc',
@@ -141,11 +148,11 @@ def main():
     
     
 if __name__ == '__main__':
-    # main()
+    main()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
     # long_print()
     # print_with_countings()
-    pretty_print()
+    # pretty_print()
     # other()

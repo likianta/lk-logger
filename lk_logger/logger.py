@@ -1,3 +1,4 @@
+from inspect import currentframe
 from textwrap import indent
 
 from .plugins import Counter
@@ -43,12 +44,20 @@ class BaseLogger(Counter):
     # -------------------------------------------------------------------------
     # master control
     
-    def enable(self, lite_mode=False):
+    def enable(self, lite_mode=False, _h=1):
         mode = 'lite_mode' if lite_mode else 'full_mode'
         if self.mode == mode:
             return
         else:
             self.mode = mode
+            
+            # the following code is in imitation of `.sourcemap.FrameFinder
+            # .getframe._wrap` and `self.position`:
+            frame = currentframe()
+            for _ in range(_h): frame = frame.f_back
+            filename, lineno = frame.f_code.co_filename, frame.f_lineno
+            print(f'{filename}:{lineno}\t>>\t[lk_logger] mode switched:', mode)
+            
         a, b = self.__mode[self.mode]
         # tip: here we use `setattr(...)` not `self.format = ...` to avoid
         # PEP-8 (weak) warnings and fix code navigation problem (and some
@@ -68,7 +77,7 @@ class BaseLogger(Counter):
     def enable_lite_mode(self):
         # if self.mode == 'lite_mode':
         #     return
-        self.enable(lite_mode=True)
+        self.enable(lite_mode=True, _h=2)
     
     def disable_lite_mode(self):
         if self.mode == 'disabled':
@@ -77,7 +86,7 @@ class BaseLogger(Counter):
                 'lk logger is disabled, you should call `lk.enable()` first to '
                 'reactivate master control.'
             )
-        self.enable(lite_mode=False)
+        self.enable(lite_mode=False, _h=2)
     
     # -------------------------------------------------------------------------
     

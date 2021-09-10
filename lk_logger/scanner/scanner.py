@@ -91,16 +91,16 @@ def get_variables(line: str):
         1. single_line = 'A, (B, C)'
         2. split by comma: ['A', '(B', 'C)']
         3. analyse each element, try to merge every mergable parts (based on
-           pairable symbols):
-           ['A', '(B, C)']
+           pairable symbols): ['A', '(B, C)']
         4. now we know there are two elements in single_line: `A` and `(B, C)`
     """
-    quotes_pattern = compile(r'^[bfru]*[\'"]')
-    number_pattern = compile(r'^[\d]+(?:\.\d+)?$')
-    kwargs_pattern = compile(r'^\w+ *=')
-    nested_pattern = compile(r'^[(\[{]')
-    lambda_pattern = compile(r'^lambda ')
-    walrus_pattern = compile(r'^(\w+) ?:=')
+    caller_pattern = compile(r'^([.\w]+)[(\[{]')  # matching: 'requests.get('
+    kwargs_pattern = compile(r'^\w+ *=')  # matching: 'a=1'
+    lambda_pattern = compile(r'^lambda ')  # matching: 'lambda *_, **__: ...'
+    nested_pattern = compile(r'^[(\[{]')  # matching: '(...', '[...', '{...'
+    number_pattern = compile(r'^-?[\d]+(?:\.\d+)?$')  # matching: '123', '-123'
+    quotes_pattern = compile(r'^[bfru]*[\'"]')  # matching: '"hello', 'b"hello'
+    walrus_pattern = compile(r'^(\w+) *:=')  # mathcing: 'x := 12'
     
     for match0 in get_all_blocks(line):
         start, end = match0.span()  # exterior brackets span
@@ -168,6 +168,8 @@ def get_variables(line: str):
                 # _indexing_filemap`
             elif m := walrus_pattern.match(element):
                 yield m.group(1), VARIABLE_NAME
+            elif m := caller_pattern.match(element):
+                yield (m.group(1), element), SUBSCRIPTABLE
             else:
                 yield element, VARIABLE_NAME
         

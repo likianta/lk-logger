@@ -16,10 +16,13 @@ BREAK_OUT = 3
 UNREACHABLE_CASE = 4
 
 # scanner.py > func:get_variables
-VARIABLE_NAME = 0  # varname
-QUOTED_STRING = 1  # qstring
-SIMPLE_NUMBER = 2
-NESTED_STRUCT = 3
+VARIABLE_NAME = 0  # varname. e.g. 'a', 'b', 'c'
+SUBSCRIPTABLE = 1  # varname with '(' or '[' or '{'. e.g. 'requests.get(...)'
+QUOTED_STRING = 2  # qstring. e.g. '"hello world"'
+SIMPLE_NUMBER = 3  # simple int or float. e.g. 1, 2, 3, 1.0, 2.0, 3.0, and
+#   negative number. but not support 1E10, 1., 2., 3., (they are treated as
+#   VARIABLE_NAME)
+NESTED_STRUCT = 4  # starts with '(' or '[' or '{'
 
 # PAIRED SYMBOLS
 PAIRED_SYMBOLS = {
