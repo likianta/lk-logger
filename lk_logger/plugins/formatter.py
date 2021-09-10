@@ -88,6 +88,6 @@ def ratchet_width():
     pass
 
 
-def _parse_template(template) -> set[str]:
+def _parse_template(template):
     slot = re.compile(r'(?<={)[^}]+')
     return set(slot.findall(template))

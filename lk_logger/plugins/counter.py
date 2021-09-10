@@ -97,4 +97,5 @@ class Counter:
             https://www.runoob.com/python/att-string-format.html
         """
         from .formatter import fmt_count
-        return fmt_count(*self._update_count())
+        return fmt_count(*self._update_count(),
+                         template=template, backup_template=backup_template)
