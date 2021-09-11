@@ -113,6 +113,7 @@ class SourceMap:
         from .scanner.const import VARIABLE_NAME
         from .scanner.const import QUOTED_STRING
         from .scanner.const import SUBSCRIPTABLE
+        from .scanner.exceptions import ScanningError
         from .scanner.exceptions import UnresolvedCase
         
         node = self._sourcemap.setdefault(filename, {})
@@ -166,6 +167,12 @@ class SourceMap:
                 except UnresolvedCase:
                     del varnames
                     continue
+                except ScanningError:
+                    raise ScanningError(
+                        match.cursor.lineno + 1, text,
+                        0, '<unknown>',
+                        f'<filename: {filename}>'
+                    )
                 else:
                     lineno = match.cursor.lineno + 1
                     node[lineno] = tuple(varnames)
