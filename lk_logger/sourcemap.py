@@ -136,12 +136,15 @@ class SourceMap:
                         if type_ == VARIABLE_NAME:
                             varnames.append(element)
                         elif type_ == SUBSCRIPTABLE:
+                            head, element = element
                             if not shorten_sub_strings:
-                                varnames.append(element[1])
+                                varnames.append(element)
+                            elif len(element) - len(head) == 2:
+                                varnames.append(element)
                             else:
                                 sub_varnames = []
                                 for sub_element, sub_type in \
-                                        get_variables(element[1]):
+                                        get_variables(element):
                                     if sub_type == QUOTED_STRING and (
                                             '\n' in sub_element or
                                             len(sub_element) > 10
@@ -151,10 +154,10 @@ class SourceMap:
                                         sub_varnames.append(sub_element)
                                 varnames.append(
                                     '{head}{bracket_s}{body}{bracket_e}'.format(
-                                        head=(x := element[0]),
-                                        bracket_s=element[1][len(x):len(x) + 1],
+                                        head=(x := head),
+                                        bracket_s=element[len(x):len(x) + 1],
                                         body=', '.join(sub_varnames),
-                                        bracket_e=element[1][-1]
+                                        bracket_e=element[-1]
                                     )
                                 )
                                 del sub_varnames

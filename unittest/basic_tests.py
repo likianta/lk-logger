@@ -12,6 +12,11 @@ def print_values():
     lk.loga(1, 2, 3, True, [])
     lk.loga(1, 2, 3, True, {})
     lk.loga(1, 2, 3, True, {'a': 'aa'})
+    
+    
+def print_object():
+    import os
+    lk.loga(os.getcwd())
 
 
 def print_values_with_varnames():
@@ -138,21 +143,24 @@ def other():
 
 
 def main():
+    long_sub_elements()
+    other()
+    pretty_print()
+    print_object()
     print_values()
     print_values_with_varnames()
-    print_with_linebreaks()
-    long_sub_elements()
     print_with_countings()
-    pretty_print()
-    other()
+    print_with_linebreaks()
     
     
 if __name__ == '__main__':
     main()
+    
+    # long_print()
+    # other()
+    # pretty_print()
+    # print_object()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
-    # long_print()
     # print_with_countings()
-    # pretty_print()
-    # other()
