@@ -131,7 +131,7 @@ class SourceMap:
                         varnames.append(element)
                     elif type_ == SUBSCRIPTABLE:
                         varnames.append(_analyse_subscriptables(
-                            element[1], shorten_sub_substrings=True
+                            element, shorten_sub_substrings=True
                         ))
                     else:
                         varnames.append('')
@@ -182,13 +182,17 @@ class SourceMap:
             for i in set(quotes_pattern_2.findall(text)):
                 if '\n' in i or len(i) > threshold:
                     text = text.replace(i, '"..."')
-            
+
+            # restore backslashes
             if backslash_mask:
                 for i in backslash_mask:
                     text = text.replace('__BACKSLASK_MASK__', i, 1)
                 del backslash_mask
-            
+
             text = re.sub(r'\s+', ' ', text)
+            #   note: this ^measure takes a side effect that it may replace
+            #   sequential whitespaces to one whitespace inside quote strings.
+
             return text
 
         node = self._sourcemap.setdefault(filename, {})
