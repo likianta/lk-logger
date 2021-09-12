@@ -188,6 +188,7 @@ class SourceMap:
                     text = text.replace('__BACKSLASK_MASK__', i, 1)
                 del backslash_mask
             
+            text = re.sub(r'\s+', ' ', text)
             return text
 
         node = self._sourcemap.setdefault(filename, {})

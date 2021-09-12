@@ -21,6 +21,11 @@ def print_callable_object():
     lk.loga(os.getcwd())
     lk.loga(os.getcwd().split('\\'))
     lk.loga(os.getcwd().format(..., ..., ))
+    lk.loga(list(
+        ('a', 'b', 'cccccccccccccccccccc',
+         d := None, e := False,
+         d, e)
+    ))
 
 
 def print_values_with_varnames():
