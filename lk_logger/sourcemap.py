@@ -1,4 +1,5 @@
 import os
+import re
 from collections import namedtuple
 from functools import wraps
 from inspect import currentframe
@@ -81,10 +82,68 @@ class SourceMap:
         
         return self._info_struct(filename, lineno, name, varnames)
     
-    def _indexing_filemap(self, filename: str, shorten_sub_strings=True):
+    def _indexing_filemap(self, filename: str):
         """
         Args:
             filename
+        """
+        if filename.startswith('<'):
+            # e.g. filename = '<string>', that means the caller came from
+            # `eval(<string>)` or `exec<string>`.
+            self._sourcemap.setdefault(filename, {})
+            return
+        
+        from .scanner.const import VARIABLE_NAME
+        from .scanner.const import SUBSCRIPTABLE
+        from .scanner.exceptions import ScanningError
+        from .scanner.exceptions import UnresolvedCase
+        
+        def _get_blocks(lines):
+            for match in get_all_blocks(*lines):
+                text = match.fulltext.strip()
+                if not text:
+                    continue
+                if not text.startswith('lk.log'):
+                    # FIXME (Warning): in lk-logger v4.0.*, the varname-
+                    #  detection feature is only enabled when content starts
+                    #  with 'lk.log'.
+                    continue
+                elif re.match(r'^lk\.log\w*\(\)', text):
+                    continue
+                try:
+                    nonlocal node
+                    varnames = _analyse_block(text)
+                    lineno = match.cursor.lineno + 1
+                    node[lineno] = tuple(varnames)
+                except ScanningError:
+                    nonlocal filename
+                    raise ScanningError(
+                        match.cursor.lineno + 1, text,
+                        0, '<unknown>',
+                        f'<filename: {filename}>'
+                    )
+        
+        def _analyse_block(text: str):
+            varnames = []
+            try:
+                for element, type_ in get_variables(text):
+                    if type_ == VARIABLE_NAME:
+                        varnames.append(element)
+                    elif type_ == SUBSCRIPTABLE:
+                        varnames.append(_analyse_subscriptables(
+                            element[1], shorten_sub_substrings=True
+                        ))
+                    else:
+                        varnames.append('')
+            except UnresolvedCase:
+                varnames.clear()
+            finally:
+                return varnames
+                
+        def _analyse_subscriptables(
+                text: str, shorten_sub_substrings=True, threshold=20
+        ):
+            """
             shorten_sub_strings:
                 example:
                     case 1: when captured a "varname" like "xxx('hello world')":
@@ -103,79 +162,39 @@ class SourceMap:
                 note: the character threshold length to trigger shortening a
                     string is adjustable, the default threshold is 10 chars and
                     must with no line break in it.
-        """
-        if filename.startswith('<'):
-            # e.g. filename = '<string>', that means the caller came from
-            # `eval(<string>)` or `exec<string>`.
-            self._sourcemap.setdefault(filename, {})
-            return
-        
-        from .scanner.const import VARIABLE_NAME
-        from .scanner.const import QUOTED_STRING
-        from .scanner.const import SUBSCRIPTABLE
-        from .scanner.exceptions import ScanningError
-        from .scanner.exceptions import UnresolvedCase
-        
+            """
+            if not shorten_sub_substrings:
+                return text
+            
+            backslash_mask = []
+            for i in re.findall(r'\\.', text):
+                backslash_mask.append(i)
+            if backslash_mask:
+                text = re.sub(r'\\.', '__BACKSLASK_MASK__', text)
+            
+            quotes_pattern_1 = re.compile(r'\'\'\'[\w\W]*\'\'\'|"""[\w\W]*"""')
+            quotes_pattern_2 = re.compile(r'\'[^\']*\'|"[^"]*"')
+            
+            for i in set(quotes_pattern_1.findall(text)):
+                if '\n' in i or len(i) > threshold:
+                    text = text.replace(i, '"""..."""')
+            
+            for i in set(quotes_pattern_2.findall(text)):
+                if '\n' in i or len(i) > threshold:
+                    text = text.replace(i, '"..."')
+            
+            if backslash_mask:
+                for i in backslash_mask:
+                    text = text.replace('__BACKSLASK_MASK__', i, 1)
+                del backslash_mask
+            
+            return text
+
         node = self._sourcemap.setdefault(filename, {})
         
         with open(filename, 'r', encoding='utf-8') as f:
-            for match in get_all_blocks(
-                    *(x.rstrip('\n') for x in f.readlines())
-            ):
-                text = match.fulltext.strip()
-                if not text:
-                    continue
-                
-                # FIXME (Warning): in lk-logger v4.0.*, the varname-detection
-                #   feature is only enabled when content starts with 'lk.log'.
-                if not text.startswith('lk.log'):
-                    continue
-                    
-                varnames = []
-                try:
-                    for element, type_ in get_variables(text):
-                        if type_ == VARIABLE_NAME:
-                            varnames.append(element)
-                        elif type_ == SUBSCRIPTABLE:
-                            head, element = element
-                            if not shorten_sub_strings:
-                                varnames.append(element)
-                            elif len(element) - len(head) == 2:
-                                varnames.append(element)
-                            else:
-                                sub_varnames = []
-                                for sub_element, sub_type in \
-                                        get_variables(element):
-                                    if sub_type == QUOTED_STRING and (
-                                            '\n' in sub_element or
-                                            len(sub_element) > 10
-                                    ):
-                                        sub_varnames.append('"..."')
-                                    else:
-                                        sub_varnames.append(sub_element)
-                                varnames.append(
-                                    '{head}{bracket_s}{body}{bracket_e}'.format(
-                                        head=(x := head),
-                                        bracket_s=element[len(x):len(x) + 1],
-                                        body=', '.join(sub_varnames),
-                                        bracket_e=element[-1]
-                                    )
-                                )
-                                del sub_varnames
-                        else:
-                            varnames.append('')
-                except UnresolvedCase:
-                    del varnames
-                    continue
-                except ScanningError:
-                    raise ScanningError(
-                        match.cursor.lineno + 1, text,
-                        0, '<unknown>',
-                        f'<filename: {filename}>'
-                    )
-                else:
-                    lineno = match.cursor.lineno + 1
-                    node[lineno] = tuple(varnames)
+            node = self._sourcemap.setdefault(filename, {})
+            _get_blocks((x.rstrip('\n') for x in f.readlines()))
 
 
 frame_finder = FrameFinder()
