@@ -12,6 +12,20 @@ def print_values():
     lk.loga(1, 2, 3, True, [])
     lk.loga(1, 2, 3, True, {})
     lk.loga(1, 2, 3, True, {'a': 'aa'})
+    
+    
+def print_callable_object():
+    import os
+    from textwrap import dedent
+    lk.loga(dedent('hello'))
+    lk.loga(os.getcwd())
+    lk.loga(os.getcwd().split('\\'))
+    lk.loga(os.getcwd().format(..., ..., ))
+    lk.loga(list(
+        ('a', 'b', 'cccccccccccccccccccc',
+         d := None, e := False,
+         d, e)
+    ))
 
 
 def print_values_with_varnames():
@@ -128,21 +142,24 @@ def other():
 
 
 def main():
+    long_sub_elements()
+    other()
+    pretty_print()
+    print_callable_object()
     print_values()
     print_values_with_varnames()
-    print_with_linebreaks()
-    long_sub_elements()
     print_with_countings()
-    pretty_print()
-    other()
+    print_with_linebreaks()
     
     
 if __name__ == '__main__':
     main()
+    
+    # long_print()
+    # other()
+    # pretty_print()
+    # print_callable_object()
     # print_values()
     # print_values_with_varnames()
     # print_with_linebreaks()
-    # long_print()
     # print_with_countings()
-    # pretty_print()
-    # other()

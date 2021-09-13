@@ -168,8 +168,8 @@ def get_variables(line: str):
                 # _indexing_filemap`
             elif m := walrus_pattern.match(element):
                 yield m.group(1), VARIABLE_NAME
-            elif m := caller_pattern.match(element):
-                yield (m.group(1), element), SUBSCRIPTABLE
+            elif caller_pattern.match(element):
+                yield element, SUBSCRIPTABLE
             else:
                 yield element, VARIABLE_NAME
         
