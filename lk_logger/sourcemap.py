@@ -44,10 +44,37 @@ class FrameFinder:
             'source_filename', 'source_lineno',
             'source_name',
         ))
+        
+        def _fix_filename_location(filename: str):
+            # warning: in some rare situation that `<frame>.f_code.co_filename`
+            # shows a RELATIVE path rather than absolute one. moreover, the
+            # 'relative' path is not always corresponded with `os.getcwd`
+            # (especially when we have changed working dir by `os.chdir`
+            # operations), so we can't make sure `os.path.abspath(os.getcwd()
+            # + '/' + <relative_path>)` could always fix it.
+            # if fix failed, return '<unknown_root:...>'. the caller should
+            # catch this situation and think about how to handle it. see
+            # `SourceMap.get_frame_info` and `SourceMap._indexing_filemap`.
+            # reference links:
+            #   https://bugs.python.org/issue18307
+            #   https://github.com/cython/cython/issues/2543
+            if filename.startswith('<'):
+                # e.g. filename = '<string>', that means the caller frame came
+                # from `eval(<string>)` or `exec<string>`.
+                return filename
+            if os.path.isabs(filename):
+                return filename
+            elif (x := os.path.join(os.getcwd(), filename)) \
+                    and os.path.exists(x):
+                return x
+            else:
+                return f'<unknown_root:{filename}>'
+        
         return struct(
-            self._frame_0.f_code.co_filename, self._frame_0.f_lineno,
-            self._frame_x.f_code.co_filename, self._frame_x.f_lineno,
-            self._frame_x.f_code.co_name,
+            _fix_filename_location(self._frame_0.f_code.co_filename),
+            self._frame_0.f_lineno,
+            _fix_filename_location(self._frame_x.f_code.co_filename),
+            self._frame_x.f_lineno, self._frame_x.f_code.co_name,
         )
     
     @property
@@ -58,9 +85,6 @@ class FrameFinder:
 class SourceMap:
     
     def __init__(self):
-        self._info_struct = namedtuple(
-            'InfoStruct', ('filename', 'lineno', 'name', 'varnames')
-        )
         self._sourcemap = {}
         #   dict[filename, dict[lineno, tuple[varname, ...]]]
         self.working_dir = os.getcwd()
@@ -68,8 +92,12 @@ class SourceMap:
     
     def get_frame_info(self, advanced=False):
         info = frame_finder.getinfo()
-        
-        filename = os.path.relpath(info.source_filename, self.working_dir)
+
+        # see `FrameFinder.getinfo._fix_filename_location`
+        if info.source_filename.startswith('<'):
+            filename = info.source_filename
+        else:
+            filename = os.path.relpath(info.source_filename, self.working_dir)
         lineno = info.source_lineno
         name = x if (x := info.source_name).startswith('<') else x + '()'
         varnames = ()
@@ -80,7 +108,10 @@ class SourceMap:
             varnames = self._sourcemap[info.direct_filename].get(
                 info.direct_lineno, ())
         
-        return self._info_struct(filename, lineno, name, varnames)
+        struct = namedtuple('InfoStruct', (
+            'filename', 'lineno', 'name', 'varnames'
+        ))
+        return struct(filename, lineno, name, varnames)
     
     def _indexing_filemap(self, filename: str):
         """
@@ -88,8 +119,7 @@ class SourceMap:
             filename
         """
         if filename.startswith('<'):
-            # e.g. filename = '<string>', that means the caller came from
-            # `eval(<string>)` or `exec<string>`.
+            # see `FrameFinder.getinfo._fix_filename_location`
             self._sourcemap.setdefault(filename, {})
             return
         
