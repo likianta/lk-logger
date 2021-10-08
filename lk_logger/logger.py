@@ -11,10 +11,6 @@ class BaseLogger(Counter):
     def __init__(self, **kwargs):
         super().__init__(auto_reset_count=kwargs.get('auto_reset_count', True))
         
-        # TODO
-        # from json import load
-        # config = load(open(f'{__file__}/../config/base.json'))  # type: dict
-        # config.update(kwargs)
         self.config = kwargs
         
         # TODO: assign the most frequently used configs to directly acessable
@@ -139,6 +135,7 @@ class BaseLogger(Counter):
             )
         
         out = self._template.format(
+            # source=f'{info.filename}:{info.lineno}',  # TODO: fixed width
             filename=info.filename,
             lineno=info.lineno,
             func=info.name,

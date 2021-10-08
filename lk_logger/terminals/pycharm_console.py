@@ -28,7 +28,9 @@ class PycharmLogger(BaseLogger):
         from textwrap import indent
         
         temp = []
-        for i, (v, d) in enumerate(zip(self._get_varnames(), data)):
+        for i, (v, d) in enumerate(
+                zip(self._get_varnames() or [''] * len(data), data)
+        ):
             temp.append(f'[{i}] {v or "_"}:')
             temp.append(indent(pformat(d), '    '))
         
