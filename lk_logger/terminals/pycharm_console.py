@@ -29,7 +29,7 @@ class PycharmLogger(BaseLogger):
         
         temp = []
         for i, (v, d) in enumerate(
-                zip(self._get_varnames() or [''] * len(data), data)
+                zip(self._get_varnames() or ['_'] * len(data), data)
         ):
             temp.append(f'[{i}] {v or "_"}:')
             temp.append(indent(pformat(d), '    '))

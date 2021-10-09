@@ -1,4 +1,5 @@
 /.idea/
+/dist/
 /history/
 /tests/
 __pycache__
