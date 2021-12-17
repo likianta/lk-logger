@@ -45,36 +45,36 @@ class FrameFinder:
             'source_name',
         ))
         
-        def _fix_filename_location(filename: str):
-            # warning: in some rare situation that `<frame>.f_code.co_filename`
-            # shows a RELATIVE path rather than absolute one. moreover, the
-            # 'relative' path is not always corresponded with `os.getcwd`
-            # (especially when we have changed working dir by `os.chdir`
-            # operations), so we can't make sure `os.path.abspath(os.getcwd()
-            # + '/' + <relative_path>)` could always fix it.
-            # if fix failed, return '<unknown_root:...>'. the caller should
-            # catch this situation and think about how to handle it. see
-            # `SourceMap.get_frame_info` and `SourceMap._indexing_filemap`.
-            # reference links:
-            #   https://bugs.python.org/issue18307
-            #   https://github.com/cython/cython/issues/2543
-            if filename.startswith('<'):
-                # e.g. filename = '<string>', that means the caller frame came
-                # from `eval(<string>)` or `exec<string>`.
-                return filename
-            if os.path.isabs(filename):
-                return filename
-            elif (x := os.path.join(os.getcwd(), filename)) \
-                    and os.path.exists(x):
+        def _extract_filepath_info_from_frame(frame):
+            file = frame.f_globals.get('__file__') or frame.f_code.co_filename
+            # try to fix file location.
+            #   in some rare situation that `<frame>.f_code.co_filename` shows
+            #   a RELATIVE path rather than absolute one. moreover, the
+            #   'relative' path is not always corresponded with `os.getcwd`
+            #   (especially when we have changed working dir by `os.chdir`
+            #   operations), so we can't make sure `os.path.abspath(os.getcwd()
+            #   + '/' + <relative_path>)` could always fix it.
+            #   if fix failed, return '<unknown_root:...>'. the caller should
+            #   catch this situation and think about how to handle it. see
+            #   `SourceMap.get_frame_info` and `SourceMap._indexing_filemap`.
+            #   reference links:
+            #       https://bugs.python.org/issue18307
+            #       https://github.com/cython/cython/issues/2543
+            if file.startswith('<') and file.endswith('>'):
+                return file
+            elif os.path.isabs(file):
+                return file
+            elif (x := os.path.join(os.getcwd(), file)) and os.path.exists(x):
                 return x
             else:
-                return f'<unknown_root:{filename}>'
+                return f'<unknown_root:{file}>'
         
         return struct(
-            _fix_filename_location(self._frame_0.f_code.co_filename),
+            _extract_filepath_info_from_frame(self._frame_0),
             self._frame_0.f_lineno,
-            _fix_filename_location(self._frame_x.f_code.co_filename),
-            self._frame_x.f_lineno, self._frame_x.f_code.co_name,
+            _extract_filepath_info_from_frame(self._frame_x),
+            self._frame_x.f_lineno,
+            self._frame_x.f_code.co_name,
         )
     
     @property
@@ -92,7 +92,7 @@ class SourceMap:
     
     def get_frame_info(self, advanced=False):
         info = frame_finder.getinfo()
-
+        
         # see `FrameFinder.getinfo._fix_filename_location`
         if info.source_filename.startswith('<'):
             filename = info.source_filename
@@ -169,7 +169,7 @@ class SourceMap:
                 varnames.clear()
             finally:
                 return varnames
-                
+        
         def _analyse_subscriptables(
                 text: str, shorten_sub_substrings=True, threshold=20
         ):
@@ -212,19 +212,19 @@ class SourceMap:
             for i in set(quotes_pattern_2.findall(text)):
                 if '\n' in i or len(i) > threshold:
                     text = text.replace(i, '"..."')
-
+            
             # restore backslashes
             if backslash_mask:
                 for i in backslash_mask:
                     text = text.replace('__BACKSLASK_MASK__', i, 1)
                 del backslash_mask
-
+            
             text = re.sub(r'\s+', ' ', text)
             #   note: this ^measure takes a side effect that it may replace
             #   sequential whitespaces to one whitespace inside quote strings.
-
+            
             return text
-
+        
         node = self._sourcemap.setdefault(filename, {})
         
         with open(filename, 'r', encoding='utf-8') as f:
