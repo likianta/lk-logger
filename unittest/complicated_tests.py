@@ -15,7 +15,7 @@ def complicated_nest_structure():
 
 
 def general_control():
-    lk.enable()
+    lk.switch_mode('full_mode')
     lk.loga('enabled')
     lk.enable_lite_mode()
     lk.loga('lite mode enabled')
@@ -25,7 +25,7 @@ def general_control():
         lk.disable_lite_mode()
     except Exception as e:
         print(e)
-        lk.enable()
+        lk.switch_mode('full_mode')
         lk.disable_lite_mode()
     lk.loga('full mode enabled')
 

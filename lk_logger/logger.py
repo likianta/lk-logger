@@ -1,4 +1,5 @@
 from inspect import currentframe
+from os import getcwd
 from textwrap import indent
 
 from .plugins import Counter
@@ -12,6 +13,7 @@ class BaseLogger(Counter):
         super().__init__(auto_reset_count=kwargs.get('auto_reset_count', True))
         
         self.config = kwargs
+        self._working_dir = getcwd()
         
         # TODO: assign the most frequently used configs to directly acessable
         #   attributes.
@@ -36,24 +38,32 @@ class BaseLogger(Counter):
                 self.output,
             ),
         }
+        
+        # PERF: more controls
+        self._print_scope = 0
+        #   0: print all
+        #   1: full print in self._working_dir, simple print in external modules.
+        #   2: print only in self._working_dir, no print in external modules.
     
     # -------------------------------------------------------------------------
     # master control
     
-    def enable(self, lite_mode=False, _h=1):
-        mode = 'lite_mode' if lite_mode else 'full_mode'
+    def switch_mode(self, mode: str, quiet=False, _h=1):
+        # mode: str['lite_mode', 'full_mode', 'disabled']
         if self.mode == mode:
             return
         else:
             self.mode = mode
             
-            # the following code is in imitation of `.sourcemap.FrameFinder
-            # .getframe._wrap` and `self.position`:
-            frame = currentframe()
-            for _ in range(_h): frame = frame.f_back
-            filename, lineno = frame.f_code.co_filename, frame.f_lineno
-            print(f'{filename}:{lineno}\t>>\t[lk_logger] mode switched:', mode)
-            
+            if not quiet:
+                # reference: `.sourcemap.FrameFinder.getframe._wrap` and
+                # `self.position`.
+                frame = currentframe()
+                for _ in range(_h): frame = frame.f_back
+                filename, lineno = frame.f_code.co_filename, frame.f_lineno
+                print(f'{filename}:{lineno}\t>>\t'
+                      f'[lk_logger] mode switched: {mode}')
+        
         a, b = self.__mode[self.mode]
         # tip: here we use `setattr(...)` not `self.format = ...` to avoid
         # PEP-8 (weak) warnings and fix code navigation problem (and some
@@ -70,19 +80,21 @@ class BaseLogger(Counter):
         setattr(self, 'format', a)
         setattr(self, 'output', b)
     
-    def enable_lite_mode(self):
-        # if self.mode == 'lite_mode':
-        #     return
-        self.enable(lite_mode=True, _h=2)
+    def enable_lite_mode(self, quiet=False):
+        self.switch_mode('lite_mode', quiet=quiet, _h=2)
     
-    def disable_lite_mode(self):
+    def disable_lite_mode(self, quiet=False):
         if self.mode == 'disabled':
             raise Exception(
                 '[lk_logger.logger.BaseLogger]',
                 'lk logger is disabled, you should call `lk.enable()` first to '
                 'reactivate master control.'
             )
-        self.enable(lite_mode=False, _h=2)
+        self.switch_mode('full_mode', quiet=quiet, _h=2)
+    
+    def change_print_scope(self, scope: int):
+        assert scope in (0, 1, 2)
+        self._print_scope = scope
     
     # -------------------------------------------------------------------------
     
