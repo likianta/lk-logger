@@ -1,3 +1,33 @@
 {
-    "use_cache": true
+    "black_magic": {
+        "override_builtin_print": false
+    },
+    "print_external_libs": {
+        "enabled": true,
+        "sourcemap_mode": "relpath",
+        "# show_mode": [
+            {
+                "enum": [
+                    "none",
+                    "abspath",
+                    "relpath",
+                    "libname",
+                    "libname_with_libprefix",
+                    "filename",
+                    "filename_with_libprefix",
+                    "libname_filename",
+                    "libname_filename_with_libprefix"
+                ]
+            },
+            "lib_prefixed: `[lib][<lib_name>]`"
+        ]
+    },
+    "terminal": {
+        "default_terminal": "pycharm",
+        "# default_terminal": [
+            "enum[pycharm, idea, intellij_products, cmd, powershell, bash, zsh, file_stream]",
+            "pycharm, idea, intellij_products have the same effect.",
+            "in current version, only pycharm is supported. the file_stream is coming soon."
+        ]
+    }
 }
