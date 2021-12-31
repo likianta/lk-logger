@@ -48,7 +48,7 @@ class BaseLogger(Counter):
     # -------------------------------------------------------------------------
     # master control
     
-    def switch_mode(self, mode: str, quiet=False, _h=1):
+    def switch_mode(self, mode: str, quiet=True, _h=1):
         # mode: str['lite_mode', 'full_mode', 'disabled']
         if self.mode == mode:
             return
@@ -71,26 +71,16 @@ class BaseLogger(Counter):
         setattr(self, 'format', a)
         setattr(self, 'output', b)
     
+    def enable_full_mode(self):
+        self.switch_mode('full_mode', _h=2)
+    
+    def enable_lite_mode(self):
+        self.switch_mode('lite_mode', _h=2)
+    
+    enable = enable_full_mode
+    
     def disable(self):
-        if self.mode == 'disabled':
-            return
-        else:
-            self.mode = 'disabled'
-        a, b = self.__mode[self.mode]
-        setattr(self, 'format', a)
-        setattr(self, 'output', b)
-    
-    def enable_lite_mode(self, quiet=False):
-        self.switch_mode('lite_mode', quiet=quiet, _h=2)
-    
-    def disable_lite_mode(self, quiet=False):
-        if self.mode == 'disabled':
-            raise Exception(
-                '[lk_logger.logger.BaseLogger]',
-                'lk logger is disabled, you should call `lk.enable()` first to '
-                'reactivate master control.'
-            )
-        self.switch_mode('full_mode', quiet=quiet, _h=2)
+        self.switch_mode('disabled', _h=2)
     
     def change_print_scope(self, scope: int):
         assert scope in (0, 1, 2)

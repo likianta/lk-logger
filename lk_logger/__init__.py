@@ -1,3 +1,3 @@
 from .terminals.pycharm_console import lk
 
-__version__ = '4.0.6'
+__version__ = '4.0.7'
