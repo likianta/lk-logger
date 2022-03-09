@@ -2,63 +2,69 @@
 
 ## 4.0
 
-### 4.0.6 | 2021-12-17
+### 4.1.0 (2022-03-09)
+
+重要更新:
+
+- [新增] 提供一个可选项, 可以全局替换内置的 `print` 函数
+
+### 4.0.6 (2021-12-17)
 
 次要更新:
 
-- 优化: 从 caller frame 查找路径的方式
+- [优化] 从 caller frame 查找路径的方式
 
-### 4.0.5 | 2021-12-14
+### 4.0.5 (2021-12-14)
 
 次要更新:
 
-- 优化: lk-logger 模式切换增强
-- 新增: 静默切换模式
+- [优化] lk-logger 模式切换增强
+- [新增] 静默切换模式
 
 --------------------------------------------------------------------------------
 
 ## 3.6
 
-### 3.6.3 | 2020-08-30
+### 3.6.3 (2020-08-30)
 
 重要更新:
 
-- 变更: lk-logger 从 lk-utils 中剥离并独立, 这是第一个从另一个主项目独立出来的版本
+- [变更] lk-logger 从 lk-utils 中剥离并独立, 这是第一个从另一个主项目独立出来的版本
 
 次要更新:
 
-- 移除: 不再引用 time_utils.simple_time() 函数
-- 更新: 默认不打印 DEBUG 级别的信息
-- 更新: 部分变量变为私有变量
-- 变更: 默认关闭 LKLogger._recorder
-- 优化: 移除实例化时的开始时间提示
+- [移除] 不再引用 time_utils.simple_time() 函数
+- [更新] 默认不打印 DEBUG 级别的信息
+- [更新] 部分变量变为私有变量
+- [变更] 默认关闭 LKLogger._recorder
+- [优化] 移除实例化时的开始时间提示
 
-## 3.5 | 2019-11-06
+## 3.5 (2019-11-06)
 
 重要更新:
 
-- 新增: LKLogger 新增 terminal 类变量, 用于指定输出终端
-- 优化: 重构计数器相关的方法
+- [新增] LKLogger 新增 terminal 类变量, 用于指定输出终端
+- [优化] 重构计数器相关的方法
 
 次要更新:
 
-- 变更: init_counter() 合并到 wrap_counter()
-- 优化: 重构计数器相关的方法
-- 优化: count(), enum() 使用更安全的类型检查
-- 优化: init_count() 调整为与 count() 行为一致
-- 修复: MsgRecorder.record() 在记录 tag 时的错误
-- 新增: 计数器增加 interval 参数
-- 变更: 计数器从 _base_print() 改为在 log*x() 方法中实现
-- 变更: _base_print() 移除 caller 参数
-- 修复: 计数器 interval 参数
-- 移除: MsgRecorder.show_important_messages() 取消对 msg_list 的排序行为
-- 优化: logp() 方法
-- 变更: init_count() 合并到 count() 方法
-- 优化: dump_log() 方法
-- 优化: 计数方法
-- 修复: log() 在打印非 str 类型的单变量时的错误
+- [变更] init_counter() 合并到 wrap_counter()
+- [优化] 重构计数器相关的方法
+- [优化] count(), enum() 使用更安全的类型检查
+- [优化] init_count() 调整为与 count() 行为一致
+- [修复] MsgRecorder.record() 在记录 tag 时的错误
+- [新增] 计数器增加 interval 参数
+- [变更] 计数器从 _base_print() 改为在 log*x() 方法中实现
+- [变更] _base_print() 移除 caller 参数
+- [修复] 计数器 interval 参数
+- [移除] MsgRecorder.show_important_messages() 取消对 msg_list 的排序行为
+- [优化] logp() 方法
+- [变更] init_count() 合并到 count() 方法
+- [优化] dump_log() 方法
+- [优化] 计数方法
+- [修复] log() 在打印非 str 类型的单变量时的错误
 
-## 3.4 | 2019-10-22
+## 3.4 (2019-10-22)
 
 重要更新:
 
@@ -81,7 +87,7 @@
 - 优化 _extract_vars_from_srcln() 方法
 - MsgRecorder.show_important_messages() 默认不显示 DEBUG 级别的详情信息
 
-## 3.3 | 2019-08-20
+## 3.3 (2019-08-20)
 
 重要更新:
 
@@ -95,7 +101,7 @@
 - AstAnalyser 修复因中文字符引起的 col_offset 偏移错误
 - logd*() 方法允许按照 loga 形式处理 var_names
 
-## 3.2 | 2019-06-25
+## 3.2 (2019-06-25)
 
 次要更新:
 
@@ -114,7 +120,7 @@
 - 新增 log_enable 类变量
 - 优化对 "[TEMPRINT]" 标识的判断
 
-## 3.1 | 2019-05-14
+## 3.1 (2019-05-14)
 
 重要更新:
 
@@ -139,7 +145,7 @@
 - calculate_relative_path() 简化代码
 - _base_print() 增加对 `\r` 的识别
 
-## 3.0 | 2019-05-14
+## 3.0 (2019-05-14)
 
 重要更新:
 

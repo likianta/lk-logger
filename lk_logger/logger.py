@@ -2,6 +2,7 @@ from inspect import currentframe
 from os import getcwd
 from textwrap import indent
 
+from ._builtin_print import print
 from .plugins import Counter
 from .sourcemap import getframe
 from .sourcemap import sourcemap

@@ -61,6 +61,14 @@ def lambda_occurances():
     lk.loga((lambda *args, **kwargs: (len(args), len(kwargs)))(1, 2, a=3))
 
 
+def black_magic():
+    from lk_logger import setup_as_builtin_print
+    setup_as_builtin_print()
+    a = 1
+    b = 2
+    print(a, b, a + b)
+
+
 def main():
     complicated_nest_structure()
     general_control()
@@ -73,4 +81,5 @@ if __name__ == '__main__':
     # general_control()
     # hierarchy_reflections()
     # lambda_occurances()
-    main()
+    black_magic()
+    # main()

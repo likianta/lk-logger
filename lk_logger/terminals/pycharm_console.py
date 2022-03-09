@@ -1,3 +1,4 @@
+from .._builtin_print import print
 from ..logger import BaseLogger
 from ..sourcemap import getframe
 
