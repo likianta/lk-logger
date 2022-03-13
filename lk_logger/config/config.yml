@@ -1,0 +1,89 @@
+black_magic:
+  override_builtin_print_on_startup: false
+print_external_libs:
+  enabled: true
+  sourcemap_mode: 'relpath'
+  #   options:
+  #     none
+  #     abspath
+  #     relpath
+  #     libname
+  #     libname_with_libprefix
+  #     filename
+  #     filename_with_libprefix
+  #     libname_filename
+  #     libname_filename_with_libprefix
+  #   descriptions:
+  #     none:
+  #       nothing print. the same effect like enabled=false.
+  #     abspath:
+  #       print absolute path of the external caller.
+  #       e.g. 'e:/python/lib/site-packages/lk_logger/logger.py'
+  #     relpath:
+  #       print relative path of the external caller.
+  #       e.g. '../../venv/lib/site-packages/lk-logger/logger.py'
+  #     libname:
+  #       print caller's library name (i.e. the package name).
+  #       e.g. '[lk-logger]' (we prefer to use dashes instead of underscores.)
+  #     libname_with_libprefix:
+  #       the same with libname, but prefixed with '[lib]'.
+  #       e.g. '[lib][lk-logger]'
+  #     filename:
+  #       print only the filename of caller.
+  #       e.g. '[logger.py]'
+  #     filename_with_libprefix:
+  #       the same with filename, but prefixed with '[lib]'.
+  #       e.g. '[lib][logger.py]'
+  #     libname_filename:
+  #       print the library name and the filename of caller.
+  #       e.g. '[lk-logger][logger.py]'
+  #     libname_filename_with_libprefix:
+  #       the same with libname_filename, but prefixed with '[lib]'.
+  #       e.g. '[lib][lk-logger][logger.py]'
+  #   suggest_using:
+  #     1. relpath
+  #     2. libname_filename
+  #     3. libname_filename_with_libprefix
+  #     4. libname_with_libprefix
+terminal:
+  default_terminal: 'pycharm'
+  #   options:
+  #     pycharm
+  #     idea
+  #     intellij_ide
+  #     cmd
+  #     powershell
+  #     bash
+  #     zsh
+  #     file_stream
+  #     ...
+  #   note:
+  #     - pycharm, idea, intellij_ide have the same effect.
+  #     - we are considering removing some of them in the future.
+  #     - currently this feature is not opened to public. we only support
+  #       'pycharm' option now. significant changes will be made in the future.
+  #     - file_stream support is coming soon.
+printing_elements:
+  # TODO: this feature should be moved to Style class.
+  tag:
+    format: '[{level}{id}]'
+    #   placeholders:
+    #     level:
+    #       options:
+    #         D, DEBUG
+    #         I, INFO
+    #         W, WARNING
+    #         E, ERROR
+    #         C, CRITICAL
+    #       DIWEC is the built-in levels. you can use any string as level. the
+    #       built-in levels have predefined colors in Tag.color_sheet.
+    #       you may need to extend it to support your own levels. (see also
+    #       Tag.color_sheet)
+    #     yyyy: full year
+    #     mm: full month, 01 - 12
+    #     dd: full day, 01 - 31
+    #     hh: full hour, 00 - 23
+    #     nn: full minute, 00 - 59
+    #     ss: full second, 00 - 59
+    #     no: number, starts from 1, auto increased in current session. reset
+    #         when restart program.
