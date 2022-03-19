@@ -1,4 +1,3 @@
-from .black_magic import setup_as_builtin_print
-from .terminals.pycharm_console import lk
+from .logger import setup
 
-__version__ = '4.1.0'
+__version__ = '5.0.0'

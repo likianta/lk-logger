@@ -1,223 +1,380 @@
+import builtins
+import os
+import sys
 from inspect import currentframe
-from os import getcwd
-from textwrap import indent
 
 from ._builtin_print import print
-from .plugins import Counter
-from .sourcemap import getframe
+from .general import normpath
 from .sourcemap import sourcemap
 
 
-class BaseLogger(Counter):
-    
-    def __init__(self, **kwargs):
-        super().__init__(auto_reset_count=kwargs.get('auto_reset_count', True))
+# -----------------------------------------------------------------------------
+# global controls
+
+def setup(**kwargs):
+    """
+    args:
+        kwargs: see `LoggingConfig:docstring`.
+    """
+    global lk
+    lk.configure(**kwargs)
+    setattr(builtins, 'print', lk.log)
+
+
+def uninstall():
+    setattr(builtins, 'print', print)
+
+
+def enable():
+    global lk
+    setattr(builtins, 'print', lk.log)
+
+
+def disable():
+    setattr(builtins, 'print', lambda *_, **__: None)
+
+
+# -----------------------------------------------------------------------------
+
+class LoggingConfig:
+    """
+    options:
+        show_source: bool[true]
+            add source info (filepath and line number) prefix to log messages.
+            example:
+                lk.log('hello world')
+                # enabled : './main.py:10  >>  hello world'
+                # disabled: 'hello world'
+        show_varnames: bool[false]
+            show both var names and values. (magic reflection)
+            example:
+                a, b = 1, 2
+                lk.log(a, b, a + b)
+                # enabled : 'main.py:11  >>  a = 1; b = 2; a + b = 3'
+                # disabled: 'main.py:11  >>  1, 2, 3'
+        show_external_lib: bool[true]
+            if `param source` came from an external library, whether to print.
+            for example, if a third-party library 'xxx' also used `lk.log`,
+            its source path (relative to current working dir) may be very long,
+            if you don't want to see any prints except your own project, you'd
+            set this to False.
         
-        self.config = kwargs
-        self._working_dir = getcwd()
+        # the following options are only available if `show_external_lib` is
+        # true.
+        path_format_for_external_lib: literal
+            literal:
+                'pretty_relpath': default
+                    trunscate the source path of external lib to be shorter.
+                    example:
+                        before:
+                            '../../../../site-packages/lk_logger/sourcemap.py'
+                            # there may be a lot of '../'.
+                        after:
+                            '[lk_logger]/sourcemap.py'
+                'relpath':
+                    a relative path to current working dir. (<- `os.getcwd()`)
+                    note there may be a lot of '../../../...' if external lib
+                    is far beyond the current working dir.
+                'lib_name_only':
+                    show only the library name (surrounded by brackets).
+                    example: '[lk_logger]'
+            ps: if you don't want to show anything, you should turn to set
+            `show_external_lib` to False.
+    """
+    show_source = True
+    show_varnames = False
+    show_external_lib = True
+    path_format_for_external_lib = 'pretty_relpath'
+    
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+
+
+class PathHelper:
+    @staticmethod
+    def find_project_root() -> str:
+        """ find personal-like project root.
         
-        # TODO: assign the most frequently used configs to directly acessable
-        #   attributes.
-        self._template = self.config.get(
-            'template', '{filename}:{lineno}\t>>\t{func}\t>>\t{msg}')
-        self._var_seg = self.config.get('var_seg', ';\t')
-        self._visualize_linebreaks = self.config.get(  # DEL
-            'visualize_linebreaks', False)
-        
-        self.mode = 'full_mode'
-        self.__mode = {
-            'disabled' : (
-                lambda *_, **__: None,
-                lambda *_, **__: None,
-            ),
-            'lite_mode': (
-                lambda data, **__: ';\t'.join(map(str, data)),
-                lambda data, **__: print(data)
-            ),
-            'full_mode': (
-                self.format,
-                self.output,
-            ),
-        }
-        
-        # PERF: more controls
-        self._print_scope = 0
-        #   0: print all
-        #   1: full print in self._working_dir, simple print in external modules.
-        #   2: print only in self._working_dir, no print in external modules.
-    
-    # -------------------------------------------------------------------------
-    # master control
-    
-    def switch_mode(self, mode: str, quiet=True, _h=1):
-        # mode: str['lite_mode', 'full_mode', 'disabled']
-        if self.mode == mode:
-            return
-        else:
-            self.mode = mode
-            
-            if not quiet:
-                # reference: `.sourcemap.FrameFinder.getframe._wrap` and
-                # `self.position`.
-                frame = currentframe()
-                for _ in range(_h): frame = frame.f_back
-                filename, lineno = frame.f_code.co_filename, frame.f_lineno
-                print(f'{filename}:{lineno}\t>>\t'
-                      f'[lk_logger] mode switched: {mode}')
-        
-        a, b = self.__mode[self.mode]
-        # tip: here we use `setattr(...)` not `self.format = ...` to avoid
-        # PEP-8 (weak) warnings and fix code navigation problem (and some
-        # intelli-sense problems) when developing in pycharm.
-        setattr(self, 'format', a)
-        setattr(self, 'output', b)
-    
-    def enable_full_mode(self):
-        self.switch_mode('full_mode', _h=2)
-    
-    def enable_lite_mode(self):
-        self.switch_mode('lite_mode', _h=2)
-    
-    enable = enable_full_mode
-    
-    def disable(self):
-        self.switch_mode('disabled', _h=2)
-    
-    def change_print_scope(self, scope: int):
-        assert scope in (0, 1, 2)
-        self._print_scope = scope
-    
-    # -------------------------------------------------------------------------
-    
-    def format(self, data, **kwargs):
+        proposals:
+            1. backtrack from current working dir to find a folder which has
+               one of '.idea', '.git', etc. folders.
+            2. iterate paths in sys.path, to find a folder which is parent of
+               current working dir. (adopted)
+               if there are more than one, choose which is shortest.
+               if there is none, return current working dir.
         """
-        
-        Args:
-            data:
-            **kwargs:
-        
-        Keyword Args:
-            advanced
-            count
-            divider_line
-            indent: int[4]
-            start_from_newline: bool[False].
-            tag:
-            title: effect when `start_from_newline` is True.
-        """
-        info = sourcemap.get_frame_info(
-            advanced=kwargs.get('advanced', False)
+        cwd = normpath(os.getcwd())
+        paths = tuple(
+            x for x in map(normpath, map(os.path.abspath, sys.path))
+            if cwd.startswith(x) and os.path.isdir(x)
         )
-        
-        # message head
-        msg_head = ' '.join(filter(None, (
-            kwargs.get('tag'),
-            kwargs.get('count'),
-            kwargs.get('divider_line'),
-        ))).strip()
-        
-        # message body
-        if info.varnames:
-            if kwargs.get('tag'):
-                varnames = info.varnames[1:]
-            else:
-                varnames = info.varnames
-            assert len(varnames) == len(data), (info, data)
-            temp = []
-            for k, v in zip(varnames, data):
-                temp.append(f'{k} = {v}' if k else str(v))
-            msg_body = kwargs.get('sep', ';\t').join(temp)
+        if len(paths) == 0:
+            return cwd
+        elif len(paths) == 1:
+            return paths[0]
         else:
-            msg_body = kwargs.get('sep', ';\t').join(map(str, data))
-        if self._visualize_linebreaks:
-            msg_body = msg_body.replace('\n', '\\n')
-        if kwargs.get('start_from_newline', False):
-            title = kwargs.get('title', '')
-            msg_body = title + indent(
-                '\n' + msg_body, ' ' * kwargs.get('indent', 4)
-            )
-        
-        out = self._template.format(
-            # source=f'{info.filename}:{info.lineno}',  # TODO: fixed width
-            filename=info.filename,
-            lineno=info.lineno,
-            func=info.name,
-            msg=f'{msg_head} {msg_body}'.strip(' ')
-        )
-        return out
+            return min(paths, key=lambda x: len(x))
     
     @staticmethod
-    def _get_varnames():
-        info = sourcemap.get_frame_info(advanced=True)
-        return info.varnames
-    
-    # -------------------------------------------------------------------------
-    # Typical implementations see: `lk_logger.terminals.pycharm_console`.
-    
-    @getframe
-    def log(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def loga(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logd(self, *data, symbol='-', length=80, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logp(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logt(self, tag, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logx(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logtx(self, tag, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logax(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logdx(self, *data, symbol='-', length=80, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logtx(self, *data, h='self'):
-        raise NotImplementedError
-    
-    @getframe
-    def logdtx(self, tag, *data, symbol='-', length=80, h='self'):
-        raise NotImplementedError
-    
-    def output(self, msg: str, **kwargs):
-        raise NotImplementedError
-    
-    # -------------------------------------------------------------------------
-    
-    @property
-    @getframe
-    def position(self):
+    def indexing_external_libs() -> dict:
         """
+        return:
+            dict[str path, str lib_name]
+        """
+        out = {}
         
-        Returns:
-            (filename, lineno)
-                - filename is an absolute path.
-                - the lineno starts from 1.
+        for path in reversed(sys.path):
+            if not os.path.exists(path):
+                continue
+            for root, dirs, files in os.walk(path):
+                root = normpath(root)
+                out[root] = os.path.basename(root)
+                
+                for d in dirs:
+                    if d.startswith(('.', '__')):
+                        continue
+                    if '-' in d or '.' in d:
+                        continue
+                    out[f'{root}/{d}'] = d
+                
+                # for f in files:
+                #     name, ext = os.path.splitext(f)
+                #     if ext not in ('.py', '.pyc', '.pyd', '.pyo', '.pyw'):
+                #         continue
+                #     if '-' in name or '.' in name:
+                #         continue
+                #     out[f'{root}/{f}'] = name
+                break
+        
+        return out
+
+
+class MarkupAnalyser:
+    """
+    readme:
+        ~/docs/markup.zh.md
+    
+    markup list:
+        :d  divider line
+        :i  index
+        :l  long / loose
+        :p  parent layer
+        :r  rich
+        :s  short
+        :t  tag
+        :v  verbose / log level
+    """
+    
+    def __init__(self):
+        from re import compile
+        self._mark_pattern = compile(r'[a-z]\d*')
+    
+    def analyse_markup(self, markup: str) -> list:
         """
-        from .sourcemap import frame_finder
-        frame = frame_finder.frame
-        return frame.f_code.co_filename, frame.f_lineno
+        return:
+            iterable[tuple[literal mark, int number]]
+                mark:
+                    a ':'-prefixed character.
+                    literal: ':d', ':i', ':l', ':p', ':r', ':s', ':t', ':v'.
+                number: 0, 1, 2, ...
+        """
+        marks = self._mark_pattern.findall(markup)  # list[str]
+        out = []
+        defaults = {
+            'd': 0,
+            'i': 1,
+            'l': 0,
+            'p': 1,
+            'r': 0,
+            's': 0,
+            't': 0,
+            'v': 0,
+        }
+        for m in marks:
+            if len(m) == 1:
+                # out.append((m, None))
+                out.append((m, defaults[m]))
+            else:
+                out.append((m[0], int(m[1:])))
+        return out
+
+
+class LKLogger:
+    
+    def __init__(self):
+        self._config = LoggingConfig()
+        self._counter = 0
+        self._cwd = normpath(os.getcwd())
+        self._markup_analyser = MarkupAnalyser()
+        
+        # lazy loaded
+        self.__external_libs = None
+        self.__proj_root = None
+    
+    def configure(self, **kwargs):
+        self._config.update(**kwargs)
     
     @property
-    def version(self):
-        from . import __version__
-        return __version__
+    def _proj_root(self) -> str:
+        if self.__proj_root is None:
+            self.__proj_root = PathHelper.find_project_root()
+        return self.__proj_root
+    
+    @property
+    def _external_libs(self) -> dict:
+        if self.__external_libs is None:
+            self.__external_libs = PathHelper.indexing_external_libs()
+        return self.__external_libs
+    
+    def log(self, *args, **_):
+        message_details = {
+            'divider_line': '',
+            'filepath'    : '',
+            'funcname'    : '',
+            'index'       : '',
+            'lineno'      : '0',
+            'log_level'   : '',
+            'message'     : '',
+        }
+        
+        markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
+        traceback_level = 0  # int[default 1]
+        if args:
+            if (
+                    isinstance(args[0], str) and args[0].startswith(':')
+            ):
+                markup_pos = 1
+                markup, args = args[0], args[1:]
+            elif len(args) > 1 and (
+                    isinstance(args[-1], str) and args[-1].starts_with(':')
+            ):
+                markup_pos = -1
+                markup, args = args[-1], args[:-1]
+            else:
+                markup_pos = 0
+                markup, args = None, args
+            
+            # analyse markup
+            if markup:
+                # analyse markup
+                marks = self._markup_analyser.analyse_markup(markup)
+                if marks:
+                    for m, i in marks:
+                        if m == 'd':
+                            message_details['divider_line'] = '-' * 80
+                        elif m == 'i':
+                            if i == 0:
+                                self._counter = 0
+                            self._counter += 1
+                            message_details['index'] = str(self._counter)
+                        elif m == 'l':
+                            pass
+                        elif m == 'p':
+                            traceback_level = i
+                        elif m == 'r':
+                            pass
+                        elif m == 's':
+                            pass
+                        elif m == 'v':
+                            message_details['log_level'] = (
+                                'trace', 'debug', 'info',
+                                'warn', 'error', 'fatal'
+                            )[i]
+        
+        info = sourcemap.get_sourcemap(
+            frame=currentframe().f_back,
+            traceback_level=traceback_level,
+            advanced=self._config.show_varnames,
+        )
+        
+        if args:
+            if self._config.show_varnames:
+                if markup_pos == 0:
+                    varnames = info.varnames
+                elif markup_pos == 1:
+                    varnames = info.varnames[1:]
+                else:
+                    varnames = info.varnames[:-1]
+                assert len(varnames) == len(args), (varnames, args)
+                # organize args
+                tmp_msg = []
+                for n, a in zip(varnames, args):
+                    tmp_msg.append(f'{n} = {a}' if n else str(a))
+                message_details['message'] = ';\t'.join(tmp_msg)
+            else:
+                message_details['message'] = ';\t'.join(map(str, args))
+        
+        message_details['funcname'] = info.funcname
+        
+        # show external lib?
+        if self._config.show_external_lib:
+            # is external lib?
+            if self._is_external_lib(info.filepath):  # yes
+                # path format
+                fmt = self._config.path_format_for_external_lib
+                if fmt == 'relpath':
+                    message_details['filepath'] = normpath(
+                        os.path.relpath(info.filepath, self._cwd)
+                    )
+                else:
+                    for lib_path in reversed(self._external_libs):
+                        if info.filepath.startswith(lib_path):
+                            lib_name = self._external_libs[lib_path]
+                            lib_relpath = info.filepath[len(lib_path):] or \
+                                          os.path.basename(info.filepath)
+                            break
+                    else:
+                        lib_name = ''
+                        lib_relpath = info.filepath.lstrip('./')
+                    
+                    if fmt == 'pretty_relpath':
+                        if lib_name:
+                            message_details['filepath'] = '[{}]/{}'.format(
+                                lib_name, lib_relpath)
+                        else:
+                            message_details['filepath'] = '[{}]/{}'.format(
+                                'unknown', lib_relpath)
+                    elif fmt == 'lib_name_only':
+                        message_details['filepath'] = f'[{lib_name}]'
+            else:  # no
+                message_details['filepath'] = normpath(
+                    os.path.relpath(info.filepath, self._cwd)
+                )
+        else:
+            if self._is_external_lib(info.filepath):
+                pass
+            else:
+                message_details['filepath'] = normpath(
+                    os.path.relpath(info.filepath, self._cwd)
+                )
+        if (x := message_details['filepath']) and not x.startswith('../'):
+            message_details['filepath'] = './' + x
+        
+        message_details['lineno'] = str(info.lineno)
+        
+        # show message
+        # noinspection PyListCreation
+        message_parts = []
+        message_parts.append(message_details['filepath'] + ':')
+        message_parts.append(message_details['lineno'])
+        message_parts.append('\t>>\t')
+        if (x := message_details['funcname']).startswith('<'):
+            message_parts.append(x)
+        else:
+            message_parts.append(x + '()')
+        message_parts.append('\t>>\t')
+        if message_details['index']:
+            message_parts.append('[{}] '.format(message_details['index']))
+        if message_details['divider_line']:
+            message_parts.append(message_details['divider_line'] + ' ')
+        message_parts.append(message_details['message'])
+        
+        print(''.join(message_parts))
+    
+    def _is_external_lib(self, filepath: str) -> bool:
+        return not filepath.startswith(self._proj_root)
+
+
+lk = LKLogger()
