@@ -1,126 +1,77 @@
-import os
 import re
 from collections import namedtuple
-from functools import wraps
-from inspect import currentframe
 from types import FrameType
-from typing import Optional
 
 from .scanner import get_all_blocks
 from .scanner import get_variables
-
-
-class FrameFinder:
-    _hierarchy = {
-        'self'              : 1,
-        'parent'            : 2,
-        'grand_parent'      : 3,
-        'great_grand_parent': 4,
-    }
-    
-    _frame_0: Optional[FrameType] = None  # the direct caller frame
-    _frame_x: Optional[FrameType] = None  # the target caller frame
-    
-    def getframe(self, func):
-        @wraps(func)
-        def _wrap(*args, **kwargs):
-            frame = self._frame_0 = currentframe().f_back
-            for _ in range(self._hierarchy.get(
-                    (h := kwargs.get('h', 'self')), h
-            ) - 1):
-                frame = frame.f_back
-            self._frame_x = frame
-            return func(*args, **kwargs)
-        
-        return _wrap
-    
-    def getinfo(self):
-        assert self._frame_0 and self._frame_x, (
-            'You must hold the frame before fetching the frame! '
-            '(see `FrameFinder.getframe` decorator)'
-        )
-        struct = namedtuple('FrameInfo', (
-            'direct_filename', 'direct_lineno',
-            'source_filename', 'source_lineno',
-            'source_name',
-        ))
-        
-        def _extract_filepath_info_from_frame(frame):
-            file = frame.f_globals.get('__file__') or frame.f_code.co_filename
-            # try to fix file location.
-            #   in some rare situation that `<frame>.f_code.co_filename` shows
-            #   a RELATIVE path rather than absolute one. moreover, the
-            #   'relative' path is not always corresponded with `os.getcwd`
-            #   (especially when we have changed working dir by `os.chdir`
-            #   operations), so we can't make sure `os.path.abspath(os.getcwd()
-            #   + '/' + <relative_path>)` could always fix it.
-            #   if fix failed, return '<unknown_root:...>'. the caller should
-            #   catch this situation and think about how to handle it. see
-            #   `SourceMap.get_frame_info` and `SourceMap._indexing_filemap`.
-            #   reference links:
-            #       https://bugs.python.org/issue18307
-            #       https://github.com/cython/cython/issues/2543
-            if file.startswith('<') and file.endswith('>'):
-                return file
-            elif os.path.isabs(file):
-                return file
-            elif (x := os.path.join(os.getcwd(), file)) and os.path.exists(x):
-                return x
-            else:
-                return f'<unknown_root:{file}>'
-        
-        return struct(
-            _extract_filepath_info_from_frame(self._frame_0),
-            self._frame_0.f_lineno,
-            _extract_filepath_info_from_frame(self._frame_x),
-            self._frame_x.f_lineno,
-            self._frame_x.f_code.co_name,
-        )
-    
-    @property
-    def frame(self):
-        return self._frame_0
 
 
 class SourceMap:
     
     def __init__(self):
         self._sourcemap = {}
-        #   dict[filename, dict[lineno, tuple[varname, ...]]]
-        self.working_dir = os.getcwd()
-        # # self.working_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        #   dict[str filepath, dict[int lineno, tuple[str varname, ...]]]
     
-    def get_frame_info(self, advanced=False):
-        info = frame_finder.getinfo()
+    @staticmethod
+    def get_frame_info(frame: FrameType, traceback_level: int):
+        from .general import normpath
         
-        # see `FrameFinder.getinfo._fix_filename_location`
-        if info.source_filename.startswith('<'):
-            filename = info.source_filename
+        frame_0 = frame
+        frame_x: FrameType
+        for _ in range(traceback_level):
+            frame = frame.f_back
+        frame_x = frame
+        
+        struct = namedtuple('FrameInfo', (
+            'direct_filepath', 'direct_lineno',
+            'target_filepath', 'target_lineno',
+            'target_funcname',
+        ))
+        
+        if (x := frame_x.f_code.co_name).startswith('<'):
+            funcname = x
         else:
-            filename = os.path.relpath(info.source_filename, self.working_dir)
-        lineno = info.source_lineno
-        name = x if (x := info.source_name).startswith('<') else x + '()'
-        varnames = ()
+            funcname = x + '()'
         
-        if advanced:
-            if info.direct_filename not in self._sourcemap:
-                self._indexing_filemap(info.direct_filename)
-            varnames = self._sourcemap[info.direct_filename].get(
-                info.direct_lineno, ())
+        return struct(
+            normpath(frame_0.f_globals.get('__file__', '<unknown>')),
+            frame_0.f_lineno,
+            normpath(frame_x.f_globals.get('__file__', '<unknown>')),
+            frame_x.f_lineno,
+            funcname,
+        )
+    
+    def get_sourcemap(self, frame: FrameType, traceback_level: int = 0,
+                      advanced=False):
+        info = self.get_frame_info(frame, traceback_level)
         
         struct = namedtuple('InfoStruct', (
-            'filename', 'lineno', 'name', 'varnames'
+            'filepath', 'lineno', 'funcname', 'varnames'
         ))
-        return struct(filename, lineno, name, varnames)
+        
+        if advanced:
+            if info.direct_filepath not in self._sourcemap:
+                self._indexing_filemap(info.direct_filepath)
+            varnames = self._sourcemap[info.direct_filepath].get(
+                info.direct_lineno, ())
+        else:
+            varnames = ()
+        
+        return struct(
+            info.target_filepath,
+            info.target_lineno,
+            info.target_funcname,
+            varnames,
+        )
     
-    def _indexing_filemap(self, filename: str):
+    def _indexing_filemap(self, filepath: str):
         """
         Args:
-            filename
+            filepath
         """
-        if filename.startswith('<'):
-            # see `FrameFinder.getinfo._fix_filename_location`
-            self._sourcemap.setdefault(filename, {})
+        if filepath.startswith('<'):
+            # see `FrameFinder.getinfo._fix_filepath_location`
+            self._sourcemap.setdefault(filepath, {})
             return
         
         from .scanner.const import VARIABLE_NAME
@@ -133,12 +84,10 @@ class SourceMap:
                 text = match.fulltext.strip()
                 if not text:
                     continue
-                if not text.startswith('lk.log'):
+                if not text.startswith('print'):
                     # FIXME (Warning): in lk-logger v4.0.*, the varname-
                     #  detection feature is only enabled when content starts
-                    #  with 'lk.log'.
-                    continue
-                elif re.match(r'^lk\.log\w*\(\)', text):
+                    #  with specific prefix.
                     continue
                 try:
                     nonlocal node
@@ -146,11 +95,11 @@ class SourceMap:
                     lineno = match.cursor.lineno + 1
                     node[lineno] = tuple(varnames)
                 except ScanningError:
-                    nonlocal filename
+                    nonlocal filepath
                     raise ScanningError(
                         match.cursor.lineno + 1, text,
                         0, '<unknown>',
-                        f'<filename: {filename}>'
+                        f'<filepath: {filepath}>'
                     )
         
         def _analyse_block(text: str):
@@ -225,15 +174,13 @@ class SourceMap:
             
             return text
         
-        node = self._sourcemap.setdefault(filename, {})
+        node = self._sourcemap.setdefault(filepath, {})
         
-        with open(filename, 'r', encoding='utf-8') as f:
-            node = self._sourcemap.setdefault(filename, {})
+        with open(filepath, 'r', encoding='utf-8') as f:
+            node = self._sourcemap.setdefault(filepath, {})
             _get_blocks((x.rstrip('\n') for x in f.readlines()))
 
 
-frame_finder = FrameFinder()
-getframe = frame_finder.getframe
 sourcemap = SourceMap()
 
-__all__ = ['frame_finder', 'getframe', 'sourcemap']
+__all__ = ['sourcemap']
