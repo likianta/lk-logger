@@ -45,9 +45,9 @@ class MessageFormatter:
     @staticmethod
     def fmt_message(msg: str, rich: bool) -> str:
         if rich:
-            return msg
+            return msg.replace(';\t', '[grey];\t[/]')
         else:
-            return msg.replace('[', '\\[')
+            return msg.replace('[', '\\[').replace(';\t', '[grey];\t[/]')
     
     _width_cache = {}  # dict[int raw_width_of_text, int suggested_width]
     
