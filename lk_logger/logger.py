@@ -3,10 +3,12 @@ import sys
 from inspect import currentframe
 
 from pytermgui import parser
+from pytermgui.prettifiers import prettify
 from pytermgui import tim
 
 from .general import normpath
 from .general import std_print
+from .markup import MarkupAnalyser
 from .message_formatter import MessageFormatter
 from .sourcemap import sourcemap
 
@@ -129,56 +131,6 @@ class PathHelper:
         return out
 
 
-class MarkupAnalyser:
-    """
-    readme:
-        ~/docs/markup.zh.md
-    
-    markup list:
-        :d  divider line
-        :i  index
-        :l  long / loose
-        :p  parent layer
-        :r  rich
-        :s  short
-        :t  tag
-        :v  verbose / log level
-    """
-    
-    def __init__(self):
-        from re import compile
-        self._mark_pattern = compile(r'[a-z]\d*')
-    
-    def analyse_markup(self, markup: str) -> list:
-        """
-        return:
-            iterable[tuple[literal mark, int number]]
-                mark:
-                    a ':'-prefixed character.
-                    literal: ':d', ':i', ':l', ':p', ':r', ':s', ':t', ':v'.
-                number: 0, 1, 2, ...
-        """
-        marks = self._mark_pattern.findall(markup)  # list[str]
-        out = []
-        defaults = {
-            'd': 0,
-            'i': 1,
-            'l': 0,
-            'p': 1,
-            'r': 0,
-            's': 0,
-            't': 0,
-            'v': 0,
-        }
-        for m in marks:
-            if len(m) == 1:
-                # out.append((m, None))
-                out.append((m, defaults[m]))
-            else:
-                out.append((m[0], int(m[1:])))
-        return out
-
-
 class LKLogger:
     
     def __init__(self):
@@ -220,7 +172,7 @@ class LKLogger:
         
         markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
         traceback_level = 0  # int[default 1]
-        has_rich_mark = False
+        marks = {}
         
         if args:
             if (
@@ -242,27 +194,29 @@ class LKLogger:
                 # analyse markup
                 marks = self._markup_analyser.analyse_markup(markup)
                 if marks:
-                    for m, i in marks:
-                        if m == 'd':
-                            message_details['divider_line'] = '-' * 80
-                        elif m == 'i':
-                            if i == 0:
-                                self._counter = 0
-                            self._counter += 1
-                            message_details['index'] = str(self._counter)
-                        elif m == 'l':
-                            pass
-                        elif m == 'p':
-                            traceback_level = i
-                        elif m == 'r':
-                            has_rich_mark = True
-                        elif m == 's':
-                            pass
-                        elif m == 'v':
-                            message_details['log_level'] = (
-                                'trace', 'debug', 'info',
-                                'warn', 'error', 'fatal'
-                            )[i]
+                    if 'd' in marks:
+                        message_details['divider_line'] = '-' * 80
+                    if 'i' in marks:
+                        if marks['i'] == 0:
+                            self._counter = 0
+                        self._counter += 1
+                        message_details['index'] = str(self._counter)
+                    if 'l' in marks:
+                        args = tuple((
+                            prettify(x, indent=4)
+                            for x in args
+                        ))
+                    if 'p' in marks:
+                        traceback_level = marks['p']
+                    if 'r' in marks:
+                        pass
+                    if 's' in marks:
+                        pass
+                    if 'v' in marks:
+                        message_details['log_level'] = (
+                            'trace', 'debug', 'info',
+                            'warn', 'error', 'fatal'
+                        )[marks['v']]
         
         info = sourcemap.get_sourcemap(
             frame=currentframe().f_back,
@@ -358,6 +312,15 @@ class LKLogger:
         message_elements.append(
             _formatter.fmt_separator(' : ')
         )
+        if message_details['log_level']:
+            message_elements.append(
+                _formatter.fmt_level(
+                    text='[bold][{}][/]'.format(
+                        message_details['log_level'].upper()
+                    ), level=message_details['log_level']
+                )
+            )
+            message_elements.append(' ')
         if message_details['index']:
             message_elements.append(
                 _formatter.fmt_index(
@@ -372,12 +335,23 @@ class LKLogger:
                 )
             )
             message_elements.append(' ')
+        if 'l' in marks:
+            message_details['message'] = message_details['message'].replace(
+                ';\t', '\n'
+            )
         message_elements.append(
             _formatter.fmt_message(
                 message_details['message'],
-                has_rich_mark
+                rich='r' in marks or 'l' in marks,
+                multilines='l' in marks,
             )
         )
+        if message_details['log_level'] and \
+                message_details['log_level'] != 'trace':
+            message_elements[-1] = _formatter.fmt_level(
+                message_elements[-1],
+                level=message_details['log_level']
+            )
         
         tim.print(''.join(message_elements))
     
