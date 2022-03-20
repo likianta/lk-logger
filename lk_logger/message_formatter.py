@@ -1,3 +1,4 @@
+from textwrap import indent
 from typing import Union
 
 
@@ -43,11 +44,44 @@ class MessageFormatter:
         return '[yellow]{}[/]'.format(div_)
     
     @staticmethod
-    def fmt_message(msg: str, rich: bool) -> str:
+    def fmt_message(msg: str, rich: bool, multilines=False) -> str:
         if rich:
-            return msg.replace(';\t', '[grey];\t[/]')
+            if multilines:
+                x = []
+                for line in msg.splitlines():
+                    if line.startswith('    '):
+                        how_many = len(line) - len(line.lstrip())
+                        spaces = line[:how_many]
+                        rich_indent = spaces.replace('    ', '[236]│[/]   ')
+                        x.append(rich_indent + line[how_many:])
+                    else:
+                        x.append(line)
+                out = '\n' + indent('\n'.join(x), '    ')
+                return out
+            else:
+                return msg.replace(';\t', '[grey];\t[/]')
         else:
-            return msg.replace('[', '\\[').replace(';\t', '[grey];\t[/]')
+            if multilines:
+                out = msg.replace('[', '\\[')
+                out = '\n' + indent(out, '    ')
+                return out
+            else:
+                return msg.replace('[', '\\[').replace(';\t', '[grey];\t[/]')
+    
+    @staticmethod
+    def fmt_level(text: str, level: str) -> str:
+        colors = {
+            'trace': '',
+            'debug': 'dim',
+            'info' : 'brightblue',
+            'warn' : 'yellow',
+            'error': 'brightred',
+            'fatal': 'red',
+        }
+        if c := colors.get(level):
+            return '[{}]{}[/]'.format(c, text)
+        else:
+            return text
     
     _width_cache = {}  # dict[int raw_width_of_text, int suggested_width]
     
