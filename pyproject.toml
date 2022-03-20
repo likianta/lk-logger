@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "lk-logger"
-version = "4.0.7"
+version = "5.0.0dev3"
 description = "Python advanced print with varnames."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+pytermgui = ""
 
 [tool.poetry.dev-dependencies]
 
