@@ -28,17 +28,12 @@ class SourceMap:
             'target_funcname',
         ))
         
-        if (x := frame_x.f_code.co_name).startswith('<'):
-            funcname = x
-        else:
-            funcname = x + '()'
-        
         return struct(
             normpath(frame_0.f_globals.get('__file__', '<unknown>')),
             frame_0.f_lineno,
             normpath(frame_x.f_globals.get('__file__', '<unknown>')),
             frame_x.f_lineno,
-            funcname,
+            frame_x.f_code.co_name,
         )
     
     def get_sourcemap(self, frame: FrameType, traceback_level: int = 0,
