@@ -1,40 +1,18 @@
-import builtins
 import os
 import sys
 from inspect import currentframe
 
-from ._builtin_print import print
+from pytermgui import parser
+from pytermgui import tim
+
 from .general import normpath
+from .general import std_print
+from .message_formatter import MessageFormatter
 from .sourcemap import sourcemap
 
+setattr(parser, 'print', std_print)
+_formatter = MessageFormatter()
 
-# -----------------------------------------------------------------------------
-# global controls
-
-def setup(**kwargs):
-    """
-    args:
-        kwargs: see `LoggingConfig:docstring`.
-    """
-    global lk
-    lk.configure(**kwargs)
-    setattr(builtins, 'print', lk.log)
-
-
-def uninstall():
-    setattr(builtins, 'print', print)
-
-
-def enable():
-    global lk
-    setattr(builtins, 'print', lk.log)
-
-
-def disable():
-    setattr(builtins, 'print', lambda *_, **__: None)
-
-
-# -----------------------------------------------------------------------------
 
 class LoggingConfig:
     """
@@ -228,6 +206,7 @@ class LKLogger:
             self.__external_libs = PathHelper.indexing_external_libs()
         return self.__external_libs
     
+    # noinspection PyUnresolvedReferences
     def log(self, *args, **_):
         message_details = {
             'divider_line': '',
@@ -241,6 +220,8 @@ class LKLogger:
         
         markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
         traceback_level = 0  # int[default 1]
+        has_rich_mark = False
+        
         if args:
             if (
                     isinstance(args[0], str) and args[0].startswith(':')
@@ -248,7 +229,7 @@ class LKLogger:
                 markup_pos = 1
                 markup, args = args[0], args[1:]
             elif len(args) > 1 and (
-                    isinstance(args[-1], str) and args[-1].starts_with(':')
+                    isinstance(args[-1], str) and args[-1].startswith(':')
             ):
                 markup_pos = -1
                 markup, args = args[-1], args[:-1]
@@ -274,7 +255,7 @@ class LKLogger:
                         elif m == 'p':
                             traceback_level = i
                         elif m == 'r':
-                            pass
+                            has_rich_mark = True
                         elif m == 's':
                             pass
                         elif m == 'v':
@@ -355,23 +336,50 @@ class LKLogger:
         message_details['lineno'] = str(info.lineno)
         
         # show message
+        global _formatter
         # noinspection PyListCreation
-        message_parts = []
-        message_parts.append(message_details['filepath'] + ':')
-        message_parts.append(message_details['lineno'])
-        message_parts.append('\t>>\t')
-        if (x := message_details['funcname']).startswith('<'):
-            message_parts.append(x)
-        else:
-            message_parts.append(x + '()')
-        message_parts.append('\t>>\t')
+        message_elements = []
+        message_elements.append(
+            _formatter.fmt_source(
+                message_details['filepath'],
+                message_details['lineno'],
+                fmt_width=True
+            )
+        )
+        message_elements.append(
+            _formatter.fmt_separator(' : ')
+        )
+        message_elements.append(
+            _formatter.fmt_funcname(
+                message_details['funcname'],
+                fmt_width=True
+            )
+        )
+        message_elements.append(
+            _formatter.fmt_separator(' : ')
+        )
         if message_details['index']:
-            message_parts.append('[{}] '.format(message_details['index']))
+            message_elements.append(
+                _formatter.fmt_index(
+                    message_details['index']
+                )
+            )
+            message_elements.append(' ')
         if message_details['divider_line']:
-            message_parts.append(message_details['divider_line'] + ' ')
-        message_parts.append(message_details['message'])
+            message_elements.append(
+                _formatter.fmt_divider(
+                    message_details['divider_line']
+                )
+            )
+            message_elements.append(' ')
+        message_elements.append(
+            _formatter.fmt_message(
+                message_details['message'],
+                has_rich_mark
+            )
+        )
         
-        print(''.join(message_parts))
+        tim.print(''.join(message_elements))
     
     def _is_external_lib(self, filepath: str) -> bool:
         return not filepath.startswith(self._proj_root)
