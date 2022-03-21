@@ -3,9 +3,10 @@ import sys
 from inspect import currentframe
 
 from pytermgui import parser
-from pytermgui.prettifiers import prettify
 from pytermgui import tim
+from pytermgui.prettifiers import prettify
 
+from ._internal_debug import debug  # noqa
 from .general import normpath
 from .general import std_print
 from .markup import MarkupAnalyser
@@ -208,6 +209,11 @@ class LKLogger:
                             self._counter = 0
                             if args:
                                 self._counter += 1
+                            else:
+                                message_details['message'] = \
+                                    '[grey](index reset)[/grey]'
+                                # make sure 'r' key exists.
+                                marks.setdefault('r', 0)
                         else:
                             self._counter += 1
                         message_details['index'] = str(self._counter)
@@ -264,11 +270,12 @@ class LKLogger:
                         os.path.relpath(info.filepath, self._cwd)
                     )
                 else:
-                    for lib_path in reversed(self._external_libs):
+                    for lib_path in sorted(self._external_libs, reverse=True):
                         if info.filepath.startswith(lib_path):
-                            lib_name = self._external_libs[lib_path]
-                            lib_relpath = info.filepath[len(lib_path):] or \
-                                          os.path.basename(info.filepath)
+                            lib_name = self._external_libs[lib_path].lower()
+                            lib_relpath = \
+                                info.filepath[len(lib_path):].lstrip('./') or \
+                                os.path.basename(info.filepath)
                             break
                     else:
                         lib_name = ''
@@ -276,13 +283,19 @@ class LKLogger:
                     
                     if fmt == 'pretty_relpath':
                         if lib_name:
-                            message_details['filepath'] = '[{}]/{}'.format(
-                                lib_name, lib_relpath)
+                            message_details['filepath'] = \
+                                '[magenta]\\[{}][/]/{}'.format(
+                                    lib_name, lib_relpath
+                                )
                         else:
-                            message_details['filepath'] = '[{}]/{}'.format(
-                                'unknown', lib_relpath)
+                            message_details['filepath'] = \
+                                '[red]\\[{}][/]/{}'.format(
+                                    'unknown', lib_relpath
+                                )
+                        # debug(lib_name, lib_relpath)
                     elif fmt == 'lib_name_only':
-                        message_details['filepath'] = f'[{lib_name}]'
+                        message_details['filepath'] = \
+                            f'[magenta]\\[{lib_name}][/]'
             else:  # no
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
@@ -294,7 +307,8 @@ class LKLogger:
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
                 )
-        if (x := message_details['filepath']) and not x.startswith('../'):
+        if (x := message_details['filepath']) and \
+                not x.startswith(('../', '[')):
             message_details['filepath'] = './' + x
         
         message_details['lineno'] = str(info.lineno)
@@ -311,7 +325,7 @@ class LKLogger:
             )
         )
         message_elements.append(
-            _formatter.fmt_separator(' : ')
+            _formatter.fmt_separator('\t>>\t')
         )
         message_elements.append(
             _formatter.fmt_funcname(
@@ -320,7 +334,7 @@ class LKLogger:
             )
         )
         message_elements.append(
-            _formatter.fmt_separator(' : ')
+            _formatter.fmt_separator('\t>>\t')
         )
         if message_details['log_level']:
             message_elements.append(

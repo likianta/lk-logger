@@ -7,13 +7,13 @@ from ._internal_debug import debug  # noqa
 
 class MessageFormatter:
     # see `self.fmt_message`.
-    _braket_pattern = re.compile(r'\[[@\w! ():]+]')
+    _braket_pattern = re.compile(r'\[[@_a-z! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    fmt_width=False) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
-            text_b = self._fmt_width(text_a, min_width=15)
+            text_b = self._fmt_width(text_a, min_width=16)
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
@@ -33,7 +33,7 @@ class MessageFormatter:
             funcname = funcname[1:-1]
         if fmt_width:
             funcname = self._fmt_width(
-                funcname, min_width=10, incremental_unit=2
+                funcname, min_width=8, incremental_unit=2
             )
         if is_func:
             return '[green]{}[/]'.format(funcname)
