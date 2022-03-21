@@ -1,8 +1,19 @@
 """
 usage:
     from ._internal_debug import debug
+    
+    # 1
     with debug.enable():
         debug('some message')
+        
+    # 2
+    debug.enabled = True
+    debug('some message')
+    ...
+    debug.enabled = False
+    
+    # 3
+    debug('some message', condition=True)
 """
 from contextlib import contextmanager
 
@@ -23,8 +34,8 @@ class Debugger:
         yield
         self.enabled = False
     
-    def __call__(self, *args):
-        if self.enabled:
+    def __call__(self, *args, condition=None):
+        if self.enabled or condition:
             std_print(*args)
 
 
