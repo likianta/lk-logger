@@ -158,8 +158,15 @@ class LKLogger:
             self.__external_libs = PathHelper.indexing_external_libs()
         return self.__external_libs
     
-    # noinspection PyUnresolvedReferences
     def log(self, *args, **_):
+        msg = self._main(currentframe().f_back, *args)
+        tim.print(msg)
+    
+    def fmt(self, *args, **_):
+        return self._main(currentframe().f_back, *args)
+    
+    # noinspection PyUnresolvedReferences
+    def _main(self, frame, *args) -> str:
         message_details = {
             'divider_line': '',
             'filepath'    : '',
@@ -219,7 +226,7 @@ class LKLogger:
                         )[marks['v']]
         
         info = sourcemap.get_sourcemap(
-            frame=currentframe().f_back,
+            frame=frame,
             traceback_level=traceback_level,
             advanced=self._config.show_varnames,
         )
@@ -353,7 +360,7 @@ class LKLogger:
                 level=message_details['log_level']
             )
         
-        tim.print(''.join(message_elements))
+        return ''.join(message_elements)
     
     def _is_external_lib(self, filepath: str) -> bool:
         return not filepath.startswith(self._proj_root)

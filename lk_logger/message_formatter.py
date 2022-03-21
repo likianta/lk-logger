@@ -1,10 +1,12 @@
 import re
 from textwrap import indent
 from typing import Union
+
 from ._internal_debug import debug  # noqa
 
 
 class MessageFormatter:
+    # see `self.fmt_message`.
     _braket_pattern = re.compile(r'\[[@\w! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
@@ -65,6 +67,9 @@ class MessageFormatter:
         else:
             # FIXME: this is a workaround for pytermgui's parser.
             #   1. ptg cannot parse backslash, so we convert it to slash.
+            #   2. ptg tries to parse any valid patterns, but ignore the
+            #      invalid ones. we should add a backslash to the former, but
+            #      do nothing to the latter.
             msg = msg.replace('\\', '■')
             # # msg = msg.replace('[', '\\[')
             msg = self._braket_pattern.sub(lambda x: '\\' + x.group(), msg)

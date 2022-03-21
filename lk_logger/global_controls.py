@@ -13,7 +13,11 @@ def setup(**kwargs):
     """
     lk.configure(**kwargs)
     setattr(builtins, 'print', lk.log)
-    tim.print('[bold !rainbow]lk-logger is ready![/]')
+    print('[bold]'
+          '[red]♥[/red]'
+          '[!rainbow] lk-logger is ready [/!rainbow]'
+          '[red]♥[/red]'
+          '[/bold]', ':rp')
 
 
 def uninstall():

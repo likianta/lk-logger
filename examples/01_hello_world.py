@@ -46,9 +46,3 @@ def func1():
 
 response = func1()
 print(response)
-
-try:
-    _ = 1 / 0
-except Exception:
-    from rich.console import Console
-    Console().print_exception(show_locals=True)
