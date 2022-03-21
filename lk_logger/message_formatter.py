@@ -1,8 +1,11 @@
+import re
 from textwrap import indent
 from typing import Union
+from ._internal_debug import debug  # noqa
 
 
 class MessageFormatter:
+    _braket_pattern = re.compile(r'\[[@\w! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    fmt_width=False) -> str:
@@ -43,8 +46,7 @@ class MessageFormatter:
     def fmt_divider(div_: str) -> str:
         return '[yellow]{}[/]'.format(div_)
     
-    @staticmethod
-    def fmt_message(msg: str, rich: bool, multilines=False) -> str:
+    def fmt_message(self, msg: str, rich: bool, multilines=False) -> str:
         if rich:
             if multilines:
                 x = []
@@ -61,12 +63,18 @@ class MessageFormatter:
             else:
                 return msg.replace(';\t', '[grey];\t[/]')
         else:
+            # FIXME: this is a workaround for pytermgui's parser.
+            #   1. ptg cannot parse backslash, so we convert it to slash.
+            msg = msg.replace('\\', '■')
+            # # msg = msg.replace('[', '\\[')
+            msg = self._braket_pattern.sub(lambda x: '\\' + x.group(), msg)
+            msg = msg.replace('■', '[grey]/[/]')
+            # debug('[LKDEBUG]', f'{msg = }')
             if multilines:
-                out = msg.replace('[', '\\[')
-                out = '\n' + indent(out, '    ')
+                out = '\n' + indent(msg, '    ')
                 return out
             else:
-                return msg.replace('[', '\\[').replace(';\t', '[grey];\t[/]')
+                return msg.replace(';\t', '[grey];\t[/]')
     
     @staticmethod
     def fmt_level(text: str, level: str) -> str:
