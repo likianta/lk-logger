@@ -2,6 +2,7 @@ import re
 from collections import namedtuple
 from types import FrameType
 
+from ._internal_debug import debug  # noqa
 from .scanner import get_all_blocks
 from .scanner import get_variables
 
@@ -79,10 +80,7 @@ class SourceMap:
                 text = match.fulltext.strip()
                 if not text:
                     continue
-                if not text.startswith('print'):
-                    # FIXME (Warning): in lk-logger v4.0.*, the varname-
-                    #  detection feature is only enabled when content starts
-                    #  with specific prefix.
+                if not text.startswith('print'):  # FIXME: this is not stable
                     continue
                 try:
                     nonlocal node

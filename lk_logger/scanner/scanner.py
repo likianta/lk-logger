@@ -10,6 +10,7 @@ from .analyser import Analyser
 from .const import *
 from .exceptions import *
 from .typehint import *
+from .._internal_debug import debug  # noqa
 
 
 def get_all_blocks(*lines: str, end_mark='\n'):
@@ -32,6 +33,7 @@ def get_all_blocks(*lines: str, end_mark='\n'):
         f'Please make sure each of lines must not end with "{end_mark}". '
         f'(You need to strip them before calling this function)'
     )
+    assert len(end_mark) == 1
     
     analyser = Analyser(end=end_mark)
     #   IMPROVEMENT: if `lines:each` contains '\n', which means we can't pass
@@ -52,11 +54,7 @@ def get_all_blocks(*lines: str, end_mark='\n'):
     for line in lines:
         cursor.update_lineno()
         
-        if end_mark is None:
-            line_ = list(line) + [end_mark]
-        else:
-            # line_ = line.rstrip(whitespace + end_mark) + end_mark
-            line_ = line + end_mark
+        line_ = line + end_mark
         for char in line_:  # MARK: 20210901173115
             cursor.update_charno()
             # _debug(cursor.i, line, cursor.j, char, analyser.symbols)
@@ -75,6 +73,8 @@ def get_all_blocks(*lines: str, end_mark='\n'):
                 while char != end_mark:
                     cursor.update_charno()
                     char = line_[cursor.charno]
+                    debug(cursor.charno, char)
+                yield from _submit()
                 break
             elif ret_code == UNREACHABLE_CASE:
                 raise UnreachableCase(
@@ -108,12 +108,9 @@ def get_variables(line: str):
         #   `~.rstrip(...)`: for example:
         #       line = 'a, b, c, \n' -> 'a, b, c'
         
-        # from lk_logger_3_6 import lk
-        # lk.logt('[D3957]', 'stripped lk.log* arounded', line)
-        
         for match1 in get_all_blocks(line, end_mark=','):
             element = match1.fulltext.strip()
-            # lk.logt('[D5018]', element)
+            # debug(f'{element = }')
             
             if not element:
                 # # continue
