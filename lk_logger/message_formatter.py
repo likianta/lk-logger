@@ -7,7 +7,7 @@ from ._internal_debug import debug  # noqa
 
 class MessageFormatter:
     # see `self.fmt_message`.
-    _braket_pattern = re.compile(r'\[[@_a-z! ():]+]')
+    _braket_pattern = re.compile(r'\[[/@_a-z! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    fmt_width=False) -> str:

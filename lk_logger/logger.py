@@ -286,17 +286,17 @@ class LKLogger:
                     if fmt == 'pretty_relpath':
                         if lib_name:
                             message_details['filepath'] = \
-                                '[magenta]\\[{}][/]/{}'.format(
+                                '[magenta]\\[{}][/magenta]/{}'.format(
                                     lib_name, lib_relpath
                                 )
                         else:
                             message_details['filepath'] = \
-                                '[red]\\[{}][/]/{}'.format(
+                                '[red]\\[{}][/red]/{}'.format(
                                     'unknown', lib_relpath
                                 )
                     elif fmt == 'lib_name_only':
                         message_details['filepath'] = \
-                            f'[magenta]\\[{lib_name}][/]'
+                            f'[magenta]\\[{lib_name}][/magenta]'
             else:  # no
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
