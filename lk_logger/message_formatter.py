@@ -73,7 +73,7 @@ class MessageFormatter:
             msg = msg.replace('\\', '■')
             # # msg = msg.replace('[', '\\[')
             msg = self._braket_pattern.sub(lambda x: '\\' + x.group(), msg)
-            msg = msg.replace('■', '[grey]/[/]')
+            msg = msg.replace('■', '[magenta]/[/]')
             # debug('[LKDEBUG]', f'{msg = }')
             if multilines:
                 out = '\n' + indent(msg, '    ')

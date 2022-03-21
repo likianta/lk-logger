@@ -2,6 +2,13 @@ import lk_logger
 lk_logger.setup(show_varnames=True)
 
 
+def test_print_empty():
+    print()
+    print('')
+    print(())
+    print(None)
+
+
 def test_source_scanner():
     # test if comment crashes souce scanner.
     a, b = 1, 2
@@ -23,6 +30,8 @@ def test_backslash_brackets():
     print(':i', 'hello [world(]')  # 8 -> r'hello [world(]'
     print(':i', 'hello [world()]')  # 9 -> r'hello [world()]'
     print(':i', 'hello [world(a:b)]')  # 10 -> r'hello [world(a:b)]'
+    
+    print(':i', r'C:\Users\<Username>\AppData\Local\Temp')
     
     x = {'a': 'aaa'}
     print(':i0', x['a'])  # 1 -> "x['a'] = aaa"

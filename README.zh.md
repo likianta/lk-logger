@@ -39,11 +39,11 @@ lk-logger 带来以下特性:
     print(a, b, a + b)
     ```
 
-    ![](.assets/YXecYnrNMe.png)
+    ![](.assets/20220321153646.png)
 
 5. 高亮打印.
 
-    ![](.assets/20220321-115509.png)
+    ![](.assets/20220321115509.png)
 
 ## 安装
 
