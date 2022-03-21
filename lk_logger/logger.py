@@ -206,7 +206,10 @@ class LKLogger:
                     if 'i' in marks:
                         if marks['i'] == 0:
                             self._counter = 0
-                        self._counter += 1
+                            if args:
+                                self._counter += 1
+                        else:
+                            self._counter += 1
                         message_details['index'] = str(self._counter)
                     if 'l' in marks:
                         args = tuple((
