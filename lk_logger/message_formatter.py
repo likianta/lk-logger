@@ -13,7 +13,7 @@ class MessageFormatter:
                    fmt_width=False) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
-            text_b = self._fmt_width(text_a, min_width=20)
+            text_b = self._fmt_width(text_a, min_width=15)
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
