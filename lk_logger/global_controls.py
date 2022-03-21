@@ -20,7 +20,7 @@ def setup(**kwargs):
           '[/bold]', ':rp')
 
 
-def uninstall():
+def unload():
     setattr(builtins, 'print', std_print)
 
 
