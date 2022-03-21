@@ -1,12 +1,28 @@
 # LK Logger
 
-Advaned print tool for Python.
+Advanced print tool for Python.
 
 Features:
 
-- Simple. Just add two lines of code to enable lk-logger.
-- Non-intrusive. Enable it with that two lines of code, no more modifications on your source code projects (this is very low-cost and low-effort migration). You will directly see new effects at once.
+- Simple. Add two lines of code to enable lk-logger.
+
+    ```python
+    import lk_logger
+    lk_logger.setup()
+    ```
+
+    It will replace Python's built-in `print` function to take care all the leftovers.
+
+- Non-intrusive. After enable it like above, no more modifications on your source code projects (this is low-cost and low-effort migration). You will see new effects at once.
+
+    This would be a nice chioce for developers who have already dived into their own projects with Python `print` too much to get a new start with a new logging tool.
+
+    You can have a try to apply lk-logger to your projects with that two lines of code.
+
 - Code highlight.
+
+    ![](.assets/20220321155834.png)
+
 - Show both varnames and values.
 
     before:
@@ -19,6 +35,8 @@ Features:
     after:
 
     ```python
+    import lk_logger
+    lk_logger.setup(show_varnames=True)
     a, b = 1, 2
     print(a, b, a + b)
     ```
@@ -27,11 +45,11 @@ Features:
 
 ## Install
 
-```
+```shell
 pip install lk-logger
 ```
 
-The latest version is 5.0+.
+The latest version is 5.0.0 or higher.
 
 ## Quick Start
 
@@ -143,7 +161,7 @@ Screenshot:
 
 ## Caution
 
-- The back slash will be forcedly converted to forward slash.
+- The back slash will be forcely converted to forward slash.
 
     ```python
     print(r'C:\Users\<Username>\AppData\Local\Temp')
