@@ -33,7 +33,7 @@ class MarkupAnalyser:
             'r': 0,
             's': 0,
             't': 0,
-            'v': 0,
+            'v': 1,
         }
         marks = self._mark_pattern.findall(markup) or ()  # list[str]
         for m in marks:

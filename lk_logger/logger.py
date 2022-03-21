@@ -281,6 +281,8 @@ class LKLogger:
                         lib_name = ''
                         lib_relpath = info.filepath.lstrip('./')
                     
+                    # debug(lib_name, lib_relpath)
+                    
                     if fmt == 'pretty_relpath':
                         if lib_name:
                             message_details['filepath'] = \
@@ -292,7 +294,6 @@ class LKLogger:
                                 '[red]\\[{}][/]/{}'.format(
                                     'unknown', lib_relpath
                                 )
-                        # debug(lib_name, lib_relpath)
                     elif fmt == 'lib_name_only':
                         message_details['filepath'] = \
                             f'[magenta]\\[{lib_name}][/]'

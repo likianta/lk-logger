@@ -73,7 +73,7 @@ def get_all_blocks(*lines: str, end_mark='\n'):
                 while char != end_mark:
                     cursor.update_charno()
                     char = line_[cursor.charno]
-                    debug(cursor.charno, char)
+                    # debug(cursor.charno, char)
                 yield from _submit()
                 break
             elif ret_code == UNREACHABLE_CASE:
