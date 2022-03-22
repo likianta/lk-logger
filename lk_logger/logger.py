@@ -76,6 +76,10 @@ class LoggingConfig:
 class LKLogger:
     
     def __init__(self):
+        # self._cache = {}  # TODO: be complete in next version
+        # #   dict[tuple k, namedtuple v]
+        # #       k: (filepath, lineno)
+        # #       v: ...
         self._config = LoggingConfig()
         self._counter = 0
         self._cwd = normpath(os.getcwd())

@@ -2,20 +2,6 @@ import lk_logger
 lk_logger.setup(show_varnames=True)
 
 
-def test_print_empty():
-    print()
-    print('')
-    print(())
-    print(None)
-
-
-def test_source_scanner():
-    # test if comment crashes souce scanner.
-    a, b = 1, 2
-    print(a, b)  # this is a comment
-    print(a, b)
-
-
 def test_backslash_brackets():
     # test backslash brackets (`\\[` and `\[`) behaviors.
     print(':i', 'hello [world] ---')  # 1 -> r'hello [world] ---'
@@ -35,8 +21,3 @@ def test_backslash_brackets():
     
     x = {'a': 'aaa'}
     print(':i0', x['a'])  # 1 -> "x['a'] = aaa"
-
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main()
