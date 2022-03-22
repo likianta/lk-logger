@@ -15,9 +15,7 @@ Features:
 
 - Non-intrusive. After enable it like above, no more modifications on your source code projects (this is low-cost and low-effort migration). You will see new effects at once.
 
-    This would be a nice chioce for developers who have already dived into their own projects with Python `print` too much to get a new start with a new logging tool.
-
-    You can have a try to apply lk-logger to your projects with that two lines of code.
+    This would be a good chioce for developers who have already dived into their own projects with Python `print` too much to get a new start with a new logging tool.
 
 - Code highlight.
 

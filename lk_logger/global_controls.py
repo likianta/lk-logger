@@ -9,7 +9,7 @@ from .logger import lk
 def setup(**kwargs):
     """
     args:
-        kwargs: see `./logger.py > LoggingConfig > docstring`.
+        kwargs: see `./logger.py > LoggingConfig`.
     """
     lk.configure(**kwargs)
     setattr(builtins, 'print', lk.log)
