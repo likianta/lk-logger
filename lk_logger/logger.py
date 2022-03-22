@@ -193,12 +193,17 @@ class LKLogger:
                     varnames = info.varnames[1:]
                 else:
                     varnames = info.varnames[:-1]
-                assert len(varnames) == len(args), (varnames, args)
-                # organize args
-                tmp_msg = []
-                for n, a in zip(varnames, args):
-                    tmp_msg.append(f'{n} = {a}' if n else str(a))
-                message_details['message'] = ';\t'.join(tmp_msg)
+                try:
+                    assert len(varnames) == len(args), (varnames, args)
+                except AssertionError:
+                    # debug('failed extracting varnames')
+                    message_details['message'] = ';\t'.join(map(str, args))
+                else:
+                    # organize args
+                    tmp_msg = []
+                    for n, a in zip(varnames, args):
+                        tmp_msg.append(f'{n} = {a}' if n else str(a))
+                    message_details['message'] = ';\t'.join(tmp_msg)
             else:
                 message_details['message'] = ';\t'.join(map(str, args))
         
