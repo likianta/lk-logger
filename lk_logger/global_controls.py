@@ -1,7 +1,5 @@
 import builtins
 
-from pytermgui import tim
-
 from .general import std_print
 from .logger import lk
 
@@ -11,13 +9,17 @@ def setup(**kwargs):
     args:
         kwargs: see `./logger.py > LoggingConfig`.
     """
+    quiet = kwargs.pop('quiet', False)
+    
     lk.configure(**kwargs)
     setattr(builtins, 'print', lk.log)
-    print('[bold]'
-          '[red]♥[/red]'
-          '[!rainbow] lk-logger is ready [/!rainbow]'
-          '[red]♥[/red]'
-          '[/bold]', ':rp')
+    
+    if not quiet:
+        print('[bold]'
+              '[red]♥[/red]'
+              '[!rainbow] lk-logger is ready [/!rainbow]'
+              '[red]♥[/red]'
+              '[/bold]', ':rp')
 
 
 def unload():
