@@ -2,6 +2,7 @@
 name = "lk-logger"
 version = "5.0.0"
 description = "Python advanced print with varnames."
+readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
 
