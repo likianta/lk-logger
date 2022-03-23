@@ -25,7 +25,7 @@ def test_print_from_external_package():
     from lk_logger_test_package import hello  # noqa
 
 
-def hierarchy_reflections():
+def test_parent_reflections():
     def _aaa():
         def _bbb():
             def _ccc():

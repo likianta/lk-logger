@@ -15,11 +15,13 @@ def setup(**kwargs):
     setattr(builtins, 'print', lk.log)
     
     if not quiet:
-        print('[bold]'
-              '[red]♥[/red]'
-              '[!rainbow] lk-logger is ready [/!rainbow]'
-              '[red]♥[/red]'
-              '[/bold]', ':rp')
+        from random import randint
+        slogan = (
+            '[!rainbow]lk-logger is ready[/!rainbow]',
+            '[!gradient(197)]lk-logger is ready[/!gradient]',
+            '[!gradient(197)]lk-logger[/!gradient] [171]is ready[/]',
+        )[randint(0, 2)]
+        print('[bold red]♥[/] ' + slogan + ' [bold red]♥[/]', ':rp')
 
 
 def unload():

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.0.1dev1"
+version = "5.0.1"
 description = "Python advanced print with varnames."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
