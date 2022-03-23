@@ -1,3 +1,14 @@
+"""
+note:
+    pytermgui color names for basic colors:
+        there are some name changes between 4.1.0 and 4.2.0, for example the
+        color number 8 before is 'grey', after is 'bright-black', number 9
+        before is 'brightred', after is 'bright-red'.
+        i'd like to keep pace with the latest version of ptg. so i'll use
+        'bright-black', not 8 although it's not quite compatible insurance.
+        *this decision remains to be changeable in the future.*
+        ref: `pytermgui/colors.py > (var) XTERM_NAMED_COLORS`
+"""
 import re
 from textwrap import indent
 from typing import Union
@@ -7,7 +18,7 @@ from ._internal_debug import debug  # noqa
 
 class MessageFormatter:
     # see `self.fmt_message`.
-    _braket_pattern = re.compile(r'\[[/@_a-z! ():]+]')
+    _braket_pattern = re.compile(r'\[[-/@_a-z! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    fmt_width=False) -> str:
@@ -17,13 +28,15 @@ class MessageFormatter:
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
-        return '[bold cyan]{}[/][dim]:[/][cyan]{}{}[/]'.format(
-            filepath, lineno, additional_space
-        )
+        return ('[underline]'
+                '[bold blue]{0}[/bold /blue]'
+                '[bright-black]:[/bright-black]'
+                '[blue]{1}{2}[/blue]'
+                '[/underline]'.format(filepath, lineno, additional_space))
     
     @staticmethod
     def fmt_separator(sep: str = ' >> ') -> str:
-        return '[grey]{}[/]'.format(sep)
+        return '[bright-black]{}[/]'.format(sep)
     
     def fmt_funcname(self, funcname: str, fmt_width=False) -> str:
         is_func = not funcname.startswith('<')
@@ -56,14 +69,16 @@ class MessageFormatter:
                     if line.startswith('    '):
                         how_many = len(line) - len(line.lstrip())
                         spaces = line[:how_many]
-                        rich_indent = spaces.replace('    ', '[236]│[/]   ')
+                        rich_indent = spaces.replace(
+                            '    ', '[bright-black]│[/]   '
+                        )
                         x.append(rich_indent + line[how_many:])
                     else:
                         x.append(line)
                 out = '\n' + indent('\n'.join(x), '    ')
                 return out
             else:
-                return msg.replace(';\t', '[grey];\t[/]')
+                return msg.replace(';\t', '[bright-black];\t[/]')
         else:
             # FIXME: this is a workaround for pytermgui's parser.
             #   1. ptg cannot parse backslash, so we convert it to slash.
@@ -79,16 +94,16 @@ class MessageFormatter:
                 out = '\n' + indent(msg, '    ')
                 return out
             else:
-                return msg.replace(';\t', '[grey];\t[/]')
+                return msg.replace(';\t', '[bright-black];\t[/]')
     
     @staticmethod
     def fmt_level(text: str, level: str) -> str:
         colors = {
             'trace': '',
-            'debug': 'dim',
-            'info' : 'brightblue',
+            'debug': 'bright-black',
+            'info' : 'bright-blue',
             'warn' : 'yellow',
-            'error': 'brightred',
+            'error': 'bright-red',
             'fatal': 'red',
         }
         if c := colors.get(level):

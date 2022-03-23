@@ -1,1 +1,1 @@
-pytermgui
+pytermgui >= 4.2.0

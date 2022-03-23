@@ -139,10 +139,10 @@ print(':v5', 'this is a FATAL message')
 :p5+    great great great ... grand parent layer
         note: be careful using :p2+, it may crash if the layer not exists
 
-:v0     trace (default)
+:v0     trace
         if you don't like using number, you can use an alias :vT
         (:vT is not supported in current version. we'll bring it soon)
-:v1     debug (alias is :vD)
+:v1     debug (alias is :vD) (default)
 :v2     info (alias is :vI)
 :v3     warning (alias is :vW)
 :v4     error (alias is :vE)
