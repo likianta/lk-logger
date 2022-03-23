@@ -124,9 +124,10 @@ class LKLogger:
             'message'     : '',
         }
         
+        is_external_lib = False
+        marks = {}
         markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
         traceback_level = 0  # int[default 1]
-        marks = {}
         
         if args:
             if (
@@ -214,6 +215,7 @@ class LKLogger:
         if self._config.show_external_lib:
             # is external lib?
             if self._is_external_lib(info.filepath):  # yes
+                is_external_lib = True
                 # path format
                 fmt = self._config.path_format_for_external_lib
                 if fmt == 'relpath':
@@ -237,24 +239,19 @@ class LKLogger:
                     if fmt == 'pretty_relpath':
                         if lib_name:
                             message_details['filepath'] = \
-                                '[magenta]\\[{}][/]/{}'.format(
-                                    lib_name, lib_relpath
-                                )
+                                '[{}]/{}'.format(lib_name, lib_relpath)
                         else:
                             message_details['filepath'] = \
-                                '[red]\\[{}][/]/{}'.format(
-                                    'unknown', lib_relpath
-                                )
+                                '[{}]/{}'.format('unknown', lib_relpath)
                     elif fmt == 'lib_name_only':
-                        message_details['filepath'] = \
-                            f'[magenta]\\[{lib_name}][/]'
+                        message_details['filepath'] = f'[{lib_name}]'
             else:  # no
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
                 )
         else:
             if self._is_external_lib(info.filepath):
-                pass
+                pass  # is_external_lib = True ?
             else:
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
@@ -273,6 +270,7 @@ class LKLogger:
             _formatter.fmt_source(
                 message_details['filepath'],
                 message_details['lineno'],
+                is_external_lib=is_external_lib,
                 fmt_width=True
             )
         )

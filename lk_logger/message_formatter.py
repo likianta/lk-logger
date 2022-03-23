@@ -22,17 +22,37 @@ class MessageFormatter:
     _braket_pattern = re.compile(r'\[[-/@_a-z! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
-                   fmt_width=False) -> str:
+                   is_external_lib: bool = False, fmt_width=False) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
             text_b = self._fmt_width(text_a, min_width=16)
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
+        if is_external_lib:
+            assert filepath.startswith('[')
+            a, b = filepath[1:].split(']', 1)
+            filepath = (
+                '[bold {color}]\\[{a}]'
+                '[bold blue]{b}[/]'.format(
+                    a=a, b=b, color='red' if filepath.startswith('[unknown]')
+                    else 'magenta'
+                )
+            )
+            # FIXME: `tim.print('[blue][magenta]aaa[blue]bbb')`
+            #   'bbb' color is invalid!
+            #   below is a workaround.
+            return (
+                '{0}'
+                '[bright-black]:[/]'
+                '[blue]{1}{2}[/]'.format(
+                    filepath, lineno, additional_space
+                )
+            )
         return (
-            '[underline bold blue]{0}[/]'
-            '[underline bright-black]:[/]'
-            '[underline blue]{1}{2}[/]'.format(
+            '[bold blue]{0}[/]'
+            '[bright-black]:[/]'
+            '[blue]{1}{2}[/]'.format(
                 filepath, lineno, additional_space
             )
         )
