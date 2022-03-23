@@ -295,7 +295,16 @@ class LKLogger:
                     ), level=message_details['log_level']
                 )
             )
-            message_elements.append(' ')
+            message_elements.append('\t')
+            #   why use '\t', not ' '?
+            #   '\t' aligns the following message tidier.
+            #   comparison:
+            #       use ' ':            use '\t':
+            #           [TRACE] ...         [TRACE] ...
+            #           [DEBUG] ...         [DEBUG] ...
+            #           [INFO] ...          [INFO]  ...
+            #           [WARN] ...          [WARN]  ...
+            #                 ^                   ^^
         if message_details['index']:
             message_elements.append(
                 _formatter.fmt_index(
