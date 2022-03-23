@@ -8,6 +8,7 @@ note:
         'bright-black', not 8 although it's not quite compatible insurance.
         *this decision remains to be changeable in the future.*
         ref: `pytermgui/colors.py > (var) XTERM_NAMED_COLORS`
+    there are some markup issues should be known. see `gitbook > ptg-markup.md`.
 """
 import re
 from textwrap import indent
@@ -28,11 +29,13 @@ class MessageFormatter:
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
-        return ('[underline]'
-                '[bold blue]{0}[/bold /blue]'
-                '[bright-black]:[/bright-black]'
-                '[blue]{1}{2}[/blue]'
-                '[/underline]'.format(filepath, lineno, additional_space))
+        return (
+            '[underline bold blue]{0}[/]'
+            '[underline bright-black]:[/]'
+            '[underline blue]{1}{2}[/]'.format(
+                filepath, lineno, additional_space
+            )
+        )
     
     @staticmethod
     def fmt_separator(sep: str = ' >> ') -> str:
@@ -88,8 +91,11 @@ class MessageFormatter:
             msg = msg.replace('\\', '■')
             # # msg = msg.replace('[', '\\[')
             msg = self._braket_pattern.sub(lambda x: '\\' + x.group(), msg)
-            msg = msg.replace('■', '[magenta]/[/]')
-            # debug('[LKDEBUG]', f'{msg = }')
+            if '■' in msg:
+                # # msg = msg.replace('■', '[magenta]/[/]')
+                msg = re.sub('■+', lambda x: r'[magenta]{}[/]'.format(
+                    '/' * len(x.group())), msg)
+            # debug(f'{msg = }')
             if multilines:
                 out = '\n' + indent(msg, '    ')
                 return out
@@ -104,10 +110,11 @@ class MessageFormatter:
             'info' : 'bright-blue',
             'warn' : 'yellow',
             'error': 'bright-red',
-            'fatal': 'red',
+            'fatal': 'bold bright-cyan @bright-red',
         }
         if c := colors.get(level):
-            return '[{}]{}[/]'.format(c, text)
+            # debug('[{}]{}[/]'.format(c, text))
+            return '[{}]{}[/fg]'.format(c, text)
         else:
             return text
     

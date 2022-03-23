@@ -106,6 +106,7 @@ class LKLogger:
     
     def log(self, *args, **_):
         msg = self._main(currentframe().f_back, *args)
+        # debug(msg)
         tim.print(msg)
     
     def fmt(self, *args, **_):
@@ -156,7 +157,7 @@ class LKLogger:
                                 self._counter += 1
                             else:
                                 message_details['message'] = \
-                                    '[grey](index reset)[/grey]'
+                                    '[bright-black](index reset)[/]'
                                 # make sure 'r' key exists.
                                 marks.setdefault('r', 0)
                         else:
@@ -236,17 +237,17 @@ class LKLogger:
                     if fmt == 'pretty_relpath':
                         if lib_name:
                             message_details['filepath'] = \
-                                '[magenta]\\[{}][/magenta]/{}'.format(
+                                '[magenta]\\[{}][/]/{}'.format(
                                     lib_name, lib_relpath
                                 )
                         else:
                             message_details['filepath'] = \
-                                '[red]\\[{}][/red]/{}'.format(
+                                '[red]\\[{}][/]/{}'.format(
                                     'unknown', lib_relpath
                                 )
                     elif fmt == 'lib_name_only':
                         message_details['filepath'] = \
-                            f'[magenta]\\[{lib_name}][/magenta]'
+                            f'[magenta]\\[{lib_name}][/]'
             else:  # no
                 message_details['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
@@ -290,7 +291,7 @@ class LKLogger:
         if message_details['log_level']:
             message_elements.append(
                 _formatter.fmt_level(
-                    text='[bold][{}][/]'.format(
+                    text='[bold][{}][/bold]'.format(
                         message_details['log_level'].upper()
                     ), level=message_details['log_level']
                 )
@@ -305,6 +306,18 @@ class LKLogger:
             #           [INFO] ...          [INFO]  ...
             #           [WARN] ...          [WARN]  ...
             #                 ^                   ^^
+            '''
+            bug: ptg consecutive duplicate markup invalid:
+                tim.print('[yellow]aaa[/][red]bbb[/]')
+                tim.print('[yellow]aaa[/][yellow]bbb[/]')  # <- bug
+                                      ^^^ B     ^^^ A
+                tim.print('[yellow]aaa[/] [yellow]bbb[/]')
+            part `A` doesn't rendered as yellow because its previous mark is
+            also yellow. we have to remove `B` to make it work.
+            the following code is a WORKAROUND!
+            '''
+            if message_details['log_level'] == 'debug':
+                message_elements[-3] = message_elements[-3][:-3]
         if message_details['index']:
             message_elements.append(
                 _formatter.fmt_index(

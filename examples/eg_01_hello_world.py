@@ -21,8 +21,8 @@ print(':r', '[brightblue]this is a[/] [!rainbow]rich text[/]')
 
 print(':v0', 'this is a TRACE message')
 print(':v1', 'this is a DEBUG message')
-print(':v2', ' this is a INFO message')
-print(':v3', ' this is a WARNING message')
+print(':v2', 'this is a INFO  message')
+print(':v3', 'this is a WARN  message')
 print(':v4', 'this is a ERROR message')
 print(':v5', 'this is a FATAL message')
 
