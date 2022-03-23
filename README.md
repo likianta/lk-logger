@@ -156,7 +156,7 @@ See [examples/02_all_markup_usages.py](examples/02_all_markup_usages.py).
 
 Screenshot:
 
-![](.assets/20220321161728.png)
+![](.assets/20220324022530.png)
 
 ## Caution
 
