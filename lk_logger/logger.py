@@ -71,6 +71,12 @@ class LoggingConfig:
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
+    
+    def reset(self):
+        self.show_source = True
+        self.show_varnames = False
+        self.show_external_lib = True
+        self.path_format_for_external_lib = 'pretty_relpath'
 
 
 class LKLogger:
@@ -89,7 +95,9 @@ class LKLogger:
         self.__external_libs = None
         self.__proj_root = None
     
-    def configure(self, **kwargs):
+    def configure(self, clear_pre_configured=False, **kwargs):
+        if clear_pre_configured:
+            self._config.reset()
         self._config.update(**kwargs)
     
     @property

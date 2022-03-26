@@ -45,14 +45,14 @@ class MessageFormatter:
             return (
                 '{0}'
                 '[bright-black]:[/]'
-                '[blue]{1}{2}[/]'.format(
+                '[bold blue]{1}{2}[/]'.format(
                     filepath, lineno, additional_space
                 )
             )
         return (
             '[bold blue]{0}[/]'
             '[bright-black]:[/]'
-            '[blue]{1}{2}[/]'.format(
+            '[bold blue]{1}{2}[/]'.format(
                 filepath, lineno, additional_space
             )
         )
