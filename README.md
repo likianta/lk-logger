@@ -90,6 +90,9 @@ It prints weekdays with a numeric prefix:
 Another one:
 
 ```python
+import lk_logger
+lk_logger.setup()
+
 print('this is a divider', ':d')
 
 print(':v0', 'this is a TRACE message')
@@ -100,7 +103,7 @@ print(':v4', 'this is a ERROR message')
 print(':v5', 'this is a FATAL message')
 ```
 
-![](.assets/20220321160102.png)
+![](.assets/20220328191717.png)
 
 **Here is a list of all available marks:**
 
