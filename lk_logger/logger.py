@@ -1,9 +1,7 @@
 import os
 from inspect import currentframe
 
-from pytermgui import parser
 from pytermgui import tim
-from pytermgui.prettifiers import prettify
 
 from ._internal_debug import debug  # noqa
 from .general import normpath
@@ -13,7 +11,6 @@ from .message_formatter import MessageFormatter
 from .path_helper import PathHelper
 from .sourcemap import sourcemap
 
-setattr(parser, 'print', std_print)
 _formatter = MessageFormatter()
 
 
@@ -115,21 +112,23 @@ class LKLogger:
     def log(self, *args, **_):
         msg = self._main(currentframe().f_back, *args)
         # debug(msg)
-        tim.print(msg)
+        std_print(msg)
     
     def fmt(self, *args, **_):
         return self._main(currentframe().f_back, *args)
     
     # noinspection PyUnresolvedReferences
     def _main(self, frame, *args) -> str:
-        message_details = {
-            'divider_line': '',
+        global _formatter
+        
+        elements = {
             'filepath'    : '',
-            'funcname'    : '',
-            'index'       : '',
             'lineno'      : '0',
+            'funcname'    : '',
             'log_level'   : '',
-            'message'     : '',
+            'index'       : '',
+            'divider_line': '',
+            'arguments'   : [],
         }
         
         is_external_lib = False
@@ -155,36 +154,31 @@ class LKLogger:
             # analyse markup
             if markup:
                 # analyse markup
-                marks = self._markup_analyser.analyse_markup(markup)
+                marks = self._markup_analyser.analyse(markup)  # type: dict
                 if marks:
                     if 'd' in marks:
-                        message_details['divider_line'] = '-' * 80
+                        elements['divider_line'] = '-' * 80
                     if 'i' in marks:
-                        if marks['i'] == 0:
+                        if marks['i'] == 0:  # reset counter
                             self._counter = 0
                             if args:
                                 self._counter += 1
                             else:
-                                message_details['message'] = \
-                                    '[bright-black](index reset)[/]'
-                                # make sure 'r' key exists.
-                                marks.setdefault('r', 0)
+                                elements['arguments'].append(
+                                    '(index reset)')
                         else:
                             self._counter += 1
-                        message_details['index'] = str(self._counter)
+                        elements['index'] = str(self._counter)  # 0 based
                     if 'l' in marks:
-                        args = tuple((
-                            prettify(x, indent=4)
-                            for x in args
-                        ))
+                        args = tuple(map(_formatter.expand_node, args))
                     if 'p' in marks:
                         traceback_level = marks['p']
-                    if 'r' in marks:
-                        pass
+                    if 'r' in marks and 'l' not in marks:
+                        args = tuple(map(tim.parse, map(str, args)))
                     if 's' in marks:
                         pass
                     if 'v' in marks:
-                        message_details['log_level'] = (
+                        elements['log_level'] = (
                             'trace', 'debug', 'info',
                             'warn', 'error', 'fatal'
                         )[marks['v']]
@@ -207,17 +201,17 @@ class LKLogger:
                     assert len(varnames) == len(args), (varnames, args)
                 except AssertionError:
                     # debug('failed extracting varnames')
-                    message_details['message'] = ';\t'.join(map(str, args))
+                    elements['arguments'].extend(map(str, args))
                 else:
                     # organize args
-                    tmp_msg = []
                     for n, a in zip(varnames, args):
-                        tmp_msg.append(f'{n} = {a}' if n else str(a))
-                    message_details['message'] = ';\t'.join(tmp_msg)
+                        elements['arguments'].append(
+                            f'{n} = {a}' if n else str(a)
+                        )
             else:
-                message_details['message'] = ';\t'.join(map(str, args))
+                elements['arguments'].extend(map(str, args))
         
-        message_details['funcname'] = info.funcname
+        elements['funcname'] = info.funcname
         
         # show external lib?
         if self._config.show_external_lib:
@@ -227,7 +221,7 @@ class LKLogger:
                 # path format
                 fmt = self._config.path_format_for_external_lib
                 if fmt == 'relpath':
-                    message_details['filepath'] = normpath(
+                    elements['filepath'] = normpath(
                         os.path.relpath(info.filepath, self._cwd)
                     )
                 else:
@@ -246,114 +240,130 @@ class LKLogger:
                     
                     if fmt == 'pretty_relpath':
                         if lib_name:
-                            message_details['filepath'] = \
+                            elements['filepath'] = \
                                 '[{}]/{}'.format(lib_name, lib_relpath)
                         else:
-                            message_details['filepath'] = \
+                            elements['filepath'] = \
                                 '[{}]/{}'.format('unknown', lib_relpath)
                     elif fmt == 'lib_name_only':
-                        message_details['filepath'] = f'[{lib_name}]'
+                        elements['filepath'] = f'[{lib_name}]'
             else:  # no
-                message_details['filepath'] = normpath(
+                elements['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
                 )
         else:
             if self._is_external_lib(info.filepath):
                 pass  # is_external_lib = True ?
             else:
-                message_details['filepath'] = normpath(
+                elements['filepath'] = normpath(
                     os.path.relpath(info.filepath, self._cwd)
                 )
-        if (x := message_details['filepath']) and \
+        if (x := elements['filepath']) and \
                 not x.startswith(('../', '[')):
-            message_details['filepath'] = './' + x
+            elements['filepath'] = './' + x
         
-        message_details['lineno'] = str(info.lineno)
+        elements['lineno'] = str(info.lineno)
+        
+        # ---------------------------------------------------------------------
         
         # show message
-        global _formatter
         # noinspection PyListCreation
         message_elements = []
+        #   element sequence:
+        #       1. source (filename & lineno)
+        #       2. funcname
+        #       3. log_level
+        #       4. index
+        #       5. divider_line
+        #       6. arguments
+        # 1. source
         message_elements.append(
             _formatter.fmt_source(
-                message_details['filepath'],
-                message_details['lineno'],
+                elements['filepath'],
+                elements['lineno'],
                 is_external_lib=is_external_lib,
                 fmt_width=True
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('\t>>\t')
+            _formatter.fmt_separator('\t>>    ')
         )
+        # 2. funcname
         message_elements.append(
             _formatter.fmt_funcname(
-                message_details['funcname'],
+                elements['funcname'],
                 fmt_width=True
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('\t>>\t')
+            _formatter.fmt_separator('\t>>    ')
         )
-        if message_details['log_level']:
+        # 3. log_level
+        if elements['log_level']:
             message_elements.append(
                 _formatter.fmt_level(
-                    text='[bold][{}][/bold]'.format(
-                        message_details['log_level'].upper()
-                    ), level=message_details['log_level']
+                    text='[{tag}]{spacing}'.format(
+                        tag=elements['log_level'].upper(),
+                        spacing='\t' if elements['log_level'] != 'fatal'
+                        else '   '  # to be explained below
+                    ), level=elements['log_level']
                 )
             )
-            message_elements.append('\t')
-            #   why use '\t', not ' '?
-            #   '\t' aligns the following message tidier.
-            #   comparison:
-            #       use ' ':            use '\t':
-            #           [TRACE] ...         [TRACE] ...
-            #           [DEBUG] ...         [DEBUG] ...
-            #           [INFO] ...          [INFO]  ...
-            #           [WARN] ...          [WARN]  ...
-            #                 ^                   ^^
+            r''' about placeholder `spacing`:
+            
+                q: why use '\t'?
+                a: '\t' aligns its following message more tidier than spaces.
+                   illustration (dot means whitespaces):
+                        use ' '                 use '\t'
+                        [TRACE].hello world     [TRACE]..hello world
+                        [DEBUG].hello world     [DEBUG]..hello world
+                        [INFO].hello world      [INFO]...hello world
+                        [WARN].hello world      [WARN]...hello world
+                        [FATAL].hello world     [FATAL]..hello world
+                                                        (↑ looks more pretty)
+            
+                q: why FATAL doesn't use '\t'?
+                a: FATAL's effect is white text on red background.
+                   the red background effect will be invalid if we use '\t'.
+                   so we have to '   ' instead.
+                   the letter number of '   ' depends on the width of its
+                   leading content. currently it's `4 * <integer> + 2 + <7_(the_
+                   length_of_'[FATAL]'>`. see also `./message_formatter
+                   : MessageFormatter : fmt_source : (param) min_width`.
             '''
-            bug: ptg consecutive duplicate markup invalid:
-                tim.print('[yellow]aaa[/][red]bbb[/]')
-                tim.print('[yellow]aaa[/][yellow]bbb[/]')  # <- bug
-                                      ^^^ B     ^^^ A
-                tim.print('[yellow]aaa[/] [yellow]bbb[/]')
-            part `A` doesn't rendered as yellow because its previous mark is
-            also yellow. we have to remove `B` to make it work.
-            the following code is a WORKAROUND!
-            '''
-            if message_details['log_level'] == 'debug':
-                message_elements[-3] = message_elements[-3][:-3]
-        if message_details['index']:
+        # 4. index
+        if elements['index']:
             message_elements.append(
                 _formatter.fmt_index(
-                    message_details['index']
+                    elements['index']
                 )
             )
             message_elements.append(' ')
-        if message_details['divider_line']:
+        # 5. divider_line
+        if elements['divider_line']:
             message_elements.append(
                 _formatter.fmt_divider(
-                    message_details['divider_line']
+                    elements['divider_line']
                 )
             )
             message_elements.append(' ')
-        if 'l' in marks:
-            message_details['message'] = message_details['message'].replace(
-                ';\t', '\n'
-            )
+        # 6. arguments
         message_elements.append(
             _formatter.fmt_message(
-                message_details['message'],
+                elements['arguments'],
                 rich='r' in marks or 'l' in marks,
-                multilines='l' in marks,
+                expand='l' in marks,
             )
         )
-        if message_details['log_level'] and \
-                message_details['log_level'] != 'trace':
+        if elements['log_level'] and \
+                elements['log_level'] != 'trace':
             message_elements[-1] = _formatter.fmt_level(
                 message_elements[-1],
-                level=message_details['log_level']
+                level=elements['log_level']
+            )
+        if elements['index'] == '0':
+            message_elements[-1] = _formatter.markup(
+                (message_elements[-1], 'bright-black')
             )
         
         return ''.join(message_elements)

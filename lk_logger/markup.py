@@ -18,7 +18,7 @@ class MarkupAnalyser:
         from re import compile
         self._mark_pattern = compile(r'[a-z]\d*')
     
-    def analyse_markup(self, markup: str) -> dict:
+    def analyse(self, markup: str) -> dict:
         """
         return:
             dict[literal mark, int value]
