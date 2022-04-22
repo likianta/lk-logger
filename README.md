@@ -1,5 +1,7 @@
 # LK Logger
 
+[中文版](https://blog.csdn.net/Likianta/article/details/124358443)
+
 Advanced print tool for Python.
 
 ![](.assets/20220422181702.png)
