@@ -2,44 +2,53 @@
 
 Advanced print tool for Python.
 
+![](.assets/20220422181702.png)
+
 Features:
 
-- Simple. Add two lines of code to enable lk-logger.
+-   Show source map, function name and varnames in printing.
+
+    ![](.assets/20220422183248.png)
+
+-   Easy to start. Just add two lines code to enable lk-logger.
 
     ```python
+    # add this
     import lk_logger
     lk_logger.setup()
+
+    # then remain using `print` as usual...
+    print('Hello world')
+    print(123, 456, 789)
+    ...
     ```
 
     It will replace Python's built-in `print` function to take care all the leftovers.
 
-- Non-intrusive. After enable it like above, no more modifications on your source code projects (this is low-cost and low-effort migration). You will see new effects at once.
-
-    This would be a good choice for developers who have already dived into their own projects with Python `print` too much to get a new start with a new logging tool.
-
-- Code highlight.
-
-    ![](.assets/20220321155834.png)
-
-- Show both varnames and values.
-
-    before:
+-   Simple to write:
 
     ```python
+    # before
     a, b = 1, 2
     print('a = {}, b = {}, a + b = {}'.format(a, b, a + b))
-    ```
 
-    after:
-
-    ```python
-    import lk_logger
-    lk_logger.setup(show_varnames=True)
-    a, b = 1, 2
+    # after
     print(a, b, a + b)
     ```
 
-    ![](.assets/20220321153646.png)
+    ![](.assets/20220422182815.png)
+
+    (Another example)
+
+    ![](.assets/20220422183714.png)
+
+-   Non-intrusive. After enable it like above, no more modifications on your source code projects (it is low-cost and low-effort to migrate). You will see the new effects at once.
+
+    This would be a good choice for developers who have dived into their projects with Python `print` to get a new start with a new logging util.
+
+-   Code highlight.
+
+    ![](.assets/20220321155834.png)
 
 ## Install
 
@@ -69,9 +78,9 @@ Screenshot:
 
 ## Advanced Usage
 
-Generally, the two lines of code above are enough to use.
+Usually, the above example is enough to use.
 
-The advanced feature is its "markup" shorthand.
+The advanced feature is **"markup"** shorthand.
 
 Use a markup as in the first or the last parameter, the markup is a string that starts with ':', consists of multiple marks.
 
@@ -159,16 +168,4 @@ See [examples/02_all_markup_usages.py](examples/02_all_markup_usages.py).
 
 Screenshot:
 
-![](.assets/20220324022530.png)
-
-## Caution
-
-- The back slash will be forcely converted to forward slash.
-
-    ```python
-    print(r'C:\Users\<Username>\AppData\Local\Temp')
-    ```
-
-    ![](.assets/20220321155215.png)
-
-    There remained an unresolved issue in its internal parser. We will fix it in future version.
+![](.assets/20220422184344.png)
