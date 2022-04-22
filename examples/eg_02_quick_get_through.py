@@ -25,7 +25,7 @@ print(':v5', 'this is a FATAL message')
 
 x = {
     'name'   : 'Johnnie',
-    'age'    : '42',
+    'age'    : 42,
     'address': {
         'country' : 'USA',
         'city'    : 'New York',
