@@ -1,12 +1,118 @@
 from textwrap import indent
 from typing import Union
 
+from pytermgui import tim
+
 from ._internal_debug import debug  # noqa
 
 _SEPARATOR = (' ', '')  # see also `MessageFormatter._safe_markup`.
 
 
+# noinspection PyUnusedLocal
+def new_preffity(
+        target,
+        indent: int = 2,
+        force_markup: bool = False,
+        expand_all: bool = False,
+        parse: bool = True,
+) -> str:
+    """
+    this function was copied from `pytermgui.prettifiers.prettify`, but removed
+    checking whether `target` in builtin module.
+    """
+    from pytermgui.prettifiers import (
+        CONTAINER_TYPES, AnsiSyntaxError, MarkupSyntaxError,  # noqa
+        _prettify_container, _prettify_str,  # noqa
+    )
+    
+    buff = ""
+    
+    if isinstance(target, CONTAINER_TYPES):
+        buff = _prettify_container(
+            target, indent=indent, expand_all=expand_all,
+            force_markup=force_markup
+        )
+    
+    elif isinstance(target, str):
+        buff = _prettify_str(target, force_markup=force_markup)
+    
+    elif isinstance(target, int):
+        buff = f"[pprint-int]{target}[/]"
+    
+    elif isinstance(target, type):
+        buff = f"[pprint-type]{target.__name__}[/]"
+    
+    elif target is None:
+        buff = f"[pprint-none]{target}[/]"
+    
+    else:
+        try:
+            iterator = iter(target)
+        except TypeError:
+            return str(target)
+        
+        for inner in iterator:
+            buff += new_preffity(inner, parse=False)
+    
+    if parse:
+        try:
+            return tim.parse(buff)
+        except (AnsiSyntaxError, MarkupSyntaxError):
+            pass
+    
+    return str(buff) or str(target)
+
+
+from pytermgui import prettifiers
+setattr(prettifiers, 'prettify', new_preffity)
+
+
+# -----------------------------------------------------------------------------
+
 class MessageFormatter:
+    
+    @staticmethod
+    def markup(*markups: tuple[str, str]) -> str:
+        """
+        thid method produces the final strings that could be directly printed.
+
+        args:
+            *markups: iterable[tuple[str text, str mark]]
+                mark:
+                    any valid patterns of pytermgui markups. for example, 'red',
+                    'bold', 'bright-black', '#00FF00', ...
+                    ps: mark allows empty.
+
+        tip:
+            if you want add a separator, use `global _SEPARATOR`.
+
+        warning:
+            - if two adjacent marks are same, merge them into one. otherwise
+              the latter one's effect will be lost. (this is a bug)
+            - `tim.parse` will ignore invalid bracket patterns, in case it
+              breaks the origin content of `text`, we take some escape method.
+              (see code for details)
+        """
+        out = []
+        last_mark = None
+        for text, mark in markups:
+            if mark == last_mark:
+                out[-1] += text
+            if mark and text.strip():
+                if '[' in text:
+                    out.append(tim.parse('[{}]{{}}[/]'.format(mark)).format(text))
+                else:
+                    out.append(tim.parse('[{}]{}[/]'.format(mark, text)))
+            else:
+                out.append(text)
+            last_mark = mark
+        return ''.join(out)
+    
+    @staticmethod
+    def expand_node(target) -> str:
+        return prettifiers.prettify(target, indent=4)
+    
+    # -------------------------------------------------------------------------
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    is_external_lib: bool = False, fmt_width=False) -> str:
@@ -102,6 +208,8 @@ class MessageFormatter:
         }
         return self.markup((text, colors[level]))
     
+    # -------------------------------------------------------------------------
+    
     _width_cache = {}  # dict[int raw_width_of_text, int suggested_width]
     
     def _fmt_width(self, text: str,
@@ -128,41 +236,3 @@ class MessageFormatter:
                 ) * incremental_unit
         self._width_cache[len(text)] = suggested_width
         return _fmt(text, suggested_width)
-    
-    @staticmethod
-    def markup(*markups: tuple[str, str]) -> str:
-        """
-        thid method produces the final strings that could be directly printed.
-        
-        args:
-            *markups: iterable[tuple[str text, str mark]]
-                mark:
-                    any valid patterns of pytermgui markups. for example, 'red',
-                    'bold', 'bright-black', '#00FF00', ...
-                    ps: mark allows empty.
-        
-        tip:
-            if you want add a separator, use `global _SEPARATOR`.
-        
-        warning:
-            - if two adjacent marks are same, merge them into one. otherwise
-              the latter one's effect will be lost. (this is a bug)
-            - `tim.parse` will ignore invalid bracket patterns, in case it
-              breaks the origin content of `text`, we take some escape method.
-              (see code for details)
-        """
-        from pytermgui import tim
-        out = []
-        last_mark = None
-        for text, mark in markups:
-            if mark == last_mark:
-                out[-1] += text
-            if mark and text.strip():
-                if '[' in text:
-                    out.append(tim.parse('[{}]{{}}[/]'.format(mark)).format(text))
-                else:
-                    out.append(tim.parse('[{}]{}[/]'.format(mark, text)))
-            else:
-                out.append(text)
-            last_mark = mark
-        return ''.join(out)
