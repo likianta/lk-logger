@@ -1,65 +1,45 @@
-"""
-note:
-    pytermgui color names for basic colors:
-        there are some name changes between 4.1.0 and 4.2.0, for example the
-        color number 8 before is 'grey', after is 'bright-black', number 9
-        before is 'brightred', after is 'bright-red'.
-        i'd like to keep pace with the latest version of ptg. so i'll use
-        'bright-black', not 8 although it's not quite compatible insurance.
-        *this decision remains to be changeable in the future.*
-        ref: `pytermgui/colors.py > (var) XTERM_NAMED_COLORS`
-    there are some markup issues should be known. see `gitbook > ptg-markup.md`.
-"""
-import re
 from textwrap import indent
 from typing import Union
 
 from ._internal_debug import debug  # noqa
 
+_SEPARATOR = (' ', '')  # see also `MessageFormatter._safe_markup`.
+
 
 class MessageFormatter:
-    # see `self.fmt_message`.
-    _braket_pattern = re.compile(r'\[[-/@_a-z! ():]+]')
     
     def fmt_source(self, filepath: str, lineno: Union[int, str],
                    is_external_lib: bool = False, fmt_width=False) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
-            text_b = self._fmt_width(text_a, min_width=16)
+            text_b = self._fmt_width(text_a, min_width=12)
             additional_space = ' ' * (len(text_b) - len(text_a))
         else:
             additional_space = ''
         if is_external_lib:
             assert filepath.startswith('[')
             a, b = filepath[1:].split(']', 1)
-            filepath = (
-                '[bold {color}]\\[{a}]'
-                '[bold blue]{b}[/]'.format(
-                    a=a, b=b, color='red' if filepath.startswith('[unknown]')
-                    else 'magenta'
-                )
+            filepath = self.markup(
+                (f'[{a}]', 'bold {}'.format(
+                    'red' if filepath.startswith('[unknown]') else 'magenta'
+                )),
+                (f'{b}', 'bold blue'),
             )
-            # FIXME: `tim.print('[blue][magenta]aaa[blue]bbb')`
-            #   'bbb' color is invalid!
-            #   below is a workaround.
-            return (
-                '{0}'
-                '[bright-black]:[/]'
-                '[bold blue]{1}{2}[/]'.format(
-                    filepath, lineno, additional_space
-                )
+            return self.markup(
+                (filepath, ''),
+                (':', 'bright-black'),
+                (str(lineno), 'bold blue'),
+                (additional_space, ''),
             )
-        return (
-            '[bold blue]{0}[/]'
-            '[bright-black]:[/]'
-            '[bold blue]{1}{2}[/]'.format(
-                filepath, lineno, additional_space
-            )
+        return self.markup(
+            (filepath, 'bold blue'),
+            (':', 'bright-black'),
+            (str(lineno), 'bold blue'),
+            (additional_space, ''),
         )
     
-    @staticmethod
-    def fmt_separator(sep: str = ' >> ') -> str:
-        return '[bright-black]{}[/]'.format(sep)
+    def fmt_separator(self, sep: str = ' >> ', color='bright-black') -> str:
+        return self.markup((sep, color))
     
     def fmt_funcname(self, funcname: str, fmt_width=False) -> str:
         is_func = not funcname.startswith('<')
@@ -69,61 +49,49 @@ class MessageFormatter:
             funcname = funcname[1:-1]
         if fmt_width:
             funcname = self._fmt_width(
-                funcname, min_width=8, incremental_unit=2
+                funcname, min_width=6, incremental_unit=2
             )
         if is_func:
-            return '[green]{}[/]'.format(funcname)
+            return self.markup((funcname, 'green'))
         else:
-            return '[magenta]{}[/]'.format(funcname)
+            return self.markup((funcname, 'magenta'))
     
-    @staticmethod
-    def fmt_index(idx: Union[int, str]) -> str:
-        return '[red]\\[{}][/]'.format(idx)
+    def fmt_index(self, idx: Union[int, str]) -> str:
+        return self.markup(
+            (f'[{idx}]', 'bright-black' if idx == 0 or idx == '0' else 'red')
+        )
     
-    @staticmethod
-    def fmt_divider(div_: str) -> str:
-        return '[yellow]{}[/]'.format(div_)
+    def fmt_divider(self, div_: str) -> str:
+        return self.markup((div_, 'yellow'))
     
-    def fmt_message(self, msg: str, rich: bool, multilines=False) -> str:
+    def fmt_message(self, msg_frags: list[str], rich: bool, expand=False) -> str:  # FIXME
         if rich:
-            if multilines:
-                x = []
-                for line in msg.splitlines():
-                    if line.startswith('    '):
-                        how_many = len(line) - len(line.lstrip())
-                        spaces = line[:how_many]
-                        rich_indent = spaces.replace(
-                            '    ', '[bright-black]│[/]   '
-                        )
-                        x.append(rich_indent + line[how_many:])
-                    else:
-                        x.append(line)
-                out = '\n' + indent('\n'.join(x), '    ')
-                return out
+            if expand:
+                lines = []
+                for frag in msg_frags:
+                    for line in frag.splitlines():
+                        if line.startswith('    '):
+                            how_many = len(line) - len(line.lstrip())
+                            spaces = line[:how_many]
+                            rich_indent = spaces.replace(
+                                '    ', self.markup(
+                                    ('|', 'bright-black'),
+                                    ('   ', ''),
+                                )
+                            )
+                            lines.append(rich_indent + line[how_many:])
+                        else:
+                            lines.append(line)
+                return '\n' + indent('\n'.join(lines), '    ')
             else:
-                return msg.replace(';\t', '[bright-black];\t[/]')
+                return self.markup((';\t', 'bright-black')).join(msg_frags)
         else:
-            # FIXME: this is a workaround for pytermgui's parser.
-            #   1. ptg cannot parse backslash, so we convert it to slash.
-            #   2. ptg tries to parse any valid patterns, but ignore the
-            #      invalid ones. we should add a backslash to the former, but
-            #      do nothing to the latter.
-            msg = msg.replace('\\', '■')
-            # # msg = msg.replace('[', '\\[')
-            msg = self._braket_pattern.sub(lambda x: '\\' + x.group(), msg)
-            if '■' in msg:
-                # # msg = msg.replace('■', '[magenta]/[/]')
-                msg = re.sub('■+', lambda x: r'[magenta]{}[/]'.format(
-                    '/' * len(x.group())), msg)
-            # debug(f'{msg = }')
-            if multilines:
-                out = '\n' + indent(msg, '    ')
-                return out
+            if expand:
+                return '\n' + indent('\n'.join(msg_frags), '    ')
             else:
-                return msg.replace(';\t', '[bright-black];\t[/]')
+                return self.markup((';\t', 'bright-black')).join(msg_frags)
     
-    @staticmethod
-    def fmt_level(text: str, level: str) -> str:
+    def fmt_level(self, text: str, level: str) -> str:
         colors = {
             'trace': '',
             'debug': 'bright-black',
@@ -132,11 +100,7 @@ class MessageFormatter:
             'error': 'bright-red',
             'fatal': 'bold bright-cyan @bright-red',
         }
-        if c := colors.get(level):
-            # debug('[{}]{}[/]'.format(c, text))
-            return '[{}]{}[/fg]'.format(c, text)
-        else:
-            return text
+        return self.markup((text, colors[level]))
     
     _width_cache = {}  # dict[int raw_width_of_text, int suggested_width]
     
@@ -164,3 +128,41 @@ class MessageFormatter:
                 ) * incremental_unit
         self._width_cache[len(text)] = suggested_width
         return _fmt(text, suggested_width)
+    
+    @staticmethod
+    def markup(*markups: tuple[str, str]) -> str:
+        """
+        thid method produces the final strings that could be directly printed.
+        
+        args:
+            *markups: iterable[tuple[str text, str mark]]
+                mark:
+                    any valid patterns of pytermgui markups. for example, 'red',
+                    'bold', 'bright-black', '#00FF00', ...
+                    ps: mark allows empty.
+        
+        tip:
+            if you want add a separator, use `global _SEPARATOR`.
+        
+        warning:
+            - if two adjacent marks are same, merge them into one. otherwise
+              the latter one's effect will be lost. (this is a bug)
+            - `tim.parse` will ignore invalid bracket patterns, in case it
+              breaks the origin content of `text`, we take some escape method.
+              (see code for details)
+        """
+        from pytermgui import tim
+        out = []
+        last_mark = None
+        for text, mark in markups:
+            if mark == last_mark:
+                out[-1] += text
+            if mark and text.strip():
+                if '[' in text:
+                    out.append(tim.parse('[{}]{{}}[/]'.format(mark)).format(text))
+                else:
+                    out.append(tim.parse('[{}]{}[/]'.format(mark, text)))
+            else:
+                out.append(text)
+            last_mark = mark
+        return ''.join(out)
