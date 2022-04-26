@@ -7,4 +7,4 @@ from .global_controls import setup
 from .global_controls import unload
 from .logger import lk
 
-__version__ = '5.0.3'
+__version__ = '5.0.4'

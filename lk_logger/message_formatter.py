@@ -77,7 +77,7 @@ class MessageFormatter:
         thid method produces the final strings that could be directly printed.
 
         args:
-            *markups: iterable[tuple[str text, str mark]]
+            markups: tuple[tuple[str text, str mark], ...]
                 mark:
                     any valid patterns of pytermgui markups. for example, 'red',
                     'bold', 'bright-black', '#00FF00', ...

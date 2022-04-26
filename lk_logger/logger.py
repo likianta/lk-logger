@@ -134,6 +134,7 @@ class LKLogger:
         is_external_lib = False
         marks = {}
         markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
+        show_varnames = self._config.show_varnames
         traceback_level = 0  # int[default 1]
         
         if args:
@@ -176,7 +177,19 @@ class LKLogger:
                     if 'r' in marks and 'l' not in marks:
                         args = tuple(map(tim.parse, map(str, args)))
                     if 's' in marks:
-                        pass
+                        # s0: disable `show_varnames`
+                        # s1: disable all, equivalent to `std_print` (a slight
+                        #   difference is that preserves rendered separators).
+                        # note: to make sure rick args take effect, `marks['s']`
+                        #   must be checked AFTER `marks['r']`.
+                        if marks['s'] == 0:
+                            show_varnames = False
+                        elif marks['s'] == 1:
+                            # # return ';\t'.join(map(str, args))
+                            return _formatter.markup(
+                                (';\t', 'bright-black')
+                            ).join(map(str, args))
+                        # TODO: else: fallback to `s0`.
                     if 'v' in marks:
                         elements['log_level'] = (
                             'trace', 'debug', 'info',
@@ -186,7 +199,7 @@ class LKLogger:
         info = sourcemap.get_sourcemap(
             frame=frame,
             traceback_level=traceback_level,
-            advanced=self._config.show_varnames,
+            advanced=show_varnames,
         )
         
         if args:
