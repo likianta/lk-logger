@@ -1,6 +1,6 @@
 import builtins
 
-std_print = builtins.print
+default_print = builtins.print
 
 
 def normpath(path: str) -> str:

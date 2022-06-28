@@ -1,9 +1,9 @@
 import builtins
 
-from .general import std_print
+from .general import default_print
 from .logger import lk
 
-_IS_WELCOME_MESSAGE_SHOWN = False
+_HAS_WELCOME_MESSAGE_SHOWN = False
 
 
 def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
@@ -21,13 +21,13 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
         clear_pre_configured:
         kwargs: see `./logger.py > LoggingConfig`.
     """
-    global _IS_WELCOME_MESSAGE_SHOWN
+    global _HAS_WELCOME_MESSAGE_SHOWN
     
     lk.configure(clear_pre_configured, **kwargs)
     setattr(builtins, 'print', lk.log)
     
-    if not quiet and not _IS_WELCOME_MESSAGE_SHOWN:
-        _IS_WELCOME_MESSAGE_SHOWN = True
+    if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
+        _HAS_WELCOME_MESSAGE_SHOWN = True
         from random import randint
         slogan = (
             '[!rainbow]lk-logger is ready[/!rainbow]',
@@ -38,7 +38,7 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
 
 
 def unload():
-    setattr(builtins, 'print', std_print)
+    setattr(builtins, 'print', default_print)
 
 
 def enable():

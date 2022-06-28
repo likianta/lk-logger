@@ -5,7 +5,7 @@ from pytermgui import tim
 
 from ._internal_debug import debug  # noqa
 from .general import normpath
-from .general import std_print
+from .general import default_print
 from .config import LoggingConfig
 from .markup import MarkupAnalyser
 from .message_formatter import MessageFormatter
@@ -51,7 +51,7 @@ class LKLogger:
     def log(self, *args, **_):
         msg = self._main(currentframe().f_back, *args)
         # debug(msg)
-        std_print(msg)
+        default_print(msg)
     
     def fmt(self, *args, **_):
         return self._main(currentframe().f_back, *args)
