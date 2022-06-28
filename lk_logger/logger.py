@@ -236,7 +236,7 @@ class LKLogger:
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('\t>>    ')
+            _formatter.fmt_separator('  >>  ')
         )
         # 2. funcname
         message_elements.append(
@@ -246,7 +246,7 @@ class LKLogger:
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('\t>>    ')
+            _formatter.fmt_separator('  >>  ')
         )
         # 3. log_level
         if elements['log_level']:

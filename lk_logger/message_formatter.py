@@ -155,7 +155,7 @@ class MessageFormatter:
             funcname = funcname[1:-1]
         if fmt_width:
             funcname = self._fmt_width(
-                funcname, min_width=6, incremental_unit=2
+                funcname, min_width=8, unit_spaces=4
             )
         if is_func:
             return self.markup((funcname, 'green'))
@@ -211,29 +211,10 @@ class MessageFormatter:
     
     # -------------------------------------------------------------------------
     
-    _width_cache = {}  # dict[int raw_width_of_text, int suggested_width]
-    
-    def _fmt_width(self, text: str,
-                   min_width: int = None,
-                   incremental_unit=4) -> str:
-        
-        def _fmt(text, suggested_width) -> str:
-            return '{{:<{}}}'.format(suggested_width).format(text)
-        
-        if len(text) in self._width_cache:
-            return _fmt(text, self._width_cache[len(text)])
-        
-        if min_width is None:
-            min_width = incremental_unit
+    @staticmethod
+    def _fmt_width(text: str, min_width: int = None, unit_spaces=4) -> str:
         if len(text) <= min_width:
-            suggested_width = min_width
+            return text.ljust(min_width)
         else:
-            increasing_part = len(text) - min_width
-            if increasing_part % incremental_unit == 0:
-                suggested_width = min_width + increasing_part
-            else:
-                suggested_width = min_width + (
-                        increasing_part // incremental_unit + 1
-                ) * incremental_unit
-        self._width_cache[len(text)] = suggested_width
-        return _fmt(text, suggested_width)
+            from math import ceil
+            return text.ljust(ceil(len(text) / unit_spaces) * unit_spaces)
