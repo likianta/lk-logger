@@ -7,8 +7,6 @@ from pytermgui import tim
 
 from ._internal_debug import debug  # noqa
 
-_SEPARATOR = (' ', '')  # see also `MessageFormatter._safe_markup`.
-
 
 # noinspection PyUnusedLocal
 def new_preffity(
@@ -172,7 +170,8 @@ class MessageFormatter:
     def fmt_divider(self, div_: str) -> str:
         return self.markup((div_, 'yellow'))
     
-    def fmt_message(self, msg_frags: list[str], rich: bool, expand=False) -> str:  # FIXME
+    def fmt_message(self, msg_frags: list[str], rich: bool, expand=False,
+                    separator=';   ') -> str:  # FIXME
         if rich:
             if expand:
                 lines = []
@@ -192,12 +191,12 @@ class MessageFormatter:
                             lines.append(line)
                 return '\n' + indent('\n'.join(lines), '    ')
             else:
-                return self.markup((';\t', 'bright-black')).join(msg_frags)
+                return self.markup((separator, 'bright-black')).join(msg_frags)
         else:
             if expand:
                 return '\n' + indent('\n'.join(msg_frags), '    ')
             else:
-                return self.markup((';\t', 'bright-black')).join(msg_frags)
+                return self.markup((separator, 'bright-black')).join(msg_frags)
     
     def fmt_level(self, text: str, level: str) -> str:
         colors = {

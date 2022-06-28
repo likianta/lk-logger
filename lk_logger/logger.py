@@ -6,74 +6,13 @@ from pytermgui import tim
 from ._internal_debug import debug  # noqa
 from .general import normpath
 from .general import std_print
+from .config import LoggingConfig
 from .markup import MarkupAnalyser
 from .message_formatter import MessageFormatter
 from .path_helper import PathHelper
 from .sourcemap import sourcemap
 
 _formatter = MessageFormatter()
-
-
-class LoggingConfig:
-    """
-    options:
-        show_source: bool[true]
-            add source info (filepath and line number) prefix to log messages.
-            example:
-                lk.log('hello world')
-                # enabled : './main.py:10  >>  hello world'
-                # disabled: 'hello world'
-        show_varnames: bool[false]
-            show both var names and values. (magic reflection)
-            example:
-                a, b = 1, 2
-                lk.log(a, b, a + b)
-                # enabled : 'main.py:11  >>  a = 1; b = 2; a + b = 3'
-                # disabled: 'main.py:11  >>  1, 2, 3'
-        show_external_lib: bool[true]
-            if `param source` came from an external library, whether to print.
-            for example, if a third-party library 'xxx' also used `lk.log`,
-            its source path (relative to current working dir) may be very long,
-            if you don't want to see any prints except your own project, you'd
-            set this to False.
-        
-        # the following options are only available if `show_external_lib` is
-        # true.
-        path_format_for_external_lib: literal
-            literal:
-                'pretty_relpath': default
-                    trunscate the source path of external lib to be shorter.
-                    example:
-                        before:
-                            '../../../../site-packages/lk_logger/sourcemap.py'
-                            # there may be a lot of '../'.
-                        after:
-                            '[lk_logger]/sourcemap.py'
-                'relpath':
-                    a relative path to current working dir. (<- `os.getcwd()`)
-                    note there may be a lot of '../../../...' if external lib
-                    is far beyond the current working dir.
-                'lib_name_only':
-                    show only the library name (surrounded by brackets).
-                    example: '[lk_logger]'
-            ps: if you don't want to show anything, you should turn to set
-            `show_external_lib` to False.
-    """
-    show_source = True
-    show_varnames = False
-    show_external_lib = True
-    path_format_for_external_lib = 'pretty_relpath'
-    
-    def update(self, **kwargs):
-        for k, v in kwargs.items():
-            if hasattr(self, k):
-                setattr(self, k, v)
-    
-    def reset(self):
-        self.show_source = True
-        self.show_varnames = False
-        self.show_external_lib = True
-        self.path_format_for_external_lib = 'pretty_relpath'
 
 
 class LKLogger:
@@ -185,15 +124,13 @@ class LKLogger:
                         if marks['s'] == 0:
                             show_varnames = False
                         elif marks['s'] == 1:
-                            # # return ';\t'.join(map(str, args))
                             return _formatter.markup(
-                                (';\t', 'bright-black')
+                                (self._config.separator, 'bright-black')
                             ).join(map(str, args))
                         # TODO: else: fallback to `s0`.
                     if 'v' in marks:
                         elements['log_level'] = (
-                            'trace', 'debug', 'info',
-                            'warn', 'error', 'fatal'
+                            'trace', 'debug', 'info', 'warn', 'error', 'fatal'
                         )[marks['v']]
         
         info = sourcemap.get_sourcemap(
@@ -366,6 +303,7 @@ class LKLogger:
                 elements['arguments'],
                 rich='r' in marks or 'l' in marks,
                 expand='l' in marks,
+                separator=self._config.separator
             )
         )
         if elements['log_level'] and \
