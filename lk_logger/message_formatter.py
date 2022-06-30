@@ -23,10 +23,7 @@ class MessageFormatter:
         out = []
         for text, mark in markups:
             if mark:
-                out.append('[{}]{}[/]'.format(
-                    # mark, text.replace('[', '\\[').replace(']', '\\]')
-                    mark, text.replace('[', '\\[')
-                ))
+                out.append('[{}]{}[/]'.format(mark, text))
             else:
                 out.append(text)
         return ''.join(out)
@@ -112,6 +109,7 @@ class MessageFormatter:
             else:
                 return self.markup((separator, 'dim')).join(msg_frags)
         else:
+            msg_frags = (x.replace('[', '\\[') for x in msg_frags)
             if expand:
                 return '\n' + indent('\n'.join(msg_frags), '    ')
             else:
