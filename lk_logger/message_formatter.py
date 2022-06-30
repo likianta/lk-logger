@@ -42,9 +42,9 @@ class MessageFormatter:
             assert filepath.startswith('[')
             a, b = filepath[1:].split(']', 1)
             filepath = self.markup(
-                (f'[{a}]', 'bold {}'.format(
-                    'red' if filepath.startswith('[unknown]') else 'magenta'
-                )),
+                ('\\[{}]'.format(a),
+                 'bold {}'.format('red' if filepath.startswith('[unknown]')
+                                  else 'magenta')),
                 (f'{b}', 'bold blue'),
             )
             return self.markup(
@@ -53,12 +53,13 @@ class MessageFormatter:
                 (str(lineno), 'bold blue'),
                 (additional_space, ''),
             )
-        return self.markup(
-            (filepath, 'bold blue'),
-            (':', 'dim'),
-            (str(lineno), 'bold blue'),
-            (additional_space, ''),
-        )
+        else:
+            return self.markup(
+                (filepath.replace('[', '\\['), 'bold blue'),
+                (':', 'dim'),
+                (str(lineno), 'bold blue'),
+                (additional_space, ''),
+            )
     
     def fmt_separator(self, sep: str = ' >> ', color='dim') -> str:
         return self.markup((sep, color))

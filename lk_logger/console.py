@@ -9,8 +9,9 @@ class Console(BaseConsole):
         super().__init__()
         if self._color_system is None:
             self._color_system = 'standard'
-        # width: if width longer than default, use single line style; otherwise
-        # split sourcemap and message into different lines.
+        # TODO (width):
+        #   if width longer than default, use single line style; otherwise
+        #   split sourcemap and message into different lines.
         pass
 
 
