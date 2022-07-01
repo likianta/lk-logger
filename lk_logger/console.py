@@ -6,7 +6,7 @@ __all__ = ['con_print', 'con_error']
 class Console(BaseConsole):
     
     def __init__(self):
-        super().__init__()
+        super().__init__(soft_wrap=True)
         if self._color_system is None:
             self._color_system = 'standard'
         # TODO (width):

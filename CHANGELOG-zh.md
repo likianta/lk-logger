@@ -1,6 +1,6 @@
 ﻿# LK Logger 更新日志
 
-### 5.1.0 (2022-06-29)
+### 5.1.0 (2022-07-01)
 
 - **重要更新**
     - 将依赖库迁移到 [rich](https://github.com/Textualize/rich)
