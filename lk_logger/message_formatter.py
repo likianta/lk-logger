@@ -61,7 +61,7 @@ class MessageFormatter:
                 (additional_space, ''),
             )
     
-    def fmt_separator(self, sep: str = ' >> ', color='dim') -> str:
+    def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
         return self.markup((sep, color))
     
     def fmt_funcname(self, funcname: str, fmt_width=False) -> str:

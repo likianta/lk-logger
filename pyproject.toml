@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.1.0"
+version = "5.1.1.dev0"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python advanced print with varnames."
 readme = "README.md"
@@ -19,5 +19,5 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
 default = true
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry"]
 build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,6 @@
 from rich.console import Console as BaseConsole
 
-__all__ = ['con_print', 'con_error']
+__all__ = ['con_print', 'con_error', 'console']
 
 
 class Console(BaseConsole):
