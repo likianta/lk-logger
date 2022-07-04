@@ -4,6 +4,7 @@ from ._internal_debug import debug  # noqa
 from .general import default_print
 from .logger import lk
 
+STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
 _HAS_WELCOME_MESSAGE_SHOWN = False
 
 
@@ -13,7 +14,7 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
         quiet:
             True: show a welcome message in caller side.
             False: do not show.
-            
+
             note: the welcome message is shown only once, if caller calls this
                 function multi times, only the first time when passes
                 `quiet=True` will show this message.
@@ -43,18 +44,27 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
         
         # debug(slogan)
         print(slogan, ':rsp')
+    
+    global STATUS
+    STATUS = 'enabled'
 
 
 def unload():
     setattr(builtins, 'print', default_print)
+    global STATUS
+    STATUS = 'unloaded'
 
 
 def enable():
     setattr(builtins, 'print', lk.log)
+    global STATUS
+    STATUS = 'enabled'
 
 
 def disable():
     setattr(builtins, 'print', lambda *_, **__: None)
+    global STATUS
+    STATUS = 'disabled'
 
 
 # -----------------------------------------------------------------------------
