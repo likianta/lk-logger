@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class LoggingConfig:
     """
     options:
@@ -23,7 +26,7 @@ class LoggingConfig:
 
         # the following options are only available if `show_external_lib` is
         # true.
-        path_format_for_external_lib: literal
+        path_style_for_external_lib: literal
             literal:
                 'pretty_relpath': default
                     trunscate the source path of external lib to be shorter.
@@ -43,24 +46,52 @@ class LoggingConfig:
             ps: if you don't want to show anything, you should turn to set
             `show_external_lib` to False.
     """
-    show_source = True
-    show_varnames = False
-    show_external_lib = True
-    path_format_for_external_lib = 'pretty_relpath'
-    separator = ';   '  # suggests: ';   ' | ';\t' | '    ' | ...
+    console_width: int | None
+    path_style_for_external_lib: str
+    rich_traceback: bool
+    separator: str
+    show_external_lib: bool
+    show_source: bool
+    show_varnames: bool
+    
+    _preset_conf = {
+        'console_width'              : None,
+        'path_style_for_external_lib': 'pretty_relpath',
+        'rich_traceback'             : True,
+        'separator'                  : ';   ',
+        #   suggests: ';   ' | ';\t' | '    ' | ...
+        'show_external_lib'          : True,
+        'show_source'                : True,
+        'show_varnames'              : False,
+    }
     
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if hasattr(LoggingConfig, k):
-                setattr(self, k, v)
+        for k, v in self._preset_conf.items():
+            if k in kwargs:
+                v = kwargs[k]
+            self._apply(k, v)
     
     def update(self, **kwargs):
         for k, v in kwargs.items():
-            if hasattr(self, k):
-                setattr(self, k, v)
+            if k in self._preset_conf and v != getattr(self, k, None):
+                self._apply(k, v)
     
     def reset(self):
-        self.show_source = True
-        self.show_varnames = False
-        self.show_external_lib = True
-        self.path_format_for_external_lib = 'pretty_relpath'
+        for k, v in self._preset_conf.items():
+            if v != getattr(self, k, None):
+                self._apply(k, v)
+    
+    def _apply(self, key: str, val: bool | int | str):
+        setattr(self, key, val)
+        if key == 'console_width':
+            if val and isinstance(val, int):
+                from .console import console
+                console.width = val
+        elif key == 'rich_traceback':
+            if val:
+                # https://rich.readthedocs.io/en/stable/traceback.html
+                from rich.traceback import install
+                from .console import console
+                install(console=console, show_locals=True)
+            else:
+                pass  # TODO: how to uninstall?

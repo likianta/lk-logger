@@ -1,4 +1,5 @@
 import traceback
+from functools import partial
 from functools import wraps
 
 from rich.console import Console as BaseConsole
@@ -9,7 +10,7 @@ __all__ = ['con_print', 'con_error', 'console']
 class Console(BaseConsole):
     
     def __init__(self):
-        super().__init__(soft_wrap=True)
+        super().__init__()
         if self._color_system is None:
             self._color_system = 'standard'
         # TODO (width):
@@ -19,8 +20,8 @@ class Console(BaseConsole):
 
 
 console = Console()
-con_print = console.print
-con_error = console.print_exception
+con_print = partial(console.print, soft_wrap=True)
+con_error = partial(console.print_exception, show_locals=True)
 
 
 def temporarily_reset_lk_logger(func):

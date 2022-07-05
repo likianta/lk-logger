@@ -58,10 +58,10 @@ class LKLogger:
     
     # -------------------------------------------------------------------------
     
-    def log(self, *args, **_) -> None:
+    def log(self, *args, **kwargs) -> None:
         msg = self._build_message(currentframe().f_back, *args)
         # debug(msg)
-        con_print(msg)
+        con_print(msg, **kwargs)
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args))
@@ -210,7 +210,7 @@ class LKLogger:
                 if self._is_external_lib(srcmap.filepath):  # yes
                     info['is_external_lib'] = True
                     # path format
-                    fmt = self._config.path_format_for_external_lib
+                    fmt = self._config.path_style_for_external_lib
                     if fmt == 'relpath':
                         info['file_path'] = normpath(
                             os.path.relpath(srcmap.filepath, self._cwd)
