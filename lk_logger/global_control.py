@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 
 from ._internal_debug import debug  # noqa
