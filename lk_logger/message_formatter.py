@@ -49,14 +49,14 @@ class MessageFormatter:
             )
             return self.markup(
                 (filepath, ''),
-                (':', 'dim'),
+                (':', 'bright_black'),
                 (str(lineno), 'bold blue'),
                 (additional_space, ''),
             )
         else:
             return self.markup(
                 (filepath.replace('[', '\\['), 'bold blue'),
-                (':', 'dim'),
+                (':', 'bright_black'),
                 (str(lineno), 'bold blue'),
                 (additional_space, ''),
             )
@@ -81,7 +81,7 @@ class MessageFormatter:
     
     def fmt_index(self, idx: Union[int, str]) -> str:
         return self.markup(
-            (f'[{idx}]', 'dim' if idx == 0 or idx == '0' else 'red')
+            (f'[{idx}]', 'bright_black' if idx == 0 or idx == '0' else 'red')
         )
     
     def fmt_divider(self, div_: str) -> str:
@@ -99,7 +99,7 @@ class MessageFormatter:
                             spaces = line[:how_many]
                             rich_indent = spaces.replace(
                                 '    ', self.markup(
-                                    ('|', 'dim'),
+                                    ('|', 'bright_black'),
                                     ('   ', ''),
                                 )
                             )
@@ -108,18 +108,18 @@ class MessageFormatter:
                             lines.append(line)
                 return '\n' + indent('\n'.join(lines), '    ')
             else:
-                return self.markup((separator, 'dim')).join(msg_frags)
+                return self.markup((separator, 'bright_black')).join(msg_frags)
         else:
             msg_frags = (x.replace('[', '\\[') for x in msg_frags)
             if expand:
                 return '\n' + indent('\n'.join(msg_frags), '    ')
             else:
-                return self.markup((separator, 'dim')).join(msg_frags)
+                return self.markup((separator, 'bright_black')).join(msg_frags)
     
     def fmt_level(self, text: str, level: str) -> str:
         colors = {
             'trace': '',
-            'debug': 'dim',
+            'debug': 'bright_black',
             'info' : 'blue',
             'warn' : 'yellow',
             'error': 'red',

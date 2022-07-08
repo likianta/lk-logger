@@ -155,7 +155,7 @@ class LKLogger:
         markup_pos, marks = analyse_markup()
         if marks.get('s') == 1:
             return (
-                '[dim]{separator}[/]'.format(
+                '[bright_black]{separator}[/]'.format(
                     separator=self._config.separator
                 ).join(map(str, args))
             )
@@ -360,7 +360,7 @@ class LKLogger:
             )
         if info['index'] == '0':
             message_elements[-1] = formatter.markup(
-                (message_elements[-1], 'dim')
+                (message_elements[-1], 'bright_black')
             )
         
         return ''.join(message_elements)
