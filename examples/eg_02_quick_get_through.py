@@ -14,7 +14,7 @@ print(':i', 'tuesday')
 print(':i', 'wednesday')
 
 print(':d', 'this is a divider line')
-print(':r', '[brightblue]this is a[/] [!rainbow]rich text[/]')
+print(':r', '[blue]this is a[/] [yellow]rich text[/]')
 
 print(':v0', 'this is a TRACE message')
 print(':v1', 'this is a DEBUG message')

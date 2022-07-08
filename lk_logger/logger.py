@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import os
 from inspect import currentframe
 
-from pytermgui import tim
-
 from ._internal_debug import debug  # noqa
+from .console import con_print
 from .general import normpath
-from .general import default_print
-from .config import LoggingConfig
 from .markup import MarkupAnalyser
 from .message_formatter import MessageFormatter
-from .path_helper import PathHelper
 from .sourcemap import sourcemap
 
-_formatter = MessageFormatter()
+__all__ = ['LKLogger', 'lk']
+
+formatter = MessageFormatter()
+markup_analyser = MarkupAnalyser()
+
+
+class T:  # Typehint
+    from rich.console import RenderableType
+    from .markup import TMarks as Marks
 
 
 class LKLogger:
@@ -22,197 +28,238 @@ class LKLogger:
         # #   dict[tuple k, namedtuple v]
         # #       k: (filepath, lineno)
         # #       v: ...
+        from .config import LoggingConfig
         self._config = LoggingConfig()
         self._counter = 0
         self._cwd = normpath(os.getcwd())
-        self._markup_analyser = MarkupAnalyser()
         
         # lazy loaded
         self.__external_libs = None
         self.__proj_root = None
     
-    def configure(self, clear_pre_configured=False, **kwargs):
-        if clear_pre_configured:
+    def configure(self, clear_old=False, **kwargs) -> None:
+        if clear_old:
             self._config.reset()
         self._config.update(**kwargs)
     
     @property
     def _proj_root(self) -> str:
         if self.__proj_root is None:
-            self.__proj_root = PathHelper.find_project_root()
+            from .path_helper import find_project_root
+            self.__proj_root = find_project_root()
         return self.__proj_root
     
     @property
-    def _external_libs(self) -> dict:
+    def _external_libs(self) -> dict[str, str]:
         if self.__external_libs is None:
-            self.__external_libs = PathHelper.indexing_external_libs()
+            from .path_helper import indexing_external_libs
+            self.__external_libs = indexing_external_libs()
         return self.__external_libs
     
-    def log(self, *args, **_):
-        msg = self._main(currentframe().f_back, *args)
+    # -------------------------------------------------------------------------
+    
+    def log(self, *args, **kwargs) -> None:
+        msg = self._build_message(currentframe().f_back, *args)
         # debug(msg)
-        default_print(msg)
+        con_print(msg, **kwargs)
     
-    def fmt(self, *args, **_):
-        return self._main(currentframe().f_back, *args)
+    def fmt(self, *args, **_) -> str:
+        return str(self._build_message(currentframe().f_back, *args))
     
-    # noinspection PyUnresolvedReferences
-    def _main(self, frame, *args) -> str:
-        global _formatter
+    def _build_message(self, frame, *args) -> T.RenderableType:
+        global formatter, markup_analyser
         
-        elements = {
-            'filepath'    : '',
-            'lineno'      : '0',
-            'funcname'    : '',
-            'log_level'   : '',
-            'index'       : '',
-            'divider_line': '',
-            'arguments'   : [],
+        info = {
+            'arguments'        : [],
+            'file_path'        : '',
+            'function_name'    : '',
+            'index'            : '',
+            'is_external_lib'  : False,
+            'is_rich_text'     : False,
+            'line_number'      : '0',
+            'multiple_lines'   : False,
+            'log_level'        : '',
+            'show_divider_line': False,
+            'show_varnames'    : self._config.show_varnames,
+            'traceback_level'  : 0,
         }
         
-        is_external_lib = False
-        marks = {}
-        markup_pos = 0  # 0 not exist, 1 for begining, -1 for ending.
-        show_varnames = self._config.show_varnames
-        traceback_level = 0  # int[default 1]
-        
-        if args:
-            if (
-                    isinstance(args[0], str) and args[0].startswith(':')
-            ):
+        def analyse_markup() -> tuple[int, T.Marks]:
+            nonlocal args
+            
+            markup_pos: int
+            marks: T.Marks
+            
+            #   0: not exist; 1: the first place; -1: the last place
+            is_markup = markup_analyser.is_valid_markup
+            if args \
+                    and isinstance(args[0], str) \
+                    and args[0].startswith(':') \
+                    and is_markup(args[0]):
                 markup_pos = 1
                 markup, args = args[0], args[1:]
-            elif len(args) > 1 and (
-                    isinstance(args[-1], str) and args[-1].startswith(':')
-            ):
+            elif len(args) > 1 \
+                    and isinstance(args[-1], str) \
+                    and args[-1].startswith(':') \
+                    and is_markup(args[-1]):
                 markup_pos = -1
                 markup, args = args[-1], args[:-1]
             else:
                 markup_pos = 0
-                markup, args = None, args
+                return markup_pos, {}
+            
+            assert markup_pos and markup
             
             # analyse markup
-            if markup:
-                # analyse markup
-                marks = self._markup_analyser.analyse(markup)  # type: dict
-                if marks:
-                    if 'd' in marks:
-                        elements['divider_line'] = '-' * 80
-                    if 'i' in marks:
-                        if marks['i'] == 0:  # reset counter
-                            self._counter = 0
-                            if args:
-                                self._counter += 1
-                            else:
-                                elements['arguments'].append(
-                                    '(index reset)')
-                        else:
-                            self._counter += 1
-                        elements['index'] = str(self._counter)  # 0 based
-                    if 'l' in marks:
-                        args = tuple(map(_formatter.expand_node, args))
-                    if 'p' in marks:
-                        traceback_level = marks['p']
-                    if 'r' in marks and 'l' not in marks:
-                        args = tuple(map(tim.parse, map(str, args)))
-                    if 's' in marks:
-                        # s0: disable `show_varnames`
-                        # s1: disable all, equivalent to `std_print` (a slight
-                        #   difference is that preserves rendered separators).
-                        # note: to make sure rick args take effect, `marks['s']`
-                        #   must be checked AFTER `marks['r']`.
-                        if marks['s'] == 0:
-                            show_varnames = False
-                        elif marks['s'] == 1:
-                            return _formatter.markup(
-                                (self._config.separator, 'bright-black')
-                            ).join(map(str, args))
-                        # TODO: else: fallback to `s0`.
-                    if 'v' in marks:
-                        elements['log_level'] = (
-                            'trace', 'debug', 'info', 'warn', 'error', 'fatal'
-                        )[marks['v']]
+            marks = markup_analyser.analyse(markup)
+            if not marks:
+                raise Exception('Unexpected result from markup analyser',
+                                markup, marks)
+                # # return markup_pos, {}
+            if 'd' in marks:
+                info['show_divider_line'] = True
+            # TODO: if 'e' in marks: ...  # not implemented yet
+            if 'i' in marks:
+                # TODO: add total-count feature
+                if marks['i'] == 0:  # reset counter
+                    self._counter = 0
+                    if args:
+                        self._counter += 1
+                    else:
+                        info['arguments'].append('(index reset)')
+                else:
+                    self._counter += 1
+                info['index'] = str(self._counter)  # 0 based
+            if 'l' in marks:
+                info['multiple_lines'] = True
+            if 'p' in marks:
+                info['traceback_level'] = marks['p']
+            if 'r' in marks and 'l' not in marks:
+                info['is_rich_text'] = True
+            if 's' in marks:
+                # s0: disable `show_varnames`
+                # s1: disable all, equivalent to `default_print`.
+                # note: to make sure rick args take effect, `marks['s']` must
+                #   be checked AFTER `marks['r']`.
+                if marks['s'] == 0:
+                    info['show_varnames'] = False
+                else:  # FIXME: this is a temporary solution
+                    return markup_pos, {'s': 1}
+            if 'v' in marks:
+                info['log_level'] = (
+                    'trace', 'debug', 'info', 'warn', 'error', 'fatal'
+                )[marks['v']]
+            
+            return markup_pos, marks
         
-        info = sourcemap.get_sourcemap(
+        markup_pos, marks = analyse_markup()
+        if marks.get('s') == 1:
+            return (
+                '[bright_black]{separator}[/]'.format(
+                    separator=self._config.separator
+                ).join(map(str, args))
+            )
+        
+        srcmap = sourcemap.get_sourcemap(
             frame=frame,
-            traceback_level=traceback_level,
-            advanced=show_varnames,
+            traceback_level=info['traceback_level'],
+            advanced=info['show_varnames'],
         )
         
-        if args:
-            if self._config.show_varnames:
-                if markup_pos == 0:
-                    varnames = info.varnames
-                elif markup_pos == 1:
-                    varnames = info.varnames[1:]
-                else:
-                    varnames = info.varnames[:-1]
-                try:
-                    assert len(varnames) == len(args), (varnames, args)
-                except AssertionError:
-                    # debug('failed extracting varnames')
-                    elements['arguments'].extend(map(str, args))
-                else:
-                    # organize args
-                    for n, a in zip(varnames, args):
-                        elements['arguments'].append(
-                            f'{n} = {a}' if n else str(a)
-                        )
-            else:
-                elements['arguments'].extend(map(str, args))
-        
-        elements['funcname'] = info.funcname
-        
-        # show external lib?
-        if self._config.show_external_lib:
-            # is external lib?
-            if self._is_external_lib(info.filepath):  # yes
-                is_external_lib = True
-                # path format
-                fmt = self._config.path_format_for_external_lib
-                if fmt == 'relpath':
-                    elements['filepath'] = normpath(
-                        os.path.relpath(info.filepath, self._cwd)
-                    )
-                else:
-                    for lib_path in sorted(self._external_libs, reverse=True):
-                        if info.filepath.startswith(lib_path):
-                            lib_name = self._external_libs[lib_path].lower()
-                            lib_relpath = \
-                                info.filepath[len(lib_path):].lstrip('./') or \
-                                os.path.basename(info.filepath)
-                            break
+        def reformat_arguments_with_varnames(markup_pos: int):
+            """
+            update the following info:
+                info['arguments']
+            """
+            if args:
+                if info['show_varnames']:
+                    if markup_pos == 0:
+                        varnames = srcmap.varnames
+                    elif markup_pos == 1:
+                        varnames = srcmap.varnames[1:]
                     else:
-                        lib_name = ''
-                        lib_relpath = info.filepath.lstrip('./')
-                    
-                    # debug(lib_name, lib_relpath)
-                    
-                    if fmt == 'pretty_relpath':
-                        if lib_name:
-                            elements['filepath'] = \
-                                '[{}]/{}'.format(lib_name, lib_relpath)
-                        else:
-                            elements['filepath'] = \
-                                '[{}]/{}'.format('unknown', lib_relpath)
-                    elif fmt == 'lib_name_only':
-                        elements['filepath'] = f'[{lib_name}]'
-            else:  # no
-                elements['filepath'] = normpath(
-                    os.path.relpath(info.filepath, self._cwd)
-                )
-        else:
-            if self._is_external_lib(info.filepath):
-                pass  # is_external_lib = True ?
-            else:
-                elements['filepath'] = normpath(
-                    os.path.relpath(info.filepath, self._cwd)
-                )
-        if (x := elements['filepath']) and \
-                not x.startswith(('../', '[')):
-            elements['filepath'] = './' + x
+                        varnames = srcmap.varnames[:-1]
+                    try:
+                        assert len(varnames) == len(args), (varnames, args)
+                    except AssertionError:
+                        # debug('failed extracting varnames')
+                        info['arguments'].extend(map(str, args))
+                    else:
+                        # organize args
+                        for n, a in zip(varnames, args):
+                            info['arguments'].append(
+                                f'{n} = {a}' if n else str(a)
+                            )
+                else:
+                    info['arguments'].extend(map(str, args))
         
-        elements['lineno'] = str(info.lineno)
+        reformat_arguments_with_varnames(markup_pos)
+        
+        info['function_name'] = srcmap.funcname
+        
+        def reformat_source_for_external_lib():
+            """
+            update the following info:
+                info['is_external_lib']
+                info['file_path']
+                info['line_number']
+            """
+            # show external lib?
+            if self._config.show_external_lib:
+                # is external lib?
+                if self._is_external_lib(srcmap.filepath):  # yes
+                    info['is_external_lib'] = True
+                    # path format
+                    fmt = self._config.path_style_for_external_lib
+                    if fmt == 'relpath':
+                        info['file_path'] = normpath(
+                            os.path.relpath(srcmap.filepath, self._cwd)
+                        )
+                    else:
+                        for lib_path in sorted(
+                                self._external_libs, reverse=True
+                        ):
+                            if srcmap.filepath.startswith(lib_path):
+                                lib_name = self._external_libs[lib_path].lower()
+                                lib_relpath = (
+                                        srcmap.filepath[
+                                        len(lib_path):].lstrip('./') or
+                                        os.path.basename(srcmap.filepath)
+                                )
+                                break
+                        else:
+                            lib_name = ''
+                            lib_relpath = srcmap.filepath.lstrip('./')
+                        
+                        # debug(lib_name, lib_relpath)
+                        
+                        if fmt == 'pretty_relpath':
+                            if lib_name:
+                                info['file_path'] = \
+                                    '[{}]/{}'.format(lib_name, lib_relpath)
+                            else:
+                                info['file_path'] = \
+                                    '[{}]/{}'.format('unknown', lib_relpath)
+                        elif fmt == 'lib_name_only':
+                            info['file_path'] = f'[{lib_name}]'
+                else:  # no
+                    info['file_path'] = normpath(
+                        os.path.relpath(srcmap.filepath, self._cwd)
+                    )
+            else:
+                if self._is_external_lib(srcmap.filepath):
+                    pass  # info['is_external_lib'] = True ?
+                else:
+                    info['file_path'] = normpath(
+                        os.path.relpath(srcmap.filepath, self._cwd)
+                    )
+            if (x := info['file_path']) and \
+                    not x.startswith(('../', '[')):
+                info['file_path'] = './' + x
+            
+            info['line_number'] = str(srcmap.lineno)
+        
+        reformat_source_for_external_lib()
         
         # ---------------------------------------------------------------------
         
@@ -228,38 +275,38 @@ class LKLogger:
         #       6. arguments
         # 1. source
         message_elements.append(
-            _formatter.fmt_source(
-                elements['filepath'],
-                elements['lineno'],
-                is_external_lib=is_external_lib,
+            formatter.fmt_source(
+                info['file_path'],
+                info['line_number'],
+                is_external_lib=info['is_external_lib'],
                 fmt_width=True
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('  >>  ')
+            formatter.fmt_separator('  >>  ')
         )
         # 2. funcname
         message_elements.append(
-            _formatter.fmt_funcname(
-                elements['funcname'],
+            formatter.fmt_funcname(
+                info['function_name'],
                 fmt_width=True
             )
         )
         message_elements.append(
-            _formatter.fmt_separator('  >>  ')
+            formatter.fmt_separator('  >>  ')
         )
         # 3. log_level
-        if elements['log_level']:
+        if info['log_level']:
             message_elements.append(
-                _formatter.fmt_level(
-                    text='[{tag}]{spacing}'.format(
-                        tag=elements['log_level'].upper(),
-                        spacing='\t' if elements['log_level'] != 'fatal'
-                        else '   '  # to be explained below
-                    ), level=elements['log_level']
+                formatter.fmt_level(
+                    text='[{tag}]{sep}'.format(
+                        tag=info['log_level'].upper(),
+                        sep='\t' if info['log_level'] != 'fatal' else '     '
+                        #   to be explained below...
+                    ), level=info['log_level']
                 )
             )
-            r''' about placeholder `spacing`:
+            r''' about placeholder `sep`:
             
                 q: why use '\t'?
                 a: '\t' aligns its following message more tidier than spaces.
@@ -275,46 +322,45 @@ class LKLogger:
                 q: why FATAL doesn't use '\t'?
                 a: FATAL's effect is white text on red background.
                    the red background effect will be invalid if we use '\t'.
-                   so we have to '   ' instead.
+                   so we have to '     ' instead.
                    the letter number of '   ' depends on the width of its
-                   leading content. currently it's `4 * <integer> + 2 + <7_(the_
-                   length_of_'[FATAL]'>`. see also `./message_formatter
+                   leading content. currently it's `4 * <integer> + 2 + <7 (the
+                   length of '[FATAL]'>`. see also `./message_formatter
                    : MessageFormatter : fmt_source : (param) min_width`.
             '''
         # 4. index
-        if elements['index']:
+        if info['index']:
             message_elements.append(
-                _formatter.fmt_index(
-                    elements['index']
+                formatter.fmt_index(
+                    info['index']
                 )
             )
             message_elements.append(' ')
         # 5. divider_line
-        if elements['divider_line']:
+        if info['show_divider_line']:
             message_elements.append(
-                _formatter.fmt_divider(
-                    elements['divider_line']
-                )
+                # PERF: use auto width?
+                formatter.fmt_divider('-' * 80)
             )
             message_elements.append(' ')
         # 6. arguments
         message_elements.append(
-            _formatter.fmt_message(
-                elements['arguments'],
-                rich='r' in marks or 'l' in marks,
-                expand='l' in marks,
+            formatter.fmt_message(
+                info['arguments'],
+                rich=info['is_rich_text'],
+                expand=info['multiple_lines'],
                 separator=self._config.separator
             )
         )
-        if elements['log_level'] and \
-                elements['log_level'] != 'trace':
-            message_elements[-1] = _formatter.fmt_level(
+        if info['log_level'] and \
+                info['log_level'] != 'trace':
+            message_elements[-1] = formatter.fmt_level(
                 message_elements[-1],
-                level=elements['log_level']
+                level=info['log_level']
             )
-        if elements['index'] == '0':
-            message_elements[-1] = _formatter.markup(
-                (message_elements[-1], 'bright-black')
+        if info['index'] == '0':
+            message_elements[-1] = formatter.markup(
+                (message_elements[-1], 'bright_black')
             )
         
         return ''.join(message_elements)
