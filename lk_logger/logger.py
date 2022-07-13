@@ -132,6 +132,8 @@ class LKLogger:
                 info['index'] = str(self._counter)  # 0 based
             if 'l' in marks:
                 info['multiple_lines'] = True
+                from rich.pretty import pretty_repr
+                args = tuple(map(pretty_repr, args))
             if 'p' in marks:
                 info['traceback_level'] = marks['p']
             if 'r' in marks and 'l' not in marks:

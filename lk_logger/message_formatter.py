@@ -89,32 +89,12 @@ class MessageFormatter:
     
     def fmt_message(self, msg_frags: list[str], rich: bool, expand=False,
                     separator=';   ') -> str:  # FIXME
-        if rich:
-            if expand:
-                lines = []
-                for frag in msg_frags:
-                    for line in frag.splitlines():
-                        if line.startswith('    '):
-                            how_many = len(line) - len(line.lstrip())
-                            spaces = line[:how_many]
-                            rich_indent = spaces.replace(
-                                '    ', self.markup(
-                                    ('|', 'bright_black'),
-                                    ('   ', ''),
-                                )
-                            )
-                            lines.append(rich_indent + line[how_many:])
-                        else:
-                            lines.append(line)
-                return '\n' + indent('\n'.join(lines), '    ')
-            else:
-                return self.markup((separator, 'bright_black')).join(msg_frags)
-        else:
+        if not rich:
             msg_frags = (x.replace('[', '\\[') for x in msg_frags)
-            if expand:
-                return '\n' + indent('\n'.join(msg_frags), '    ')
-            else:
-                return self.markup((separator, 'bright_black')).join(msg_frags)
+        if expand:
+            return '\n' + indent('\n'.join(msg_frags), '    ')
+        else:
+            return self.markup((separator, 'bright_black')).join(msg_frags)
     
     def fmt_level(self, text: str, level: str) -> str:
         colors = {
