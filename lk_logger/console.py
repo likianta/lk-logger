@@ -12,7 +12,15 @@ class Console(BaseConsole):
     def __init__(self):
         super().__init__()
         if self._color_system is None:
-            self._color_system = 'standard'
+            try:
+                # in rich version >= 12.5, the color system is changed to be a
+                # contant integer.
+                from rich.console import ColorSystem
+                self._color_system = ColorSystem.STANDARD
+            except:
+                # the older version is using a string.
+                self._color_system = 'standard'
+        
         # TODO (width):
         #   if width longer than default, use single line style; otherwise
         #   split sourcemap and message into different lines.

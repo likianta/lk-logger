@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.1.5"
+version = "5.1.6.dev0"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python advanced print with varnames."
 readme = "README.md"
@@ -9,7 +9,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-rich = ""
+rich = "^12.5"
 
 [tool.poetry.dev-dependencies]
 
