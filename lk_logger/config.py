@@ -92,6 +92,6 @@ class LoggingConfig:
                 # https://rich.readthedocs.io/en/stable/traceback.html
                 from rich.traceback import install
                 from .console import console
-                install(console=console, show_locals=True)
+                install(console=console, show_locals=False)
             else:
                 pass  # TODO: how to uninstall?
