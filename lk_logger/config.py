@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from sys import excepthook as _default_excepthook
+
 
 class LoggingConfig:
     """
@@ -51,6 +53,7 @@ class LoggingConfig:
     rich_traceback: bool
     separator: str
     show_external_lib: bool
+    show_funcname: bool
     show_source: bool
     show_varnames: bool
     
@@ -61,14 +64,13 @@ class LoggingConfig:
         'separator'                  : ';   ',
         #   suggests: ';   ' | ';\t' | '    ' | ...
         'show_external_lib'          : True,
+        'show_funcname'              : True,
         'show_source'                : True,
         'show_varnames'              : False,
     }
     
     def __init__(self, **kwargs):
-        for k, v in self._preset_conf.items():
-            if k in kwargs:
-                v = kwargs[k]
+        for k, v in self._merge_dict(self._preset_conf, kwargs).items():
             self._apply(k, v)
     
     def update(self, **kwargs):
@@ -94,4 +96,17 @@ class LoggingConfig:
                 from .console import console
                 install(console=console, show_locals=False)
             else:
-                pass  # TODO: how to uninstall?
+                import sys
+                sys.excepthook = _default_excepthook
+    
+    @staticmethod
+    def _merge_dict(base: dict, update: dict) -> dict:
+        return {k: update.get(k, default_v) for k, default_v in base.items()}
+    
+    @staticmethod
+    def _diff_dict(base: dict, update: dict) -> dict:
+        out = {}
+        for k, v0 in base.items():
+            if k in update and v0 != (v1 := update[k]):
+                out[k] = v1
+        return out
