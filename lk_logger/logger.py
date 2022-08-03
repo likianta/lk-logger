@@ -80,7 +80,6 @@ class LKLogger:
             'multiple_lines'   : False,
             'log_level'        : '',
             'show_divider_line': False,
-            'show_varnames'    : self._config.show_varnames,
             'traceback_level'  : 0,
         }
         
@@ -144,7 +143,7 @@ class LKLogger:
                 # note: to make sure rick args take effect, `marks['s']` must
                 #   be checked AFTER `marks['r']`.
                 if marks['s'] == 0:
-                    info['show_varnames'] = False
+                    pass
                 else:  # FIXME: this is a temporary solution
                     return markup_pos, {'s': 1}
             if 'v' in marks:
@@ -162,106 +161,121 @@ class LKLogger:
                 ).join(map(str, args))
             )
         
-        srcmap = sourcemap.get_sourcemap(
-            frame=frame,
-            traceback_level=info['traceback_level'],
-            advanced=info['show_varnames'],
-        )
-        
-        def reformat_arguments_with_varnames(markup_pos: int):
-            """
-            update the following info:
-                info['arguments']
-            """
-            if args:
-                if info['show_varnames']:
-                    if markup_pos == 0:
-                        varnames = srcmap.varnames
-                    elif markup_pos == 1:
-                        varnames = srcmap.varnames[1:]
-                    else:
-                        varnames = srcmap.varnames[:-1]
-                    try:
-                        assert len(varnames) == len(args), (varnames, args)
-                    except AssertionError:
-                        # debug('failed extracting varnames')
-                        info['arguments'].extend(map(str, args))
-                    else:
-                        # organize args
-                        for n, a in zip(varnames, args):
-                            info['arguments'].append(
-                                f'{n} = {a}' if n else str(a)
-                            )
-                else:
-                    info['arguments'].extend(map(str, args))
-        
-        reformat_arguments_with_varnames(markup_pos)
-        
-        info['function_name'] = srcmap.funcname
-        
-        def reformat_source_for_external_lib():
-            """
-            update the following info:
-                info['is_external_lib']
-                info['file_path']
-                info['line_number']
-            """
-            # show external lib?
-            if self._config.show_external_lib:
-                # is external lib?
-                if self._is_external_lib(srcmap.filepath):  # yes
-                    info['is_external_lib'] = True
-                    # path format
-                    fmt = self._config.path_style_for_external_lib
-                    if fmt == 'relpath':
-                        info['file_path'] = normpath(
-                            os.path.relpath(srcmap.filepath, self._cwd)
-                        )
-                    else:
-                        for lib_path in sorted(
-                                self._external_libs, reverse=True
-                        ):
-                            if srcmap.filepath.startswith(lib_path):
-                                lib_name = self._external_libs[lib_path].lower()
-                                lib_relpath = (
-                                        srcmap.filepath[
-                                        len(lib_path):].lstrip('./') or
-                                        os.path.basename(srcmap.filepath)
-                                )
-                                break
-                        else:
-                            lib_name = ''
-                            lib_relpath = srcmap.filepath.lstrip('./')
-                        
-                        # debug(lib_name, lib_relpath)
-                        
-                        if fmt == 'pretty_relpath':
-                            if lib_name:
-                                info['file_path'] = \
-                                    '[{}]/{}'.format(lib_name, lib_relpath)
-                            else:
-                                info['file_path'] = \
-                                    '[{}]/{}'.format('unknown', lib_relpath)
-                        elif fmt == 'lib_name_only':
-                            info['file_path'] = f'[{lib_name}]'
-                else:  # no
-                    info['file_path'] = normpath(
-                        os.path.relpath(srcmap.filepath, self._cwd)
-                    )
-            else:
-                if self._is_external_lib(srcmap.filepath):
-                    pass  # info['is_external_lib'] = True ?
-                else:
-                    info['file_path'] = normpath(
-                        os.path.relpath(srcmap.filepath, self._cwd)
-                    )
-            if (x := info['file_path']) and \
-                    not x.startswith(('../', '[')):
-                info['file_path'] = './' + x
+        if any((self._config.show_source,
+                self._config.show_funcname,
+                self._config.show_varnames)):
+            srcmap = sourcemap.get_sourcemap(
+                frame=frame,
+                traceback_level=info['traceback_level'],
+                advanced=self._config.show_varnames,
+            )
             
-            info['line_number'] = str(srcmap.lineno)
+            if self._config.show_source:
+    
+                def reformat_source_for_external_lib():
+                    """
+                    this function updates follows:
+                        info['is_external_lib']
+                        info['file_path']
+                        info['line_number']
+                    """
+                    # show external lib?
+                    if self._config.show_external_lib:
+                        # is external lib?
+                        if self._is_external_lib(srcmap.filepath):  # yes
+                            info['is_external_lib'] = True
+                            # path format
+                            fmt = self._config.path_style_for_external_lib
+                            if fmt == 'relpath':
+                                info['file_path'] = normpath(
+                                    os.path.relpath(srcmap.filepath, self._cwd)
+                                )
+                            else:
+                                for lib_path in sorted(
+                                        self._external_libs, reverse=True
+                                ):
+                                    if srcmap.filepath.startswith(lib_path):
+                                        lib_name = self._external_libs[
+                                            lib_path].lower()
+                                        lib_relpath = (
+                                                srcmap.filepath[len(lib_path):]
+                                                .lstrip('./') or
+                                                os.path.basename(srcmap.filepath)
+                                        )
+                                        break
+                                else:
+                                    lib_name = ''
+                                    lib_relpath = srcmap.filepath.lstrip('./')
+                    
+                                # debug(lib_name, lib_relpath)
+                    
+                                if fmt == 'pretty_relpath':
+                                    if lib_name:
+                                        info['file_path'] = \
+                                            '[{}]/{}'.format(
+                                                lib_name, lib_relpath)
+                                    else:
+                                        info['file_path'] = \
+                                            '[{}]/{}'.format(
+                                                'unknown', lib_relpath)
+                                elif fmt == 'lib_name_only':
+                                    info['file_path'] = f'[{lib_name}]'
+                        else:  # no
+                            info['file_path'] = normpath(
+                                os.path.relpath(srcmap.filepath, self._cwd)
+                            )
+                    else:
+                        if self._is_external_lib(srcmap.filepath):
+                            pass  # info['is_external_lib'] = True ?
+                        else:
+                            info['file_path'] = normpath(
+                                os.path.relpath(srcmap.filepath, self._cwd)
+                            )
+                    if (x := info['file_path']) and \
+                            not x.startswith(('../', '[')):
+                        info['file_path'] = './' + x
         
-        reformat_source_for_external_lib()
+                    info['line_number'] = str(srcmap.lineno)
+    
+                reformat_source_for_external_lib()
+                
+            if self._config.show_funcname:
+                info['funcname'] = srcmap.funcname
+    
+            if self._config.show_varnames:
+    
+                def reformat_arguments_with_varnames(markup_pos: int):
+                    """
+                    this function updates follows:
+                        info['arguments']
+                    """
+                    nonlocal args, info, srcmap
+                    if args:
+                        if markup_pos == 0:
+                            varnames = srcmap.varnames
+                        elif markup_pos == 1:
+                            varnames = srcmap.varnames[1:]
+                        else:
+                            varnames = srcmap.varnames[:-1]
+                        try:
+                            assert len(varnames) == len(args), (varnames, args)
+                        except AssertionError:
+                            # debug('failed extracting varnames')
+                            info['arguments'].extend(map(str, args))
+                        else:
+                            # organize args
+                            for n, a in zip(varnames, args):
+                                info['arguments'].append(
+                                    f'{n} = {a}' if n else str(a)
+                                )
+                
+                reformat_arguments_with_varnames(markup_pos)
+
+            else:
+                info['arguments'].extend(map(str, args))
+        
+        else:
+            info['arguments'].extend(map(str, args))
         
         # ---------------------------------------------------------------------
         
@@ -276,27 +290,29 @@ class LKLogger:
         #       5. divider_line
         #       6. arguments
         # 1. source
-        message_elements.append(
-            formatter.fmt_source(
-                info['file_path'],
-                info['line_number'],
-                is_external_lib=info['is_external_lib'],
-                fmt_width=True
+        if self._config.show_source:
+            message_elements.append(
+                formatter.fmt_source(
+                    info['file_path'],
+                    info['line_number'],
+                    is_external_lib=info['is_external_lib'],
+                    fmt_width=True
+                )
             )
-        )
-        message_elements.append(
-            formatter.fmt_separator('  >>  ')
-        )
+            message_elements.append(
+                formatter.fmt_separator('  >>  ')
+            )
         # 2. funcname
-        message_elements.append(
-            formatter.fmt_funcname(
-                info['function_name'],
-                fmt_width=True
+        if self._config.show_funcname:
+            message_elements.append(
+                formatter.fmt_funcname(
+                    info['function_name'],
+                    fmt_width=True
+                )
             )
-        )
-        message_elements.append(
-            formatter.fmt_separator('  >>  ')
-        )
+            message_elements.append(
+                formatter.fmt_separator('  >>  ')
+            )
         # 3. log_level
         if info['log_level']:
             message_elements.append(
@@ -322,10 +338,10 @@ class LKLogger:
                                                         (↑ looks more pretty)
             
                 q: why FATAL doesn't use '\t'?
-                a: FATAL's effect is white text on red background.
-                   the red background effect will be invalid if we use '\t'.
-                   so we have to '     ' instead.
-                   the letter number of '   ' depends on the width of its
+                a: FATAL's style is white text on red background.
+                   the red background effect will be losing if we use '\t'.
+                   so we have to use '     ' instead.
+                   the number of whitespaces in '     ' depends on the width of
                    leading content. currently it's `4 * <integer> + 2 + <7 (the
                    length of '[FATAL]'>`. see also `./message_formatter
                    : MessageFormatter : fmt_source : (param) min_width`.
