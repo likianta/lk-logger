@@ -36,7 +36,7 @@ class MarkupAnalyser:
     readme: prj:/docs/markup.zh.md
     """
     from re import compile
-    _mark_pattern_0 = compile(r'^:([deilprsv][0-9]?)+$')
+    _mark_pattern_0 = compile(r'^:(?:[dilprsv][0-9]?)+$')
     _mark_pattern_1 = compile(r'\w\d?')
     
     def is_valid_markup(self, text: str) -> bool:
@@ -46,9 +46,8 @@ class MarkupAnalyser:
         """
         return:
             dict[literal mark, int value]
-                mark: d, e, i, l, p, r, s, t, v
         """
-        out = {'d': -1, 'i': -1, 'l': -1, 'p': -1, 'r': -1, 's': -1, 'v': -1}
+        out = {'d': -1, 'i': -1, 'l': -1, 'p': 0, 'r': -1, 's': -1, 'v': 0}
         defaults = {'d': 0, 'i': 1, 'l': 0, 'p': 1, 'r': 0, 's': 0, 'v': 1}
         for m in (self._mark_pattern_1.findall(markup) or ()):
             if len(m) == 1:
@@ -60,13 +59,6 @@ class MarkupAnalyser:
     _simple_counter = 0
     
     def analyse(self, marks: T.Marks) -> T.MarksMeaning:
-        if marks['s'] == 0:
-            return {MarkMeaning.MODERATE_PRUNE: None}
-        elif marks['s'] >= 1:
-            return {MarkMeaning.AGRESSIVE_PRUNE: None}
-        
-        # ---------------------------------------------------------------------
-        
         out = {}
         
         if marks['d'] >= 0:
@@ -86,7 +78,12 @@ class MarkupAnalyser:
         if marks['r'] >= 0:
             out[MarkMeaning.RICH_FORMAT] = True
         
-        if marks['v'] >= 0:
+        if marks['s'] == 0:
+            out[MarkMeaning.MODERATE_PRUNE] = True
+        elif marks['s'] >= 1:
+            out[MarkMeaning.AGRESSIVE_PRUNE] = True
+        
+        if marks['v'] >= 1:
             levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
             out[MarkMeaning.VERBOSITY] = levels[marks['v']]
         

@@ -98,7 +98,7 @@ def get_variables(line: str):
     kwargs_pattern = compile(r'^\w+ *=')  # matching: 'a=1'
     lambda_pattern = compile(r'^lambda ')  # matching: 'lambda *_, **__: ...'
     nested_pattern = compile(r'^[(\[{]')  # matching: '(...', '[...', '{...'
-    number_pattern = compile(r'^-?[\d]+(?:\.\d+)?$')  # matching: '123', '-123'
+    number_pattern = compile(r'^-?\d+(?:\.\d+)?$')  # matching: '123', '-123'
     quotes_pattern = compile(r'^[bfru]*[\'"]')  # matching: '"hello', 'b"hello'
     walrus_pattern = compile(r'^(\w+) *:=')  # mathcing: 'x := 12'
     

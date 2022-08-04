@@ -78,6 +78,7 @@ class MessageBuilder:
                     marks_meaning[MarkMeaning.VERBOSITY]
                 )
             )
+            message_elements.append(' ')
         
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:

@@ -99,8 +99,10 @@ class MessageFormatter:
             return self.markup((separator, 'bright_black')).join(arguments)
     
     def fmt_level(self, level: str, custom_label='') -> str:
+        if level == 'trace':
+            return ''
         labels = {
-            'trace': '[TRACE]',
+            'trace': '',
             'debug': '[DEBUG]',
             'info' : ' [INFO]',
             'warn' : ' [WARN]',
