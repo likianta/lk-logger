@@ -61,6 +61,7 @@ class MessageBuilder:
         
         # 2. funcname
         if self._show_funcname:
+            assert info['function_name']
             message_elements.append(
                 self._formatter.fmt_funcname(
                     info['function_name'],
@@ -110,7 +111,7 @@ class MessageBuilder:
         message_elements.append(
             self._formatter.fmt_message(
                 arguments=args,
-                varnames=info['varnames'] if self._show_varnames else (),
+                varnames=info['variable_names'] if self._show_varnames else (),
                 rich=MarkMeaning.RICH_FORMAT in marks_meaning,
                 expand=MarkMeaning.EXPAND_MULTIPLE_LINES in marks_meaning,
                 separator=self._separator,

@@ -10,7 +10,7 @@ __all__ = ['LKLogger', 'lk']
 
 class T:  # Typehint
     from rich.console import RenderableType
-    from typing import TypedDict, Union
+    from typing import Iterable, TypedDict, Union
     from .markup import T as _TMarkup  # noqa
     
     Args = Union[list[str], tuple[str, ...]]
@@ -19,19 +19,13 @@ class T:  # Typehint
     Marks = _TMarkup.Marks
     MarksMeaning = _TMarkup.MarksMeaning
     
-    _FrameId = int
-    _FixedMarks = str
-    Cache = dict[_FrameId, TypedDict('_SubDict0', {
-        'markup_pos': int,
-        'info'      : dict[_FixedMarks, TypedDict('_SubDict1', {
-            'file_path'      : str,
-            'function_name'  : str,
-            'is_external_lib': bool,
-            'line_number'    : int,
-            'traceback_level': int,
-            'varnames'       : tuple[str, ...],
-        })]
-    })]
+    Info = TypedDict('Info', {
+        'file_path'      : str,
+        'line_number'    : str,
+        'is_external_lib': bool,
+        'function_name'  : str,
+        'variable_names' : Iterable[str],
+    })
 
 
 class LKLogger:
@@ -90,12 +84,12 @@ class LKLogger:
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return self._builder.quick_compose(args)
         
-        info = {
+        info: T.Info = {
             'file_path'      : '',
             'line_number'    : '0',
             'is_external_lib': False,
             'function_name'  : '',
-            'varnames'       : (),
+            'variable_names' : (),
         }
         
         if any((self._config.show_source,
@@ -139,19 +133,18 @@ class LKLogger:
                 update_sourcemap()
             
             if self._config.show_funcname:
-                info['funcname'] = srcmap.funcname
-                assert info['funcname']  # test
+                info['function_name'] = srcmap.funcname
             
             if self._config.show_varnames:
                 if MarkMeaning.MODERATE_PRUNE in marks_meaning:
-                    info['varnames'] = ()
+                    info['variable_names'] = ()
                 else:
                     if markup_pos == 0:
-                        info['varnames'] = srcmap.varnames
+                        info['variable_names'] = srcmap.varnames
                     elif markup_pos == 1:
-                        info['varnames'] = srcmap.varnames[1:]
+                        info['variable_names'] = srcmap.varnames[1:]
                     else:
-                        info['varnames'] = srcmap.varnames[:-1]
+                        info['variable_names'] = srcmap.varnames[:-1]
         
         self._cache.store_info(frame_id, markup, info)
         

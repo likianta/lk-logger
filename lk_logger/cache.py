@@ -10,20 +10,10 @@ class T:  # Typehint
     MarkupPos = int
     Markup = str
     
-    CachedInfo = t.TypedDict('CachedInfo', {
-        'marks_meaning'  : _TMarkup.MarksMeaning,  # noqa
-        'file_path'      : str,
-        'function_name'  : str,
-        'is_external_lib': bool,
-        'line_number'    : int,
-        'traceback_level': int,
-        'varnames'       : tuple[str, ...],
-    })
-    
     Cache = dict[FrameId, t.TypedDict('_SubDict0', {
-        'markup_pos': MarkupPos,  # noqa
+        'markup_pos'   : MarkupPos,  # noqa
         'marks_meaning': _TMarkup.MarksMeaning,  # noqa
-        'info'      : dict[Markup, CachedInfo]
+        'info'         : dict[Markup, dict]
     })]
 
 
@@ -33,9 +23,9 @@ class LoggingCache:
     def __init__(self):
         from collections import defaultdict
         self._cache = defaultdict(lambda: {
-            'markup_pos': None,
+            'markup_pos'   : None,
             'marks_meaning': {},
-            'info'      : {},
+            'info'         : {},
         })
     
     def clear_cache(self):
@@ -52,9 +42,7 @@ class LoggingCache:
                 markup in self._cache[frame_id]['info']
         )
     
-    def get_cache(self,
-                  frame_id: T.FrameId,
-                  markup: T.Markup) -> T.CachedInfo:
+    def get_cache(self, frame_id: T.FrameId, markup: T.Markup) -> dict:
         # suggest checking `self.is_cached` before calling this method.
         return self._cache[frame_id]['info'][markup]
     
