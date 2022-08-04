@@ -32,29 +32,11 @@ class LKLogger:
         self._config = LoggingConfig()
         self._counter = 0
         self._cwd = normpath(os.getcwd())
-        
-        # lazy loaded
-        self.__external_libs = None
-        self.__proj_root = None
     
     def configure(self, clear_old=False, **kwargs) -> None:
         if clear_old:
             self._config.reset()
         self._config.update(**kwargs)
-    
-    @property
-    def _proj_root(self) -> str:
-        if self.__proj_root is None:
-            from .path_helper import find_project_root
-            self.__proj_root = find_project_root()
-        return self.__proj_root
-    
-    @property
-    def _external_libs(self) -> dict[str, str]:
-        if self.__external_libs is None:
-            from .path_helper import indexing_external_libs
-            self.__external_libs = indexing_external_libs()
-        return self.__external_libs
     
     # -------------------------------------------------------------------------
     
@@ -171,7 +153,7 @@ class LKLogger:
             )
             
             if self._config.show_source:
-    
+                
                 def reformat_source_for_external_lib():
                     """
                     this function updates follows:
@@ -179,10 +161,11 @@ class LKLogger:
                         info['file_path']
                         info['line_number']
                     """
+                    from .path_helper import path_helper
                     # show external lib?
                     if self._config.show_external_lib:
                         # is external lib?
-                        if self._is_external_lib(srcmap.filepath):  # yes
+                        if path_helper.is_external_lib(srcmap.filepath):  # yes
                             info['is_external_lib'] = True
                             # path format
                             fmt = self._config.path_style_for_external_lib
@@ -192,10 +175,10 @@ class LKLogger:
                                 )
                             else:
                                 for lib_path in sorted(
-                                        self._external_libs, reverse=True
+                                        path_helper.external_libs, reverse=True
                                 ):
                                     if srcmap.filepath.startswith(lib_path):
-                                        lib_name = self._external_libs[
+                                        lib_name = path_helper.external_libs[
                                             lib_path].lower()
                                         lib_relpath = (
                                                 srcmap.filepath[len(lib_path):]
@@ -206,9 +189,9 @@ class LKLogger:
                                 else:
                                     lib_name = ''
                                     lib_relpath = srcmap.filepath.lstrip('./')
-                    
+                                
                                 # debug(lib_name, lib_relpath)
-                    
+                                
                                 if fmt == 'pretty_relpath':
                                     if lib_name:
                                         info['file_path'] = \
@@ -225,7 +208,7 @@ class LKLogger:
                                 os.path.relpath(srcmap.filepath, self._cwd)
                             )
                     else:
-                        if self._is_external_lib(srcmap.filepath):
+                        if path_helper.is_external_lib(srcmap.filepath):
                             pass  # info['is_external_lib'] = True ?
                         else:
                             info['file_path'] = normpath(
@@ -234,16 +217,16 @@ class LKLogger:
                     if (x := info['file_path']) and \
                             not x.startswith(('../', '[')):
                         info['file_path'] = './' + x
-        
+                    
                     info['line_number'] = str(srcmap.lineno)
-    
-                reformat_source_for_external_lib()
                 
+                reformat_source_for_external_lib()
+            
             if self._config.show_funcname:
                 info['funcname'] = srcmap.funcname
-    
+            
             if self._config.show_varnames:
-    
+                
                 def reformat_arguments_with_varnames(markup_pos: int):
                     """
                     this function updates follows:
@@ -270,7 +253,7 @@ class LKLogger:
                                 )
                 
                 reformat_arguments_with_varnames(markup_pos)
-
+            
             else:
                 info['arguments'].extend(map(str, args))
         
@@ -382,9 +365,6 @@ class LKLogger:
             )
         
         return ''.join(message_elements)
-    
-    def _is_external_lib(self, filepath: str) -> bool:
-        return not filepath.startswith(self._proj_root)
 
 
 lk = LKLogger()
