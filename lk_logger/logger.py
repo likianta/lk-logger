@@ -92,18 +92,20 @@ class LKLogger:
             'variable_names' : (),
         }
         
-        if any((self._config.show_source,
-                self._config.show_funcname,
-                self._config.show_varnames)):
-            
+        show_source = self._config.show_source
+        show_funcname = self._config.show_funcname
+        show_varnames = self._config.show_varnames and \
+            MarkMeaning.MODERATE_PRUNE not in marks_meaning
+        
+        if any((show_source, show_funcname, show_varnames)):
             from .sourcemap import sourcemap
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
                 traceback_level=marks['p'],
-                advanced=self._config.show_varnames,
+                advanced=show_varnames,
             )
             
-            if self._config.show_source:
+            if show_source:
                 
                 def update_sourcemap():
                     """
@@ -132,19 +134,16 @@ class LKLogger:
                 
                 update_sourcemap()
             
-            if self._config.show_funcname:
+            if show_funcname:
                 info['function_name'] = srcmap.funcname
             
-            if self._config.show_varnames:
-                if MarkMeaning.MODERATE_PRUNE in marks_meaning:
-                    info['variable_names'] = ()
+            if show_varnames:
+                if markup_pos == 0:
+                    info['variable_names'] = srcmap.varnames
+                elif markup_pos == 1:
+                    info['variable_names'] = srcmap.varnames[1:]
                 else:
-                    if markup_pos == 0:
-                        info['variable_names'] = srcmap.varnames
-                    elif markup_pos == 1:
-                        info['variable_names'] = srcmap.varnames[1:]
-                    else:
-                        info['variable_names'] = srcmap.varnames[:-1]
+                    info['variable_names'] = srcmap.varnames[:-1]
         
         self._cache.store_info(frame_id, markup, info)
         
