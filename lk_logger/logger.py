@@ -72,7 +72,7 @@ class LKLogger:
     def _build_message(self, frame, *args) -> T.RenderableType:
         from .markup import MarkMeaning
         
-        frame_id = id(frame)
+        frame_id = f'{id(frame)}#{frame.f_lineno}'
         args, markup_pos, markup = \
             self._extract_markup_from_arguments(frame_id, args)
         marks = self._analyser.extract(markup)
@@ -140,6 +140,7 @@ class LKLogger:
             
             if self._config.show_funcname:
                 info['funcname'] = srcmap.funcname
+                assert info['funcname']  # test
             
             if self._config.show_varnames:
                 if MarkMeaning.MODERATE_PRUNE in marks_meaning:
@@ -157,7 +158,7 @@ class LKLogger:
         return self._builder.compose(args, marks_meaning, info)
     
     def _extract_markup_from_arguments(
-            self, frame_id: int, args: T.Args
+            self, frame_id: str, args: T.Args
     ) -> tuple[T.Args, T.MarkupPos, T.Markup]:
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
             is_markup = self._analyser.is_valid_markup

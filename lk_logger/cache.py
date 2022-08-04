@@ -6,7 +6,7 @@ import typing as t
 class T:  # Typehint
     from .markup import T as _TMarkup  # noqa
     
-    FrameId = int
+    FrameId = str
     MarkupPos = int
     Markup = str
     
