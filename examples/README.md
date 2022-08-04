@@ -8,4 +8,6 @@
 
 3. all_markup_usages.py
 
-4. do_not_show_source_and_funcname.py
+4. pretty_error.py
+
+5. do_not_show_source_and_funcname.py
