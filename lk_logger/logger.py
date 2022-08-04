@@ -155,25 +155,26 @@ class LKLogger:
     ) -> tuple[T.Args, T.MarkupPos, T.Markup]:
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
             is_markup = self._analyser.is_valid_markup
-            if all((
-                    len(args) > 0,
-                    isinstance(args[0], str),
-                    args[0].startswith(':'),
+            if (
+                    len(args) > 0 and
+                    isinstance(args[0], str) and
+                    args[0].startswith(':') and
                     is_markup(args[0])
-            )):
+            ):
                 markup_pos = 1
-            elif all((
-                    len(args) > 1,
-                    isinstance(args[-1], str),
-                    args[-1].startswith(':'),
+            elif (
+                    len(args) > 1 and
+                    isinstance(args[-1], str) and
+                    args[-1].startswith(':') and
                     is_markup(args[-1])
-            )):
+            ):
                 markup_pos = -1
             else:
                 markup_pos = 0
             self._cache.record_markup_pos(frame_id, markup_pos)
         
         # markup_pos: 0 not exists, 1 first place, -1 last place.
+        args = tuple(map(str, args))
         if markup_pos == 0:
             return args, markup_pos, ''
         if markup_pos == 1:
