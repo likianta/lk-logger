@@ -51,6 +51,9 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
     STATUS = 'enabled'
 
 
+update = setup  # alias
+
+
 def unload():
     setattr(builtins, 'print', default_print)
     global STATUS

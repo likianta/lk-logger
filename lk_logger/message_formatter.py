@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import typing as t
 from textwrap import indent
-from typing import Union
 
 from ._internal_debug import debug  # noqa
 
@@ -30,7 +30,7 @@ class MessageFormatter:
     
     # -------------------------------------------------------------------------
     
-    def fmt_source(self, filepath: str, lineno: Union[int, str],
+    def fmt_source(self, filepath: str, lineno: t.Union[int, str],
                    is_external_lib: bool = False, fmt_width=False) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
@@ -79,24 +79,34 @@ class MessageFormatter:
         else:
             return self.markup((funcname, 'magenta'))
     
-    def fmt_index(self, idx: Union[int, str]) -> str:
+    def fmt_index(self, idx: int) -> str:
         return self.markup(
-            (f'[{idx}]', 'bright_black' if idx == 0 or idx == '0' else 'red')
+            (f'[{idx}]', 'bright_black' if idx == 0 else 'red')
         )
     
-    def fmt_divider(self, div_: str) -> str:
+    def fmt_divider(self, div_: str = '-' * 64) -> str:
         return self.markup((div_, 'yellow'))
     
-    def fmt_message(self, msg_frags: list[str], rich: bool, expand=False,
-                    separator=';   ') -> str:  # FIXME
+    def fmt_message(self, arguments: t.Iterable[str], varnames: tuple[str],
+                    rich: bool, expand=False, separator=';   ') -> str:
+        if varnames:
+            arguments = self._mix_arguments_with_varnames(arguments, varnames)
         if not rich:
-            msg_frags = (x.replace('[', '\\[') for x in msg_frags)
+            arguments = (x.replace('[', '\\[') for x in arguments)
         if expand:
-            return '\n' + indent('\n'.join(msg_frags), '    ')
+            return '\n' + indent('\n'.join(arguments), '    ')
         else:
-            return self.markup((separator, 'bright_black')).join(msg_frags)
+            return self.markup((separator, 'bright_black')).join(arguments)
     
-    def fmt_level(self, text: str, level: str) -> str:
+    def fmt_level(self, level: str, custom_label='') -> str:
+        labels = {
+            'trace': '[TRACE]',
+            'debug': '[DEBUG]',
+            'info' : ' [INFO]',
+            'warn' : ' [WARN]',
+            'error': '[ERROR]',
+            'fatal': '[FATAL]',
+        }
         colors = {
             'trace': '',
             'debug': 'bright_black',
@@ -105,9 +115,29 @@ class MessageFormatter:
             'error': 'red',
             'fatal': 'bold #ffffff on red',
         }
-        return self.markup((text, colors[level]))
+        if custom_label:
+            label = custom_label
+        else:
+            label = labels[level]
+        return self.markup((label, colors[level]))
     
     # -------------------------------------------------------------------------
+    
+    @staticmethod
+    def _mix_arguments_with_varnames(
+            arguments: t.Iterable[str], varnames: tuple[str, ...],
+    ) -> t.Iterable[str]:
+        if not arguments:
+            return ()
+        try:
+            # noinspection PyTypeChecker
+            assert len(varnames) == len(arguments), (varnames, arguments)
+        except AssertionError:
+            # debug('failed extracting varnames')
+            return arguments
+        else:
+            return tuple(f'{v} = {a}' if v else str(a)
+                         for v, a in zip(varnames, arguments))
     
     @staticmethod
     def _fmt_width(text: str, min_width: int = None, unit_spaces=4) -> str:

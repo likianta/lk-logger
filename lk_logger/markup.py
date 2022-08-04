@@ -1,66 +1,100 @@
-from typing import TypedDict
+from __future__ import annotations
+
+import typing as t
+from enum import Enum
+from enum import auto
 
 
-class TMarks(TypedDict, total=False):
-    d: int
-    e: int
-    i: int
-    l: int
-    p: int
-    r: int
-    s: int
-    v: int
+# noinspection PyArgumentList
+class MarkMeaning(Enum):
+    AGRESSIVE_PRUNE = auto()
+    DIVIDER_LINE = auto()
+    EXPAND_MULTIPLE_LINES = auto()
+    MODERATE_PRUNE = auto()
+    RESET_INDEX = auto()
+    RICH_FORMAT = auto()
+    UPDATE_INDEX = auto()
+    VERBOSITY = auto()
+
+
+class T:
+    Markup = str
+    Marks = t.TypedDict('Marks', {
+        'd': int,  # divider line
+        'i': int,  # index
+        'l': int,  # long / loose format (multiple lines)
+        'p': int,  # parent layer
+        'r': int,  # rich
+        's': int,  # short / simple / single line
+        'v': int,  # verbose / log level
+    })
+    MarksMeaning = dict[MarkMeaning, t.Any]
 
 
 class MarkupAnalyser:
     """
-    readme:
-        ~/docs/markup.zh.md
-
-    markup list:
-        :d  divider line
-        :e  error
-        :i  index
-        :l  long / loose format (multiple lines)
-        :p  parent layer
-        :r  rich
-        :s  short / simple / single line
-        :t  tag
-        :v  verbose / log level
+    readme: prj:/docs/markup.zh.md
     """
-    
-    def __init__(self):
-        from re import compile
-        self._mark_pattern = compile(r'^:([deilprsv][0-9]?)+$')
+    from re import compile
+    _mark_pattern_0 = compile(r'^:([deilprsv][0-9]?)+$')
+    _mark_pattern_1 = compile(r'\w\d?')
     
     def is_valid_markup(self, text: str) -> bool:
-        return bool(self._mark_pattern.match(text))
+        return bool(self._mark_pattern_0.match(text))
     
-    @staticmethod
-    def analyse(markup: str) -> TMarks:
+    def extract(self, markup: T.Markup) -> T.Marks:
         """
         return:
             dict[literal mark, int value]
                 mark: d, e, i, l, p, r, s, t, v
         """
-        out = {}
-        defaults = {
-            'd': 0,
-            'e': 0,
-            'i': 1,
-            'l': 0,
-            'p': 1,
-            'r': 0,
-            's': 0,
-            't': 0,
-            'v': 1,
-        }
-        
-        from re import compile
-        pattern = compile(r'\w\d?')
-        for m in (pattern.findall(markup) or ()):
+        out = {'d': -1, 'i': -1, 'l': -1, 'p': -1, 'r': -1, 's': -1, 'v': -1}
+        defaults = {'d': 0, 'i': 1, 'l': 0, 'p': 1, 'r': 0, 's': 0, 'v': 1}
+        for m in (self._mark_pattern_1.findall(markup) or ()):
             if len(m) == 1:
-                out[m] = defaults[m]
+                out[m[0]] = defaults[m[0]]
             else:
                 out[m[0]] = int(m[1:])
+        return out
+    
+    _simple_counter = 0
+    
+    def analyse(self, marks: T.Marks) -> T.MarksMeaning:
+        if marks['s'] == 0:
+            return {MarkMeaning.MODERATE_PRUNE: None}
+        elif marks['s'] >= 1:
+            return {MarkMeaning.AGRESSIVE_PRUNE: None}
+        
+        # ---------------------------------------------------------------------
+        
+        out = {}
+        
+        if marks['d'] >= 0:
+            out[MarkMeaning.DIVIDER_LINE] = '-' * 64
+        
+        if marks['i'] == 0:
+            self._simple_counter = 0
+            out[MarkMeaning.RESET_INDEX] = 0
+            out[MarkMeaning.RICH_FORMAT] = True
+        elif marks['i'] >= 1:
+            self._simple_counter += 1
+            out[MarkMeaning.UPDATE_INDEX] = self._simple_counter
+        
+        if marks['l'] >= 0:
+            out[MarkMeaning.EXPAND_MULTIPLE_LINES] = True
+        
+        if marks['r'] >= 0:
+            out[MarkMeaning.RICH_FORMAT] = True
+        
+        if marks['v'] >= 0:
+            levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
+            out[MarkMeaning.VERBOSITY] = levels[marks['v']]
+        
+        # postfix
+        # if any((
+        #     MarkMeaning.RESET_INDEX in out,
+        #     MarkMeaning.EXPAND_MULTIPLE_LINES in out,
+        # )):
+        #     out[MarkMeaning.RICH_FORMAT] = True
+        
         return out
