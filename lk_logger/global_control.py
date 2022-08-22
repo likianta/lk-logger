@@ -10,7 +10,7 @@ STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
 _HAS_WELCOME_MESSAGE_SHOWN = False
 
 
-def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
+def setup(*, quiet=False, clear_preset=False, **kwargs):
     """
     args:
         quiet:
@@ -22,12 +22,12 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
                 `quiet=True` will show this message.
             tip: if you are developing an intermediate/supporting library, it
                 is recommended to set `quiet=True`.
-        clear_pre_configured:
+        clear_preset:
         kwargs: see `./logger.py > LoggingConfig`.
     """
     global _HAS_WELCOME_MESSAGE_SHOWN
     
-    lk.configure(clear_pre_configured, **kwargs)
+    lk.configure(clear_preset, **kwargs)
     setattr(builtins, 'print', lk.log)
     
     if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
@@ -51,7 +51,20 @@ def setup(*, quiet=False, clear_pre_configured=False, **kwargs):
     STATUS = 'enabled'
 
 
-update = setup  # alias
+def setup_for_ipython() -> None:
+    try:
+        get_ipython()
+    except NameError:
+        print('ipython shell instance not found.', ':rv3')
+        return
+    else:
+        from rich.traceback import install
+        from .console import console
+        install(console=console)
+
+
+def update(clear_preset=False, **kwargs):
+    lk.configure(clear_preset, **kwargs)
 
 
 def unload():
