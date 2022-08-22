@@ -51,18 +51,6 @@ def setup(*, quiet=False, clear_preset=False, **kwargs):
     STATUS = 'enabled'
 
 
-def setup_for_ipython() -> None:
-    try:
-        get_ipython()
-    except NameError:
-        print('ipython shell instance not found.', ':rv3')
-        return
-    else:
-        from rich.traceback import install
-        from .console import console
-        install(console=console)
-
-
 def update(clear_preset=False, **kwargs):
     lk.configure(clear_preset, **kwargs)
 
@@ -83,6 +71,32 @@ def disable():
     setattr(builtins, 'print', lambda *_, **__: None)
     global STATUS
     STATUS = 'disabled'
+
+
+# -----------------------------------------------------------------------------
+# other
+
+def start_ipython(user_ns=None) -> None:
+    try:
+        import IPython
+    except ImportError:
+        print('ipython is not installed.', ':rv4')
+        return
+    else:
+        setup(quiet=True)
+    
+    from IPython.terminal.ipapp import TerminalIPythonApp
+    app = TerminalIPythonApp.instance(user_ns=user_ns or {'print': lk.log})
+    app.initialize()
+
+    # setup except hook for ipython
+    from IPython.core.getipython import get_ipython
+    setattr(builtins, 'get_ipython', get_ipython)
+    from rich.traceback import install
+    from .console import console
+    install(console=console)
+    
+    app.start()
 
 
 # -----------------------------------------------------------------------------
