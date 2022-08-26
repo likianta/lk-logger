@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from enum import Enum
 from enum import auto
+from time import time
 
 
 # noinspection PyArgumentList
@@ -12,7 +13,10 @@ class MarkMeaning(Enum):
     EXPAND_MULTIPLE_LINES = auto()
     MODERATE_PRUNE = auto()
     RESET_INDEX = auto()
+    RESET_TIMER = auto()
     RICH_FORMAT = auto()
+    START_TIMER = auto()
+    STOP_TIMER = auto()
     UPDATE_INDEX = auto()
     VERBOSITY = auto()
 
@@ -26,6 +30,7 @@ class T:
         'p': int,  # parent layer
         'r': int,  # rich
         's': int,  # short / simple / single line
+        't': int,  # timestamp
         'v': int,  # verbose / log level
     })
     MarksMeaning = dict[MarkMeaning, t.Any]
@@ -36,7 +41,7 @@ class MarkupAnalyser:
     readme: prj:/docs/markup.zh.md
     """
     from re import compile
-    _mark_pattern_0 = compile(r'^:(?:[dilprsv][0-9]?)+$')
+    _mark_pattern_0 = compile(r'^:(?:[dilprstv][0-9]?)+$')
     _mark_pattern_1 = compile(r'\w\d?')
     
     def is_valid_markup(self, text: str) -> bool:
@@ -47,8 +52,26 @@ class MarkupAnalyser:
         return:
             dict[literal mark, int value]
         """
-        out = {'d': -1, 'i': -1, 'l': -1, 'p': 0, 'r': -1, 's': -1, 'v': 0}
-        defaults = {'d': 0, 'i': 1, 'l': 0, 'p': 1, 'r': 0, 's': 0, 'v': 1}
+        out = {
+            'd': -1,
+            'i': -1,
+            'l': -1,
+            'p': 0,
+            'r': -1,
+            's': -1,
+            't': -1,
+            'v': 0,
+        }
+        defaults = {
+            'd': 0,
+            'i': 1,
+            'l': 0,
+            'p': 1,
+            'r': 0,
+            's': 0,
+            't': 2,
+            'v': 1,
+        }
         for m in (self._mark_pattern_1.findall(markup) or ()):
             if len(m) == 1:
                 out[m[0]] = defaults[m[0]]
@@ -56,7 +79,8 @@ class MarkupAnalyser:
                 out[m[0]] = int(m[1:])
         return out
     
-    _simple_counter = 0
+    _simple_count = 0
+    _simple_time = time()
     
     def analyse(self, marks: T.Marks) -> T.MarksMeaning:
         out = {}
@@ -65,12 +89,12 @@ class MarkupAnalyser:
             out[MarkMeaning.DIVIDER_LINE] = '-' * 64
         
         if marks['i'] == 0:
-            self._simple_counter = 0
+            self._simple_count = 0
             out[MarkMeaning.RESET_INDEX] = 0
             out[MarkMeaning.RICH_FORMAT] = True
         elif marks['i'] >= 1:
-            self._simple_counter += 1
-            out[MarkMeaning.UPDATE_INDEX] = self._simple_counter
+            self._simple_count += 1
+            out[MarkMeaning.UPDATE_INDEX] = self._simple_count
         
         if marks['l'] >= 0:
             out[MarkMeaning.EXPAND_MULTIPLE_LINES] = True
@@ -82,6 +106,19 @@ class MarkupAnalyser:
             out[MarkMeaning.MODERATE_PRUNE] = True
         elif marks['s'] >= 1:
             out[MarkMeaning.AGRESSIVE_PRUNE] = True
+        
+        if marks['t'] >= 0:
+            out[MarkMeaning.RICH_FORMAT] = True
+            if marks['t'] == 0:
+                t = self._simple_time = time()
+                out[MarkMeaning.RESET_TIMER] = t
+            elif marks['t'] == 1:
+                t = self._simple_time = time()
+                out[MarkMeaning.START_TIMER] = t
+            elif marks['t'] == 2:
+                start, end = self._simple_time, time()
+                self._simple_time = end
+                out[MarkMeaning.STOP_TIMER] = (start, end, end - start)
         
         if marks['v'] >= 1:
             levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')

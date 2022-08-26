@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import time
 import typing as t
 
 from .markup import MarkMeaning
 from .message_formatter import MessageFormatter
+
+_strftime = lambda t: time.strftime('[green]\\[%H:%M:%S][/]', time.localtime(t))
 
 
 class T:
@@ -16,7 +19,6 @@ class T:
 class MessageBuilder:
     
     def __init__(self, **kwargs):
-        self._counter = 0
         self._formatter = MessageFormatter()
         self.update_config(**kwargs)
     
@@ -93,10 +95,8 @@ class MessageBuilder:
                 self._formatter.fmt_index(0)
             )
             message_elements.append(' ')
-            
             assert not args
             args = ('[bright_black]reset index[/]',)
-        
         elif MarkMeaning.UPDATE_INDEX in marks_meaning:
             message_elements.append(
                 self._formatter.fmt_index(
@@ -104,8 +104,25 @@ class MessageBuilder:
                 )
             )
             message_elements.append(' ')
-        
-        # 5. divider
+
+        # 5. timestamp
+        if MarkMeaning.RESET_TIMER in marks_meaning:
+            assert not args
+            args = ('[bright_black]reset timer:[/] {}'.format(
+                _strftime(marks_meaning[MarkMeaning.RESET_TIMER])
+            ),)
+        elif MarkMeaning.START_TIMER in marks_meaning:
+            assert not args
+            args = ('[cyan]start timer:[/] {}'.format(
+                _strftime(marks_meaning[MarkMeaning.START_TIMER])
+            ),)
+        elif MarkMeaning.STOP_TIMER in marks_meaning:
+            s, e, d = marks_meaning[MarkMeaning.STOP_TIMER]
+            args = ('[cyan]stop timer:[/] {} -> {} [red]({}ms)[/]'.format(
+                _strftime(s), _strftime(e), round(d * 1000)
+            ), *args)
+
+        # 6. divider
         if MarkMeaning.DIVIDER_LINE in marks_meaning:
             div = marks_meaning[MarkMeaning.DIVIDER_LINE]
             message_elements.append(
@@ -113,7 +130,7 @@ class MessageBuilder:
             )
             message_elements.append(' ')
         
-        # 6. arguments
+        # 7. arguments
         message_elements.append(
             self._formatter.fmt_message(
                 arguments=args,

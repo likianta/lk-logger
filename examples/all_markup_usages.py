@@ -1,7 +1,8 @@
 import lk_logger
 lk_logger.setup(show_varnames=True)
 
-print(':d', 'this is a divider line')
+# -----------------------------------------------------------------------------
+print(':d', '`:i` usage')
 
 print(':i', 'sunday')
 print(':i', 'monday')
@@ -53,8 +54,7 @@ print(':r', '[cyan]hello[/] [yellow]world[/]')
 # -----------------------------------------------------------------------------
 print(':d', '`:t` usage')
 
-# not implemented yet
-print(':r', '[strikethrough]`:t` (timestamp) is not implemented yet[/]')
+print(':t', 'for now')
 
 # -----------------------------------------------------------------------------
 print(':d', '`:v` usage')

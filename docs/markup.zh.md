@@ -34,7 +34,7 @@ print(':i', 'wednesday')
 
 ## 为什么要有标记
 
-我们在上个版本的 lk-print 推广过程中发现, 开发者的使用意愿普遍较低. 原因是他们已经有自己的方式来打印内容 (比如使用 python 自带的 print 或者 logging 模块), **并且已经在项目中大量地应用**.
+我们在上个版本的 lk-print 推广过程中发现, 开发者的使用意愿普遍较低. 原因是他们已经有自己的方式来打印内容 (比如使用 python 自带的 print 或者 logging 库), **并且已经在项目中大量地应用**.
 
 让开发者不计成本地迁移到一个新的打印库, 是一件困难的事情. 为此我们对新版本的 lk-print 做出了一些重要改变.
 
@@ -84,7 +84,7 @@ markup list
     :p  parent layer
     :r  rich
     :s  short
-    :t  tag
+    :t  timestamp / timer
     :v  verbose / log level (trace, debug, info, warning, error, fatal)
         refer to https://stackoverflow.com/a/64806781
 
@@ -109,6 +109,10 @@ markup options
     :p4     great great grand parent layer
     :p5+    great ... grand parent layer
             note: be careful using :p2+, it may crash if the layer not exists
+
+    :t0     reset timer
+    :t1     start timer
+    :t2     stop timer and measure duration (default)
 
     :v0     trace (default)
             if you don't like using number, you can use an alias :vt
