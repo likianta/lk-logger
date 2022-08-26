@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+from typing import Any
 
 from ._internal_debug import debug  # noqa
 from .general import default_print
@@ -76,12 +77,12 @@ def disable():
 # -----------------------------------------------------------------------------
 # other
 
-def start_ipython(user_ns=None) -> None:
+def start_ipython(user_ns: dict[str, Any] = None) -> None:
     try:
         import IPython
-    except ImportError:
-        print('ipython is not installed.', ':rv4')
-        return
+    except ImportError as e:
+        print('ipython is not installed!', ':pv4')
+        raise e
     else:
         setup(quiet=True)
     

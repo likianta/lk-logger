@@ -93,8 +93,11 @@ class MessageFormatter:
             arguments = self._mix_arguments_with_varnames(arguments, varnames)
         if not rich:
             arguments = (x.replace('[', '\\[') for x in arguments)
-        if expand:
+        if expand:  # FIXME
             return '\n' + indent('\n'.join(arguments), '    ')
+            # from rich.pretty import pretty_repr
+            # arguments = (pretty_repr(x) for x in arguments)
+            # return '\n' + indent('\n'.join(arguments), '    ')
         else:
             return self.markup((separator, 'bright_black')).join(arguments)
     
