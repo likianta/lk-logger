@@ -104,14 +104,14 @@ class MessageBuilder:
         
         # 5. timestamp
         if MarkMeaning.RESET_TIMER in marks_meaning:
-            assert not args
+            # assert not args
             args = ('[grey50]reset timer: [/] {}'.format(
                 self._formatter.fmt_time(
                     marks_meaning[MarkMeaning.RESET_TIMER], color_s='green dim'
                 )
             ),)
         elif MarkMeaning.START_TIMER in marks_meaning:
-            assert not args
+            # assert not args
             args = ('[cyan]start timer:[/] {}'.format(
                 self._formatter.fmt_time(
                     marks_meaning[MarkMeaning.RESET_TIMER]
@@ -119,9 +119,7 @@ class MessageBuilder:
             ),)
         elif MarkMeaning.STOP_TIMER in marks_meaning:
             s, e = marks_meaning[MarkMeaning.STOP_TIMER]
-            args = ('[cyan]stop timer:[/] {}'.format(
-                self._formatter.fmt_time(s, e)
-            ), *args)
+            args = (self._formatter.fmt_time(s, e), *args)
         
         # 6. divider
         if MarkMeaning.DIVIDER_LINE in marks_meaning:
