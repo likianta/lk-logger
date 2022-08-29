@@ -118,7 +118,7 @@ class MarkupAnalyser:
             elif marks['t'] == 2:
                 start, end = self._simple_time, time()
                 self._simple_time = end
-                out[MarkMeaning.STOP_TIMER] = (start, end, end - start)
+                out[MarkMeaning.STOP_TIMER] = (start, end)
         
         if marks['v'] >= 1:
             levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')

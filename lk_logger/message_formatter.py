@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import typing as t
 from textwrap import indent
+from time import localtime
+from time import strftime as _strftime
 
 from ._internal_debug import debug  # noqa
+
+strftime = lambda t: _strftime('%H:%M:%S', localtime(t)) \
+    if t is not None else ''
 
 
 class MessageFormatter:
@@ -82,6 +87,50 @@ class MessageFormatter:
     def fmt_index(self, idx: int) -> str:
         return self.markup(
             (f'[{idx}]', 'bright_black' if idx == 0 else 'red')
+        )
+    
+    @staticmethod
+    def fmt_time(start: float, end: float = None, color_s='green') -> str:
+        if end is None:
+            return '[{}]\\[{}][/]'.format(color_s, strftime(start))
+        
+        diff = end - start  # float >= 0
+        
+        color_s: str
+        color_e: str
+        color_d: str
+        
+        if diff < 0.500:
+            color_e = 'green'
+            color_d = 'green'
+        elif diff < 1.000:
+            color_e = 'green'
+            color_d = 'green_yellow'
+        elif diff < 5.000:
+            color_e = 'yellow'
+            color_d = 'yellow'
+        else:
+            color_e = 'red'
+            color_d = 'red'
+        if int(start) == int(end):
+            color_e += ' dim'
+            color_d += ' dim'
+        
+        # better diff
+        if diff < 1.000:
+            diff = '{:.0f}ms'.format(diff * 1000)
+        else:
+            diff = '{:.1f}s'.format(diff)
+        
+        return '[{color_s}]\\[{start}][/] -> ' \
+               '[{color_e}]\\[{end}][/] ' \
+               '[{color_d}]({diff})[/]'.format(
+            start=strftime(start),
+            end=strftime(end),
+            diff=diff,
+            color_s=color_s,
+            color_e=color_e,
+            color_d=color_d,
         )
     
     def fmt_divider(self, div_: str = '-' * 64) -> str:
