@@ -95,7 +95,7 @@ class LKLogger:
         show_source = self._config.show_source
         show_funcname = self._config.show_funcname
         show_varnames = self._config.show_varnames and \
-            MarkMeaning.MODERATE_PRUNE not in marks_meaning
+                        MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
         if any((show_source, show_funcname, show_varnames)):
             from .sourcemap import sourcemap

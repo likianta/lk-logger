@@ -497,8 +497,8 @@ if __name__ == '__main__':
               '[green]{}[/]'.format(seg.text.replace('\n', '[magenta]\\n[/]')),
               f'[magenta]{seg.pair}[/]',
               f'[red]{seg.type}[/]',
-              '[bright_black]{}[/]'.format((seg.span.start_index,
-                                            seg.span.end_index)),
+              '[grey50]{}[/]'.format((seg.span.start_index,
+                                      seg.span.end_index)),
               ':rs' + ('i' if level == 0 else ''))
         if seg.children:
             print(':rs', '{spaces}[yellow i]children (#{level}):[/]'.format(

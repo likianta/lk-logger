@@ -1,7 +1,7 @@
 from inspect import currentframe
 
-from .general import normpath
 from .general import default_print
+from .general import normpath
 
 
 def debug(*args, condition=True):

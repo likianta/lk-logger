@@ -89,7 +89,7 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
     from IPython.terminal.ipapp import TerminalIPythonApp
     app = TerminalIPythonApp.instance(user_ns=user_ns or {'print': lk.log})
     app.initialize()
-
+    
     # setup except hook for ipython
     from IPython.core.getipython import get_ipython
     setattr(builtins, 'get_ipython', get_ipython)

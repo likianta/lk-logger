@@ -11,6 +11,24 @@ strftime = lambda t: _strftime('%H:%M:%S', localtime(t)) \
     if t is not None else ''
 
 
+class Color:  # TODO: not used yet (and not ready).
+    SEPARATOR = 'bright_black'
+    
+    # time
+    TIME_START = 'green'
+    DURATION_S = 'green'
+    DURATION_M = 'green_yellow'
+    DURATION_L = 'yellow'
+    DURATION_XL = 'red'
+    
+    # verbosity
+    V_DEBUG = 'grey50'
+    V_INFO = 'blue'
+    V_WARNING = 'yellow'
+    V_ERROR = 'red'
+    V_FATAL = 'bold #ffffff on red'
+
+
 class MessageFormatter:
     
     @staticmethod
@@ -86,7 +104,7 @@ class MessageFormatter:
     
     def fmt_index(self, idx: int) -> str:
         return self.markup(
-            (f'[{idx}]', 'bright_black' if idx == 0 else 'red')
+            (f'[{idx}]', 'grey50' if idx == 0 else 'red')
         )
     
     @staticmethod
@@ -122,9 +140,10 @@ class MessageFormatter:
         else:
             diff = '{:.1f}s'.format(diff)
         
-        return '[{color_s}]\\[{start}][/] -> ' \
+        return '[{color_s}]\\[{start}][/]' \
+               '[grey50] -> [/]' \
                '[{color_e}]\\[{end}][/] ' \
-               '[{color_d}]({diff})[/]'.format(
+               '[{color_d}]({diff:>5})[/]'.format(
             start=strftime(start),
             end=strftime(end),
             diff=diff,
@@ -163,7 +182,7 @@ class MessageFormatter:
         }
         colors = {
             'trace': '',
-            'debug': 'bright_black',
+            'debug': 'grey50',
             'info' : 'blue',
             'warn' : 'yellow',
             'error': 'red',

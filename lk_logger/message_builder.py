@@ -93,7 +93,7 @@ class MessageBuilder:
             )
             message_elements.append(' ')
             assert not args
-            args = ('[bright_black]reset index[/]',)
+            args = ('[grey50]reset index[/]',)
         elif MarkMeaning.UPDATE_INDEX in marks_meaning:
             message_elements.append(
                 self._formatter.fmt_index(
@@ -105,7 +105,7 @@ class MessageBuilder:
         # 5. timestamp
         if MarkMeaning.RESET_TIMER in marks_meaning:
             assert not args
-            args = ('[bright_black]reset timer: [/] {}'.format(
+            args = ('[grey50]reset timer: [/] {}'.format(
                 self._formatter.fmt_time(
                     marks_meaning[MarkMeaning.RESET_TIMER], color_s='green dim'
                 )

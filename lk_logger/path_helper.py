@@ -106,7 +106,7 @@ class PathHelper:
                 if path.startswith(lib_path):
                     lib_name = self.external_libs[lib_path].lower()
                     lib_relpath = path[len(lib_path):].lstrip('./') or \
-                        os.path.basename(path)
+                                  os.path.basename(path)
                     break
             else:
                 lib_name = 'unknown'

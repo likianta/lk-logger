@@ -32,7 +32,7 @@ def visualize_line(linex, line, charx, char, symbols=None):
                 line += ' ' * (80 - len(line) - 1) + '│'
             temp.append(line)
     block = temp
-
+    
     return '\n'.join(block)
 
 
