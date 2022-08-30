@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from inspect import currentframe
 
 from ._internal_debug import debug  # noqa
@@ -13,7 +14,7 @@ class T:  # Typehint
     from typing import Iterable, TypedDict, Union
     from .markup import T as _TMarkup  # noqa
     
-    Args = Union[list[str], tuple[str, ...]]
+    Args = Union[t.List[str], t.Tuple[str, ...]]
     MarkupPos = int
     Markup = str
     Marks = _TMarkup.Marks

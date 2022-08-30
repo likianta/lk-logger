@@ -10,10 +10,10 @@ class T:  # Typehint
     MarkupPos = int
     Markup = str
     
-    Cache = dict[FrameId, t.TypedDict('_SubDict0', {
+    Cache = t.Dict[FrameId, t.TypedDict('_SubDict0', {
         'markup_pos'   : MarkupPos,  # noqa
         'marks_meaning': _TMarkup.MarksMeaning,  # noqa
-        'info'         : dict[Markup, dict]
+        'info'         : t.Dict[Markup, dict]
     })]
 
 

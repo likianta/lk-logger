@@ -33,7 +33,7 @@ class T:
         't': int,  # timestamp
         'v': int,  # verbose / log level
     })
-    MarksMeaning = dict[MarkMeaning, t.Any]
+    MarksMeaning = t.Dict[MarkMeaning, t.Any]
 
 
 class MarkupAnalyser:
