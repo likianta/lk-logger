@@ -4,7 +4,7 @@ import builtins
 from typing import Any
 
 from ._internal_debug import debug  # noqa
-from .general import default_print
+from .general import builtin_print
 from .logger import lk
 
 STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
@@ -57,7 +57,7 @@ def update(clear_preset=False, **kwargs):
 
 
 def unload():
-    setattr(builtins, 'print', default_print)
+    setattr(builtins, 'print', builtin_print)
     global STATUS
     STATUS = 'unloaded'
 

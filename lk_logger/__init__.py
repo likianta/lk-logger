@@ -1,4 +1,5 @@
-from .general import default_print
+from .general import builtin_print
+from .general import builtin_print as bprint  # alias
 from .global_control import disable
 from .global_control import enable
 from .global_control import setup

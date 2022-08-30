@@ -1,6 +1,6 @@
 from inspect import currentframe
 
-from .general import default_print
+from .general import builtin_print
 from .general import normpath
 
 
@@ -10,4 +10,4 @@ def debug(*args, condition=True):
     lineno = frame.f_lineno
     source = '{}:{}'.format(filepath, lineno)
     if condition:
-        default_print(source, '[LKDEBUG]', *args)
+        builtin_print(source, '[LKDEBUG]', *args)
