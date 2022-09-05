@@ -10,7 +10,7 @@ __all__ = ['LKLogger', 'lk']
 
 
 class T:  # Typehint
-    from rich.console import RenderableType
+    from rich import console as _con
     from typing import Iterable, TypedDict, Union
     from .markup import T as _TMarkup  # noqa
     
@@ -27,6 +27,9 @@ class T:  # Typehint
         'function_name'  : str,
         'variable_names' : Iterable[str],
     })
+    
+    Renderable = _con.RenderableType
+    RenderableS = (_con.ConsoleRenderable, _con.RichCast)
 
 
 class LKLogger:
@@ -57,14 +60,33 @@ class LKLogger:
     # -------------------------------------------------------------------------
     
     def log(self, *args, **kwargs) -> None:
+        if len(args) == 1 and isinstance(args[0], T.RenderableS):
+            con_print(args[0])
+            return
         msg = self._build_message(currentframe().f_back, *args)
         # debug(msg)
-        con_print(msg, **kwargs)
+        con_print(
+            msg,
+            sep=kwargs.get('sep', ' '),
+            end=kwargs.get('end', '\n'),
+            style=kwargs.get('style'),
+            justify=kwargs.get('justify'),
+            overflow=kwargs.get('overflow'),
+            no_wrap=kwargs.get('no_wrap'),
+            emoji=kwargs.get('emoji'),
+            markup=kwargs.get('markup'),
+            highlight=kwargs.get('highlight'),
+            width=kwargs.get('width'),
+            height=kwargs.get('height'),
+            crop=kwargs.get('crop', True),
+            soft_wrap=kwargs.get('soft_wrap', True),
+            new_line_start=kwargs.get('new_line_start', False),
+        )
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args))
     
-    def _build_message(self, frame, *args) -> T.RenderableType:
+    def _build_message(self, frame, *args) -> T.Renderable:
         from .markup import MarkMeaning
         
         frame_id = f'{id(frame)}#{frame.f_lineno}'
