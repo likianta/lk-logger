@@ -26,12 +26,12 @@ class T:
     Marks = t.TypedDict('Marks', {
         'd': int,  # divider line
         'i': int,  # index
-        'l': int,  # long / loose format (multiple lines)
+        'l': int,  # long / loose / expanded (multiple lines)
         'p': int,  # parent layer
-        'r': int,  # rich
+        'r': int,  # rich style
         's': int,  # short / simple / single line
-        't': int,  # timestamp
-        'v': int,  # verbose / log level
+        't': int,  # timer / timestamp
+        'v': int,  # verbosity / log level
     })
     MarksMeaning = t.Dict[MarkMeaning, t.Any]
 
