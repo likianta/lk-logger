@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import sys
 
-from .general import normpath
+
+def normpath(path: str) -> str:
+    return path.replace('\\', '/').rstrip('/')
 
 
 class PathHelper:

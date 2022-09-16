@@ -5,7 +5,7 @@ from textwrap import indent
 from time import localtime
 from time import strftime as _strftime
 
-from ._internal_debug import debug  # noqa
+from ._print import debug  # noqa
 
 strftime = lambda t: _strftime('%H:%M:%S', localtime(t)) \
     if t is not None else ''

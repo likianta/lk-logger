@@ -2,7 +2,7 @@ import re
 from collections import namedtuple
 from types import FrameType
 
-from ._internal_debug import debug  # noqa
+from ._print import debug  # noqa
 from .scanner import get_all_blocks
 from .scanner import get_variables
 

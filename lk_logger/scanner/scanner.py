@@ -10,7 +10,7 @@ from .analyser import Analyser
 from .const import *
 from .exceptions import *
 from .typehint import *
-from .._internal_debug import debug  # noqa
+from .._print import debug  # noqa
 
 
 def get_all_blocks(*lines: str, end_mark='\n'):

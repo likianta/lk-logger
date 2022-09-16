@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from typing import Any
 
-from ._internal_debug import debug  # noqa
+from ._print import debug  # noqa
 from .general import builtin_print
 from .logger import lk
 
