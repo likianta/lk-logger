@@ -15,7 +15,7 @@ class SourceMap:
     
     @staticmethod
     def get_frame_info(frame: FrameType, traceback_level: int):
-        from .general import normpath
+        from .path_helper import normpath
         
         frame_0 = frame
         frame_x: FrameType

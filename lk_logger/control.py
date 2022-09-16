@@ -3,8 +3,8 @@ from __future__ import annotations
 import builtins
 from typing import Any
 
+from ._print import builtin_print
 from ._print import debug  # noqa
-from .general import builtin_print
 from .logger import lk
 
 STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']

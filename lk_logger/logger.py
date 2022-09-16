@@ -70,7 +70,8 @@ class LKLogger:
     
     def _stop_running(self):
         self._running = False
-        # self._message_queue.clear()  # TODO: whether to drain the queue?
+        if self._config.clear_unfinished_stream:
+            self._message_queue.clear()
         self._thread.join()
     
     def configure(self, clear_preset=False, **kwargs) -> None:
@@ -82,7 +83,7 @@ class LKLogger:
             separator=self._config.separator,
             show_source=self._config.show_source,
             show_funcname=self._config.show_funcname,
-            show_varnames=self._config.show_varnames,
+            show_varname=self._config.show_varname,
         )
     
     # -------------------------------------------------------------------------
@@ -126,15 +127,15 @@ class LKLogger:
         
         show_source = self._config.show_source
         show_funcname = self._config.show_funcname
-        show_varnames = self._config.show_varnames and \
-                        MarkMeaning.MODERATE_PRUNE not in marks_meaning
+        show_varname = self._config.show_varname and \
+                       MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
-        if any((show_source, show_funcname, show_varnames)):
+        if any((show_source, show_funcname, show_varname)):
             from .sourcemap import sourcemap
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
                 traceback_level=marks['p'],
-                advanced=show_varnames,
+                advanced=show_varname,
             )
             
             if show_source:
@@ -169,7 +170,7 @@ class LKLogger:
             if show_funcname:
                 info['function_name'] = srcmap.funcname
             
-            if show_varnames:
+            if show_varname:
                 if markup_pos == 0:
                     info['variable_names'] = srcmap.varnames
                 elif markup_pos == 1:

@@ -48,6 +48,8 @@ class LoggingConfig:
             ps: if you don't want to show anything, you should turn to set
             `show_external_lib` to False.
     """
+    async_: bool
+    clear_unfinished_stream: bool
     console_width: int | None
     path_style_for_external_lib: str
     rich_traceback: bool
@@ -55,18 +57,19 @@ class LoggingConfig:
     show_external_lib: bool
     show_funcname: bool
     show_source: bool
-    show_varnames: bool
+    show_varname: bool
     
     _preset_conf = {
+        'async_'                     : True,
+        'clear_unfinished_stream'    : False,
         'console_width'              : None,
         'path_style_for_external_lib': 'pretty_relpath',
         'rich_traceback'             : True,
         'separator'                  : ';   ',
-        #   suggests: ';   ' | ';\t' | '    ' | ...
         'show_external_lib'          : True,
         'show_funcname'              : True,
         'show_source'                : True,
-        'show_varnames'              : False,
+        'show_varname'               : False,
     }
     
     def __init__(self, **kwargs):
