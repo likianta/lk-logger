@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 from inspect import currentframe
 
-from ._internal_debug import debug  # noqa
+from ._print import debug  # noqa
 from .console import con_print
 
 __all__ = ['LKLogger', 'lk']
@@ -11,21 +11,20 @@ __all__ = ['LKLogger', 'lk']
 
 class T:  # Typehint
     from rich import console as _con
-    from typing import Iterable, TypedDict, Union
     from .markup import T as _TMarkup  # noqa
     
-    Args = Union[t.List[str], t.Tuple[str, ...]]
+    Args = t.Union[t.List[str], t.Tuple[str, ...]]
     MarkupPos = int
     Markup = str
     Marks = _TMarkup.Marks
     MarksMeaning = _TMarkup.MarksMeaning
     
-    Info = TypedDict('Info', {
+    Info = t.TypedDict('Info', {
         'file_path'      : str,
         'line_number'    : str,
         'is_external_lib': bool,
         'function_name'  : str,
-        'variable_names' : Iterable[str],
+        'variable_names' : t.Iterable[str],
     })
     
     Renderable = _con.RenderableType
@@ -35,6 +34,9 @@ class T:  # Typehint
 class LKLogger:
     
     def __init__(self):
+        from atexit import register
+        from collections import deque
+        from threading import Thread
         from .cache import LoggingCache
         from .config import LoggingConfig
         from .markup import MarkupAnalyser
@@ -44,6 +46,32 @@ class LKLogger:
         self._builder = MessageBuilder()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
+        
+        self._running = False
+        self._message_queue = deque()
+        register(self._stop_running)
+        self._thread = Thread(target=self._start_running)
+        self._thread.daemon = True
+        self._thread.start()
+    
+    def _start_running(self):
+        from time import sleep
+        self._running = True
+        while self._running:
+            if self._message_queue:
+                msg, kwargs = self._message_queue.popleft()
+                con_print(msg, **kwargs)
+            else:
+                sleep(0.1)
+        # drain the queue
+        while self._message_queue:
+            msg, kwargs = self._message_queue.popleft()
+            con_print(msg, **kwargs)
+    
+    def _stop_running(self):
+        self._running = False
+        # self._message_queue.clear()  # TODO: whether to drain the queue?
+        self._thread.join()
     
     def configure(self, clear_preset=False, **kwargs) -> None:
         self._cache.clear_cache()
@@ -60,28 +88,9 @@ class LKLogger:
     # -------------------------------------------------------------------------
     
     def log(self, *args, **kwargs) -> None:
-        if len(args) == 1 and isinstance(args[0], T.RenderableS):
-            con_print(args[0])
-            return
         msg = self._build_message(currentframe().f_back, *args)
         # debug(msg)
-        con_print(
-            msg,
-            sep=kwargs.get('sep', ' '),
-            end=kwargs.get('end', '\n'),
-            style=kwargs.get('style'),
-            justify=kwargs.get('justify'),
-            overflow=kwargs.get('overflow'),
-            no_wrap=kwargs.get('no_wrap'),
-            emoji=kwargs.get('emoji'),
-            markup=kwargs.get('markup'),
-            highlight=kwargs.get('highlight'),
-            width=kwargs.get('width'),
-            height=kwargs.get('height'),
-            crop=kwargs.get('crop', True),
-            soft_wrap=kwargs.get('soft_wrap', True),
-            new_line_start=kwargs.get('new_line_start', False),
-        )
+        self._message_queue.append((msg, kwargs))
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args))
