@@ -11,7 +11,10 @@ __all__ = ['LKLogger', 'lk']
 
 class T:  # Typehint
     from rich import console as _con
+    from types import FrameType as _FrameType
     from .markup import T as _TMarkup  # noqa
+    
+    Frame = _FrameType
     
     Args = t.Tuple[t.Any, ...]
     MarkupPos = int  # -1, 0, 1
@@ -98,7 +101,7 @@ class LKLogger:
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args))
     
-    def _build_message(self, frame, *args) -> T.Renderable:
+    def _build_message(self, frame: T.Frame, *args) -> T.Renderable:
         from .markup import MarkMeaning
         
         frame_id = f'{id(frame)}#{frame.f_lineno}'

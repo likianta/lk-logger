@@ -168,6 +168,8 @@ class MessageFormatter:
             arguments = tuple(map(pretty_repr, arguments))
         if varnames:
             arguments = self._mix_arguments_with_varnames(arguments, varnames)
+        else:
+            arguments = map(str, arguments)
         if not rich:
             arguments = (x.replace('[', '\\[') for x in arguments)
             
