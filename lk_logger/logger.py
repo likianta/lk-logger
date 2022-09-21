@@ -78,6 +78,8 @@ class LKLogger:
         self._cache.clear_cache()
         if clear_preset:
             self._config.reset()
+        if 'show_varnames' in kwargs:  # workaround for compatibility
+            kwargs['show_varname'] = kwargs.pop('show_varnames')
         self._config.update(**kwargs)
         self._builder.update_config(
             separator=self._config.separator,
