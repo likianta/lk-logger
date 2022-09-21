@@ -75,7 +75,7 @@ class T:
     _Start = str
     _End = str
     _Rule = PairRule
-    PairRule = t.Iterable[tuple[tuple[_Start, _End], _Rule]]
+    PairRule = t.Iterable[t.Tuple[t.Tuple[_Start, _End], _Rule]]
 
 
 # PERF: use namedtuple.
