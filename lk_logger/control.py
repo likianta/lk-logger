@@ -80,7 +80,7 @@ def disable():
 def start_ipython(user_ns: dict[str, Any] = None) -> None:
     try:
         import IPython
-    except ImportError as e:
+    except (ImportError, ModuleNotFoundError) as e:
         print('ipython is not installed!', ':pv4')
         raise e
     else:

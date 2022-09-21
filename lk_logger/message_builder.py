@@ -8,7 +8,7 @@ from .message_formatter import MessageFormatter
 
 class T:
     from .markup import T as _TMarkup  # noqa
-    Args = t.Iterable[str]
+    Args = t.Tuple[t.Any, ...]
     Markup = _TMarkup.Markup
     MarksMeaning = _TMarkup.MarksMeaning
 

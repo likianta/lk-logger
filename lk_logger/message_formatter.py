@@ -155,17 +155,24 @@ class MessageFormatter:
     def fmt_divider(self, div_: str = '-' * 64) -> str:
         return self.markup((div_, 'yellow'))
     
-    def fmt_message(self, arguments: t.Iterable[str], varnames: tuple[str],
+    def fmt_message(self, arguments: t.Iterable[t.Any], varnames: tuple[str],
                     rich: bool, expand=False, separator=';   ') -> str:
+        """
+        notice the process sequence:
+            1. expand
+            2. varnames
+            3. rich
+        """
+        if expand:
+            from rich.pretty import pretty_repr
+            arguments = tuple(map(pretty_repr, arguments))
         if varnames:
             arguments = self._mix_arguments_with_varnames(arguments, varnames)
         if not rich:
             arguments = (x.replace('[', '\\[') for x in arguments)
-        if expand:  # FIXME
+            
+        if expand:
             return '\n' + indent('\n'.join(arguments), '    ')
-            # from rich.pretty import pretty_repr
-            # arguments = (pretty_repr(x) for x in arguments)
-            # return '\n' + indent('\n'.join(arguments), '    ')
         else:
             return self.markup((separator, 'bright_black')).join(arguments)
     
@@ -198,19 +205,18 @@ class MessageFormatter:
     
     @staticmethod
     def _mix_arguments_with_varnames(
-            arguments: t.Iterable[str], varnames: tuple[str, ...],
+            arguments: t.Sequence[str], varnames: tuple[str, ...],
     ) -> t.Iterable[str]:
         if not arguments:
             return ()
         try:
-            # noinspection PyTypeChecker
             assert len(varnames) == len(arguments), (varnames, arguments)
         except AssertionError:
             # debug('failed extracting varnames')
             return arguments
         else:
-            return tuple(f'{v} = {a}' if v else str(a)
-                         for v, a in zip(varnames, arguments))
+            return (f'{v} = {a}' if v else str(a)
+                    for v, a in zip(varnames, arguments))
     
     @staticmethod
     def _fmt_width(text: str, min_width: int = None, unit_spaces=4) -> str:

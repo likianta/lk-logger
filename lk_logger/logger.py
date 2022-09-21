@@ -13,8 +13,8 @@ class T:  # Typehint
     from rich import console as _con
     from .markup import T as _TMarkup  # noqa
     
-    Args = t.Union[t.List[str], t.Tuple[str, ...]]
-    MarkupPos = int
+    Args = t.Tuple[t.Any, ...]
+    MarkupPos = int  # -1, 0, 1
     Markup = str
     Marks = _TMarkup.Marks
     MarksMeaning = _TMarkup.MarksMeaning
@@ -187,6 +187,11 @@ class LKLogger:
     def _extract_markup_from_arguments(
             self, frame_id: str, args: T.Args
     ) -> tuple[T.Args, T.MarkupPos, T.Markup]:
+        """
+        return: (args, markup_pos, markup)
+            markup_pos: which position of `markup` in `args`.
+                0 not exists, 1 first place, -1 last place.
+        """
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
             is_markup = self._analyser.is_valid_markup
             if (
@@ -207,11 +212,9 @@ class LKLogger:
                 markup_pos = 0
             self._cache.record_markup_pos(frame_id, markup_pos)
         
-        # markup_pos: 0 not exists, 1 first place, -1 last place.
-        args = tuple(map(str, args))
         if markup_pos == 0:
             return args, markup_pos, ''
-        if markup_pos == 1:
+        elif markup_pos == 1:
             return args[1:], markup_pos, args[0]
         else:
             return args[:-1], markup_pos, args[-1]
