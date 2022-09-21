@@ -92,8 +92,8 @@ class MessageBuilder:
                 self._formatter.fmt_index(0)
             )
             message_elements.append(' ')
-            assert not args
-            args = ('[grey50]reset index[/]',)
+            if not args and MarkMeaning.MODERATE_PRUNE not in marks_meaning:
+                args = ('[grey50]reset index[/]',)
         elif MarkMeaning.UPDATE_INDEX in marks_meaning:
             message_elements.append(
                 self._formatter.fmt_index(
@@ -104,19 +104,24 @@ class MessageBuilder:
         
         # 5. timestamp
         if MarkMeaning.RESET_TIMER in marks_meaning:
-            # assert not args
-            args = ('[grey50]reset timer: [/] {}'.format(
-                self._formatter.fmt_time(
-                    marks_meaning[MarkMeaning.RESET_TIMER], color_s='green dim'
-                )
-            ),)
+            if not args:
+                args = ('[grey50]reset timer: [/] {}'.format(
+                    self._formatter.fmt_time(
+                        marks_meaning[MarkMeaning.RESET_TIMER],
+                        color_s='green dim'
+                    )
+                ),)
+            else:
+                args = (self._formatter.fmt_time(
+                    marks_meaning[MarkMeaning.RESET_TIMER],
+                    color_s='green dim'
+                ), *args)
         elif MarkMeaning.START_TIMER in marks_meaning:
-            # assert not args
             args = ('[cyan]start timer:[/] {}'.format(
                 self._formatter.fmt_time(
                     marks_meaning[MarkMeaning.RESET_TIMER]
                 )
-            ),)
+            ), *args)
         elif MarkMeaning.STOP_TIMER in marks_meaning:
             s, e = marks_meaning[MarkMeaning.STOP_TIMER]
             args = (self._formatter.fmt_time(s, e), *args)
