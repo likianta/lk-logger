@@ -89,16 +89,12 @@ class MessageBuilder:
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:
             if MarkMeaning.MODERATE_PRUNE in marks_meaning:
-                if not args:
-                    pass
-                else:
-                    message_elements.append(self._formatter.fmt_index(0))
-                    message_elements.append(' ')
+                pass
             else:
-                if not args:
-                    args = ('[grey50]reset index[/]',)
                 message_elements.append(self._formatter.fmt_index(0))
                 message_elements.append(' ')
+                if not args:
+                    args = ('[grey50]reset index[/]',)
         elif MarkMeaning.UPDATE_INDEX in marks_meaning:
             message_elements.append(
                 self._formatter.fmt_index(
