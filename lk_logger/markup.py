@@ -44,7 +44,7 @@ class MarkupAnalyser:
     readme: prj:/docs/markup.zh.md
     """
     from re import compile
-    _mark_pattern_0 = compile(r'^:(?:[dilprstv][0-9]?)+$')
+    _mark_pattern_0 = compile(r'^:(?:[dfilprstv][0-9]?)+$')
     _mark_pattern_1 = compile(r'\w\d?')
     
     def is_valid_markup(self, text: str) -> bool:
