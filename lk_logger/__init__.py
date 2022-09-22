@@ -9,4 +9,4 @@ from .control import unload
 from .control import update
 from .logger import lk
 
-__version__ = '5.3.0'
+__version__ = '5.3.1'

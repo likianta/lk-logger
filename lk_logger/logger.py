@@ -57,6 +57,20 @@ class LKLogger:
         self._thread.daemon = True
         self._thread.start()
     
+    def configure(self, clear_preset=False, **kwargs) -> None:
+        self._cache.clear_cache()
+        if clear_preset:
+            self._config.reset()
+        if 'show_varname' in kwargs:  # workaround for compatibility
+            kwargs['show_varnames'] = kwargs.pop('show_varname')
+        self._config.update(**kwargs)
+        self._builder.update_config(
+            separator=self._config.separator,
+            show_source=self._config.show_source,
+            show_funcname=self._config.show_funcname,
+            show_varnames=self._config.show_varnames,
+        )
+    
     def _start_running(self):
         from time import sleep
         self._running = True
@@ -77,26 +91,18 @@ class LKLogger:
             self._message_queue.clear()
         self._thread.join()
     
-    def configure(self, clear_preset=False, **kwargs) -> None:
-        self._cache.clear_cache()
-        if clear_preset:
-            self._config.reset()
-        if 'show_varnames' in kwargs:  # workaround for compatibility
-            kwargs['show_varname'] = kwargs.pop('show_varnames')
-        self._config.update(**kwargs)
-        self._builder.update_config(
-            separator=self._config.separator,
-            show_source=self._config.show_source,
-            show_funcname=self._config.show_funcname,
-            show_varname=self._config.show_varname,
-        )
+    def drain_up(self) -> None:
+        self._message_queue.clear()
     
     # -------------------------------------------------------------------------
     
-    def log(self, *args, **kwargs) -> None:
+    def log(self, *args, _async=True, **kwargs) -> None:
         msg = self._build_message(currentframe().f_back, *args)
         # debug(msg)
-        self._message_queue.append((msg, kwargs))
+        if _async:
+            self._message_queue.append((msg, kwargs))
+        else:
+            con_print(msg, **kwargs)
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args))
@@ -132,15 +138,15 @@ class LKLogger:
         
         show_source = self._config.show_source
         show_funcname = self._config.show_funcname
-        show_varname = self._config.show_varname and \
-                       MarkMeaning.MODERATE_PRUNE not in marks_meaning
+        show_varnames = self._config.show_varnames and \
+                        MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
-        if any((show_source, show_funcname, show_varname)):
+        if any((show_source, show_funcname, show_varnames)):
             from .sourcemap import sourcemap
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
                 traceback_level=marks['p'],
-                advanced=show_varname,
+                advanced=show_varnames,
             )
             
             if show_source:
@@ -175,7 +181,7 @@ class LKLogger:
             if show_funcname:
                 info['function_name'] = srcmap.funcname
             
-            if show_varname:
+            if show_varnames:
                 if markup_pos == 0:
                     info['variable_names'] = srcmap.varnames
                 elif markup_pos == 1:

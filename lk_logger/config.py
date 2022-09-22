@@ -57,7 +57,7 @@ class LoggingConfig:
     show_external_lib: bool
     show_funcname: bool
     show_source: bool
-    show_varname: bool
+    show_varnames: bool
     
     _preset_conf = {
         'async_'                     : True,
@@ -69,7 +69,7 @@ class LoggingConfig:
         'show_external_lib'          : True,
         'show_funcname'              : True,
         'show_source'                : True,
-        'show_varname'               : False,
+        'show_varnames'              : False,
     }
     
     def __init__(self, **kwargs):
