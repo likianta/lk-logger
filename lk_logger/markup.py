@@ -11,6 +11,8 @@ class MarkMeaning(Enum):
     AGRESSIVE_PRUNE = auto()
     DIVIDER_LINE = auto()
     EXPAND_MULTIPLE_LINES = auto()
+    FLUSH = auto()
+    FLUSH_AND_DRAIN = auto()
     MODERATE_PRUNE = auto()
     RESET_INDEX = auto()
     RESET_TIMER = auto()
@@ -26,6 +28,7 @@ class T:
     Marks = t.TypedDict('Marks', {
         'd': int,  # divider line
         'i': int,  # index
+        'f': int,  # flush
         'l': int,  # long / loose / expanded (multiple lines)
         'p': int,  # parent layer
         'r': int,  # rich style
@@ -52,8 +55,9 @@ class MarkupAnalyser:
         return:
             dict[literal mark, int value]
         """
-        out = {
+        defaults = {
             'd': -1,
+            'f': -1,
             'i': -1,
             'l': -1,
             'p': 0,
@@ -62,8 +66,9 @@ class MarkupAnalyser:
             't': -1,
             'v': 0,
         }
-        defaults = {
+        shortcuts = {
             'd': 0,
+            'f': 0,
             'i': 1,
             'l': 0,
             'p': 1,
@@ -72,9 +77,11 @@ class MarkupAnalyser:
             't': 2,
             'v': 1,
         }
+        
+        out = defaults.copy()
         for m in (self._mark_pattern_1.findall(markup) or ()):
             if len(m) == 1:
-                out[m[0]] = defaults[m[0]]
+                out[m[0]] = shortcuts[m[0]]
             else:
                 out[m[0]] = int(m[1:])
         return out
@@ -87,6 +94,12 @@ class MarkupAnalyser:
         
         if marks['d'] >= 0:
             out[MarkMeaning.DIVIDER_LINE] = '-' * 64
+        
+        if marks['f'] >= 0:
+            if marks['f'] == 0:
+                out[MarkMeaning.FLUSH] = True
+            else:
+                out[MarkMeaning.FLUSH_AND_DRAIN] = True
         
         if marks['i'] == 0:
             self._simple_count = 0

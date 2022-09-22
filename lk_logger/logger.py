@@ -10,7 +10,6 @@ __all__ = ['LKLogger', 'lk']
 
 
 class T:  # Typehint
-    from rich import console as _con
     from types import FrameType as _FrameType
     from .markup import T as _TMarkup  # noqa
     
@@ -30,8 +29,7 @@ class T:  # Typehint
         'variable_names' : t.Iterable[str],
     })
     
-    Renderable = _con.RenderableType
-    RenderableS = (_con.ConsoleRenderable, _con.RichCast)
+    ComposedMessage = t.Tuple[str, bool, bool]
 
 
 class LKLogger:
@@ -91,23 +89,30 @@ class LKLogger:
             self._message_queue.clear()
         self._thread.join()
     
-    def drain_up(self) -> None:
-        self._message_queue.clear()
-    
     # -------------------------------------------------------------------------
     
-    def log(self, *args, _async=True, **kwargs) -> None:
-        msg = self._build_message(currentframe().f_back, *args)
+    def log(self, *args, **kwargs) -> None:
+        msg, is_flush, is_drain = self._build_message(
+            currentframe().f_back, *args
+        )
         # debug(msg)
-        if _async:
-            self._message_queue.append((msg, kwargs))
-        else:
+        if is_flush:
             con_print(msg, **kwargs)
+            if is_drain:
+                self._message_queue.clear()
+        else:
+            self._message_queue.append((msg, kwargs))
     
     def fmt(self, *args, **_) -> str:
-        return str(self._build_message(currentframe().f_back, *args))
+        return str(self._build_message(currentframe().f_back, *args)[0])
     
-    def _build_message(self, frame: T.Frame, *args) -> T.Renderable:
+    def _build_message(self, frame: T.Frame, *args) -> T.ComposedMessage:
+        """
+        return: (str message, bool is_flush, bool is_drain)
+            flush: print the message immediately.
+            drain: drain the message queue.
+                if drain is True, the flush must be True.
+        """
         from .markup import MarkMeaning
         
         frame_id = f'{id(frame)}#{frame.f_lineno}'
@@ -116,17 +121,19 @@ class LKLogger:
         marks = self._analyser.extract(markup)
         marks_meaning = self._analyser.analyse(marks)
         
+        is_drain = MarkMeaning.FLUSH_AND_DRAIN in marks_meaning
+        is_flush = is_drain or MarkMeaning.FLUSH in marks_meaning
+        
         # check cache
         if self._cache.is_cached(frame_id, markup):
             cached_info = self._cache.get_cache(frame_id, markup)
             return self._builder.compose(
-                args, marks_meaning, cached_info
-            )
+                args, marks_meaning, cached_info), is_flush, is_drain
         
         # ---------------------------------------------------------------------
         
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
-            return self._builder.quick_compose(args)
+            return self._builder.quick_compose(args), is_flush, is_drain
         
         info: T.Info = {
             'file_path'      : '',
@@ -191,7 +198,8 @@ class LKLogger:
         
         self._cache.store_info(frame_id, markup, info)
         
-        return self._builder.compose(args, marks_meaning, info)
+        return self._builder.compose(
+            args, marks_meaning, info), is_flush, is_drain
     
     def _extract_markup_from_arguments(
             self, frame_id: str, args: T.Args
