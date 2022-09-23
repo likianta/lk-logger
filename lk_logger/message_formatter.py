@@ -140,16 +140,18 @@ class MessageFormatter:
         else:
             diff = '{:.1f}s'.format(diff)
         
-        return '[{color_s}]\\[{start}][/]' \
-               '[grey50] -> [/]' \
-               '[{color_e}]\\[{end}][/] ' \
-               '[{color_d}]({diff:>5})[/]'.format(
-            start=strftime(start),
-            end=strftime(end),
-            diff=diff,
-            color_s=color_s,
-            color_e=color_e,
-            color_d=color_d,
+        return (
+            '[{color_s}]\\[{start}][/]'
+            '[grey50] -> [/]'
+            '[{color_e}]\\[{end}][/] '
+            '[{color_d}]({diff:>5})[/]'.format(
+                start=strftime(start),
+                end=strftime(end),
+                diff=diff,
+                color_s=color_s,
+                color_e=color_e,
+                color_d=color_d,
+            )
         )
     
     def fmt_divider(self, div_: str = '-' * 64) -> str:
@@ -172,7 +174,7 @@ class MessageFormatter:
             arguments = map(str, arguments)
         if not rich:
             arguments = (x.replace('[', '\\[') for x in arguments)
-            
+        
         if expand:
             return '\n' + indent('\n'.join(arguments), '    ')
         else:
@@ -215,7 +217,7 @@ class MessageFormatter:
             assert len(varnames) == len(arguments), (varnames, arguments)
         except AssertionError:
             # debug('failed extracting varnames')
-            return arguments
+            return map(str, arguments)
         else:
             return (f'{v} = {a}' if v else str(a)
                     for v, a in zip(varnames, arguments))
