@@ -37,10 +37,10 @@ def temporarily_reset_lk_logger(func):
     def wrapper(*args, **kwargs):
         import lk_logger
         
-        if lk_logger.global_control.STATUS == 'enabled':
+        if lk_logger.control.STATUS == 'enabled':
             before = lk_logger.unload
             after = lk_logger.enable
-        elif lk_logger.global_control.STATUS == 'disabled':
+        elif lk_logger.control.STATUS == 'disabled':
             before = lk_logger.unload
             after = lk_logger.disable
         else:

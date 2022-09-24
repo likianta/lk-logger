@@ -68,6 +68,10 @@ class LKLogger:
             show_funcname=self._config.show_funcname,
             show_varnames=self._config.show_varnames,
         )
+        
+    @property
+    def config(self) -> dict:
+        return self._config.to_dict()
     
     def _start_running(self):
         from time import sleep

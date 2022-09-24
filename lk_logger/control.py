@@ -83,8 +83,10 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
     except (ImportError, ModuleNotFoundError) as e:
         print('ipython is not installed!', ':pv4')
         raise e
-    else:
-        setup(quiet=True)
+    
+    logger_config_backup = lk.config.copy()
+    setup(quiet=True, clear_preset=True,
+          show_source=False, show_funcname=False, show_varnames=False)
     
     from IPython.terminal.ipapp import TerminalIPythonApp
     app = TerminalIPythonApp.instance(user_ns=user_ns or {'print': lk.log})
@@ -98,6 +100,8 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
     install(console=console)
     
     app.start()
+    
+    lk.configure(**logger_config_backup)
 
 
 # -----------------------------------------------------------------------------

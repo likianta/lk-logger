@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from sys import excepthook as _default_excepthook
 
 
@@ -101,6 +102,14 @@ class LoggingConfig:
             else:
                 import sys
                 sys.excepthook = _default_excepthook
+
+    # -------------------------------------------------------------------------
+    
+    def to_dict(self) -> dict[str, t.Any]:
+        return {
+            k: getattr(self, k)
+            for k in self._preset_conf
+        }
     
     @staticmethod
     def _merge_dict(base: dict, update: dict) -> dict:
