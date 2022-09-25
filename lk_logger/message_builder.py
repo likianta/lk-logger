@@ -73,18 +73,13 @@ class MessageBuilder:
         
         # 3. verbosity
         if MarkMeaning.VERBOSITY in marks_meaning:
-            message_elements.append(
-                self._formatter.fmt_level(
-                    marks_meaning[MarkMeaning.VERBOSITY]
+            if MarkMeaning.MODERATE_PRUNE not in marks_meaning:
+                message_elements.append(
+                    self._formatter.fmt_level(
+                        marks_meaning[MarkMeaning.VERBOSITY],
+                        text='{TAG} '
+                    )
                 )
-            )
-            # message_elements.append(' ')
-            message_elements.append(
-                self._formatter.fmt_level(
-                    marks_meaning[MarkMeaning.VERBOSITY],
-                    custom_text=' '
-                )
-            )
         
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:
@@ -149,7 +144,7 @@ class MessageBuilder:
                 MarkMeaning.EXPAND_MULTIPLE_LINES not in marks_meaning:
             message_elements[-1] = self._formatter.fmt_level(
                 marks_meaning[MarkMeaning.VERBOSITY],
-                custom_text=message_elements[-1]
+                text=message_elements[-1]
             )
         
         return ''.join(message_elements)
