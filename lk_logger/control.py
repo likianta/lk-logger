@@ -90,7 +90,12 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
     
     from IPython.terminal.ipapp import TerminalIPythonApp
     app = TerminalIPythonApp.instance(user_ns=user_ns or {'print': lk.log})
-    app.initialize()
+    try:
+        app.initialize()
+    except Exception as e:
+        print('ipython init failed! you may check `sys.argv` and trim off all '
+              'parameters to retry.', ':pv4')
+        raise e
     
     # setup except hook for ipython
     from IPython.core.getipython import get_ipython
