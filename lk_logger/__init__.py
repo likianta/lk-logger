@@ -1,3 +1,8 @@
+"""
+minimum usage: just import
+    import lk_logger  # noqa
+that's all.
+"""
 from . import console
 from ._print import builtin_print
 from ._print import builtin_print as bprint  # alias
@@ -9,4 +14,6 @@ from .control import unload
 from .control import update
 from .logger import lk
 
-__version__ = '5.3.2'
+__version__ = '5.4.0'
+
+setup(quiet=True)
