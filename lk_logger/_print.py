@@ -1,6 +1,7 @@
 import builtins
 from inspect import currentframe
 
+# DELETE: `builtin_print` is goint to be removed.
 bprint = builtin_print = builtins.print
 
 
@@ -10,7 +11,7 @@ def debug(*args, condition=True):
     lineno = frame.f_lineno
     source = '{}:{}'.format(filepath, lineno)
     if condition:
-        builtin_print(source, '[LKDEBUG]', *args)
+        bprint(source, '[LKDEBUG]', *args)
 
 
 def _normpath(path: str) -> str:

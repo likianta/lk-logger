@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from typing import Any
 
-from ._print import builtin_print
+from ._print import bprint
 from ._print import debug  # noqa
 from .logger import lk
 
@@ -57,7 +57,7 @@ def update(clear_preset=False, **kwargs):
 
 
 def unload():
-    setattr(builtins, 'print', builtin_print)
+    setattr(builtins, 'print', bprint)
     global STATUS
     STATUS = 'unloaded'
 
