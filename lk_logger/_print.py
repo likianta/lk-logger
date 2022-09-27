@@ -3,6 +3,8 @@ from inspect import currentframe
 
 # DELETE: `builtin_print` is goint to be removed.
 bprint = builtin_print = builtins.print
+std_print = builtins.print
+non_print = lambda *_, **__: None
 
 
 def debug(*args, condition=True):

@@ -84,6 +84,9 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
         print('ipython is not installed!', ':pv4')
         raise e
     
+    from .pipeline import pipeline
+    pipeline.add(IPython, bprint)
+
     logger_config_backup = lk.config.copy()
     setup(quiet=True, clear_preset=True,
           show_source=False, show_funcname=False, show_varnames=False)

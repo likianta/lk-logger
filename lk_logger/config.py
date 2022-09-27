@@ -102,7 +102,7 @@ class LoggingConfig:
             else:
                 import sys
                 sys.excepthook = _default_excepthook
-
+    
     # -------------------------------------------------------------------------
     
     def to_dict(self) -> dict[str, t.Any]:

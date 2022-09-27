@@ -5,6 +5,7 @@ from inspect import currentframe
 
 from ._print import debug  # noqa
 from .console import con_print
+from .pipeline import pipeline
 
 __all__ = ['LKLogger', 'lk']
 
@@ -20,6 +21,11 @@ class T:  # Typehint
     Markup = str
     Marks = _TMarkup.Marks
     MarksMeaning = _TMarkup.MarksMeaning
+    
+    # MessageQueue = t.List[
+    #     t.Tuple[t.Union[str, tuple], dict,
+    #             t.Optional[t.Callable]]
+    # ]
     
     Info = t.TypedDict('Info', {
         'file_path'      : str,
@@ -68,7 +74,7 @@ class LKLogger:
             show_funcname=self._config.show_funcname,
             show_varnames=self._config.show_varnames,
         )
-        
+    
     @property
     def config(self) -> dict:
         return self._config.to_dict()
@@ -76,16 +82,15 @@ class LKLogger:
     def _start_running(self):
         from time import sleep
         self._running = True
-        while self._running:
+        while self._running or self._message_queue:
             if self._message_queue:
-                msg, kwargs = self._message_queue.popleft()
-                con_print(msg, **kwargs)
+                msg, kwargs, custom_print = self._message_queue.popleft()
+                if custom_print:
+                    custom_print(*msg, **kwargs)
+                else:
+                    con_print(msg, **kwargs)
             else:
                 sleep(0.1)
-        # drain the queue
-        while self._message_queue:
-            msg, kwargs = self._message_queue.popleft()
-            con_print(msg, **kwargs)
     
     def _stop_running(self):
         self._running = False
@@ -96,16 +101,23 @@ class LKLogger:
     # -------------------------------------------------------------------------
     
     def log(self, *args, **kwargs) -> None:
-        msg, is_flush, is_drain = self._build_message(
-            currentframe().f_back, *args
-        )
+        caller_frame = currentframe().f_back
+        
+        if (path := caller_frame.f_globals.get('__file__')) and \
+                (custom_print := pipeline.get(path)):
+            self._message_queue.append((args, kwargs, custom_print))
+            # custom_print(*args, **kwargs)
+            return
+        
+        msg, is_flush, is_drain = self._build_message(caller_frame, *args)
         # debug(msg)
+        
         if is_flush:
             con_print(msg, **kwargs)
             if is_drain:
                 self._message_queue.clear()
         else:
-            self._message_queue.append((msg, kwargs))
+            self._message_queue.append((msg, kwargs, None))
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args)[0])
