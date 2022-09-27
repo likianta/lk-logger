@@ -85,7 +85,7 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
         raise e
     
     from .pipeline import pipeline
-    pipeline.add(IPython, bprint)
+    pipeline.add(IPython, bprint, scope=True)
 
     logger_config_backup = lk.config.copy()
     setup(quiet=True, clear_preset=True,

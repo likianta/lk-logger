@@ -186,8 +186,8 @@ class MessageFormatter:
         labels = {
             'trace': '',
             'debug': '[DEBUG]',
-            'info' : ' [INFO]',
-            'warn' : ' [WARN]',
+            'info' : '[ INFO]',
+            'warn' : '[ WARN]',
             'error': '[ERROR]',
             'fatal': '[FATAL]',
         }

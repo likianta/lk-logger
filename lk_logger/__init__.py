@@ -12,11 +12,11 @@ from .control import start_ipython
 from .control import unload
 from .control import update
 from .logger import lk
+from .pipeline import pipeline
 
 
 def __init():
     import traceback
-    from .pipeline import pipeline
     pipeline.add(traceback, bprint)
     setup(quiet=True)
 

@@ -21,17 +21,18 @@ class Pipeline:
         self._lines = {}
     
     def add(self, x: t.Union[str, object], prt: t.Callable = bprint,
-            scope='dir') -> None:
+            scope=False) -> None:
         if isinstance(x, str):
             path = posixpath.abspath(x)
         else:
             # x is a package or a module
             # debug(x, x.__file__)
             path = posixpath.normpath(x.__file__)
-            if scope == 'dir':
+            if scope:
                 path = posixpath.dirname(path)
         # debug('add path to pipeline', path)
         self._lines[path] = prt
+        self._cache[path] = prt
     
     def get(self, path: str) -> T.PrintFunc:
         # the path is an absolute path.
