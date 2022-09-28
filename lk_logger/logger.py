@@ -105,14 +105,16 @@ class LKLogger:
         
         if (path := caller_frame.f_globals.get('__file__')) and \
                 (custom_print := pipeline.get(path)):
-            self._message_queue.append((args, kwargs, custom_print))
-            # custom_print(*args, **kwargs)
+            if self._config.async_:
+                self._message_queue.append((args, kwargs, custom_print))
+            else:
+                custom_print(*args, **kwargs)
             return
         
         msg, is_flush, is_drain = self._build_message(caller_frame, *args)
         # debug(msg)
         
-        if is_flush:
+        if (not self._config.async_) or is_flush:
             con_print(msg, **kwargs)
             if is_drain:
                 self._message_queue.clear()
