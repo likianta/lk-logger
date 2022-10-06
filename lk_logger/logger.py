@@ -84,11 +84,14 @@ class LKLogger:
         self._running = True
         while self._running or self._message_queue:
             if self._message_queue:
-                msg, kwargs, custom_print = self._message_queue.popleft()
-                if custom_print:
-                    custom_print(*msg, **kwargs)
-                else:
-                    con_print(msg, **kwargs)
+                try:
+                    msg, kwargs, custom_print = self._message_queue.popleft()
+                    if custom_print:
+                        custom_print(*msg, **kwargs)
+                    else:
+                        con_print(msg, **kwargs)
+                except Exception as e:
+                    debug(e)
             else:
                 sleep(0.1)
     
