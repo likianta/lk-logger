@@ -1,6 +1,6 @@
 # LK Logger 更新日志
 
-### 5.4.2 (wip)
+### 5.4.2 (2022-10-09)
 
 - *次要更新*
     - 修复 start_ipython 在处理 sys.argv 时的错误
