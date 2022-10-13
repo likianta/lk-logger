@@ -113,7 +113,7 @@ class LoggingConfig:
     def _wrap_system_excepthook(
             type_, value, traceback, callback=_default_excepthook
     ) -> None:
-        print(':dfr', '[red dim]drain out message queue[/]')
+        print(':r', '[red dim]drain out message queue[/]')
         from .logger import lk
         lk._stop_running()  # noqa
         callback(type_, value, traceback)
