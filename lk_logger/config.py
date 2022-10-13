@@ -94,14 +94,29 @@ class LoggingConfig:
                 from .console import console
                 console.width = val
         elif key == 'rich_traceback':
+            import sys
+            from functools import partial
             if val:
                 # https://rich.readthedocs.io/en/stable/traceback.html
                 from rich.traceback import install
                 from .console import console
                 install(console=console, show_locals=False)
+                modified = sys.excepthook
+                sys.excepthook = partial(
+                    self._wrap_system_excepthook,
+                    callback=modified
+                )
             else:
-                import sys
-                sys.excepthook = _default_excepthook
+                sys.excepthook = self._wrap_system_excepthook
+    
+    @staticmethod
+    def _wrap_system_excepthook(
+            type_, value, traceback, callback=_default_excepthook
+    ) -> None:
+        print(':dfr', '[red dim]drain out message queue[/]')
+        from .logger import lk
+        lk._stop_running()  # noqa
+        callback(type_, value, traceback)
     
     # -------------------------------------------------------------------------
     
