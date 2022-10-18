@@ -20,12 +20,12 @@ if __name__ == '__main__':
     lk_logger.setup(quiet=True, show_varnames=True)
     d2 = forloop(lk_logger.lk.log)
     
-    lk_logger.bprint('{:5.2f}, {:5.2f}, {:5.2f}'.format(
+    print('{:5.2f}, {:5.2f}, {:5.2f}'.format(
         d0, d2, d2 / d0
     ))
     
-    # lk_logger.bprint('{:.2f}, {:.2f}, {:.2f}\n'
-    #                  '{:.2f}, {:.2f}, {:.2f}'.format(
+    # print('{:.2f}, {:.2f}, {:.2f}\n'
+    #       '{:.2f}, {:.2f}, {:.2f}'.format(
     #     d0, d1, d2,
     #     d1 / d0, d2 / d0, d2 / d1
     # ))

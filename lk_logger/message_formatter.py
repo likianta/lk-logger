@@ -180,7 +180,7 @@ class MessageFormatter:
         else:
             return self.markup((separator, 'bright_black')).join(arguments)
     
-    def fmt_level(self, level: str, text='{TAG}') -> str:
+    def fmt_level(self, level: str, text='') -> str:
         if level == 'trace':
             return ''
         labels = {
@@ -199,7 +199,7 @@ class MessageFormatter:
             'error': 'red',
             'fatal': 'bold #ffffff on red',
         }
-        text = text.format(TAG=labels[level])
+        if not text: text = labels[level]
         return self.markup((text, colors[level]))
     
     # -------------------------------------------------------------------------

@@ -22,4 +22,4 @@ def __init():
 
 
 __init()
-__version__ = '5.4.3'
+__version__ = '5.4.4'

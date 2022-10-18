@@ -77,10 +77,10 @@ class MessageBuilder:
                 message_elements.append(
                     self._formatter.fmt_level(
                         marks_meaning[MarkMeaning.VERBOSITY],
-                        text='{TAG} '
                     )
                 )
-        
+                message_elements.append(' ')
+
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:
             if MarkMeaning.MODERATE_PRUNE in marks_meaning:
