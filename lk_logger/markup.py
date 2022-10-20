@@ -21,6 +21,7 @@ class MarkMeaning(Enum):
     STOP_TIMER = auto()
     UPDATE_INDEX = auto()
     VERBOSITY = auto()
+    WAIT_TO_FLUSH = auto()
 
 
 class T:
@@ -98,8 +99,10 @@ class MarkupAnalyser:
         if marks['f'] >= 0:
             if marks['f'] == 0:
                 out[MarkMeaning.FLUSH] = True
-            else:
+            elif marks['f'] == 1:
                 out[MarkMeaning.FLUSH_AND_DRAIN] = True
+            elif marks['f'] == 2:
+                out[MarkMeaning.WAIT_TO_FLUSH] = True
         
         if marks['i'] == 0:
             self._simple_count = 0

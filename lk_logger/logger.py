@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from inspect import currentframe
+from time import sleep
 
 from ._print import debug  # noqa
 from .console import con_print
@@ -35,7 +36,13 @@ class T:  # Typehint
         'variable_names' : t.Iterable[str],
     })
     
-    ComposedMessage = t.Tuple[str, bool, bool]
+    FlushScheme = int
+    #   0: no flush
+    #   1: instant flush
+    #   2: instant flush and drain
+    #   3: wait for flush
+    ComposedMessage = t.Tuple[str, FlushScheme]
+    #   tuple[str message, int flush_scheme]
 
 
 class LKLogger:
@@ -80,7 +87,6 @@ class LKLogger:
         return self._config.to_dict()
     
     def _start_running(self):
-        from time import sleep
         self._running = True
         while self._running or self._message_queue:
             if self._message_queue:
@@ -93,7 +99,7 @@ class LKLogger:
                 except Exception as e:
                     debug(e)
             else:
-                sleep(0.1)
+                sleep(10E-3)
     
     def _stop_running(self):
         self._running = False
@@ -114,15 +120,23 @@ class LKLogger:
                 custom_print(*args, **kwargs)
             return
         
-        msg, is_flush, is_drain = self._build_message(caller_frame, *args)
+        msg, flush_scheme = self._build_message(caller_frame, *args)
         # debug(msg)
         
-        if (not self._config.async_) or is_flush:
+        if flush_scheme == 0:
+            if self._config.async_:
+                self._message_queue.append((msg, kwargs, None))
+            else:
+                con_print(msg, **kwargs)
+        elif flush_scheme == 1:
             con_print(msg, **kwargs)
-            if is_drain:
-                self._message_queue.clear()
-        else:
+        elif flush_scheme == 2:
+            con_print(msg, **kwargs)
+            self._message_queue.clear()
+        elif flush_scheme == 3:
             self._message_queue.append((msg, kwargs, None))
+            while self._message_queue:
+                sleep(10E-3)
     
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args)[0])
@@ -142,19 +156,24 @@ class LKLogger:
         marks = self._analyser.extract(markup)
         marks_meaning = self._analyser.analyse(marks)
         
-        is_drain = MarkMeaning.FLUSH_AND_DRAIN in marks_meaning
-        is_flush = is_drain or MarkMeaning.FLUSH in marks_meaning
+        flush_scheme: T.FlushScheme = 0
+        if MarkMeaning.FLUSH in marks_meaning:
+            flush_scheme = 1
+        elif MarkMeaning.FLUSH_AND_DRAIN in marks_meaning:
+            flush_scheme = 2
+        elif MarkMeaning.WAIT_TO_FLUSH in marks_meaning:
+            flush_scheme = 3
         
         # check cache
         if self._cache.is_cached(frame_id, markup):
             cached_info = self._cache.get_cache(frame_id, markup)
             return self._builder.compose(
-                args, marks_meaning, cached_info), is_flush, is_drain
+                args, marks_meaning, cached_info), flush_scheme
         
         # ---------------------------------------------------------------------
         
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
-            return self._builder.quick_compose(args), is_flush, is_drain
+            return self._builder.quick_compose(args), flush_scheme
         
         info: T.Info = {
             'file_path'      : '',
@@ -220,7 +239,8 @@ class LKLogger:
         self._cache.store_info(frame_id, markup, info)
         
         return self._builder.compose(
-            args, marks_meaning, info), is_flush, is_drain
+            args, marks_meaning, info
+        ), flush_scheme
     
     def _extract_markup_from_arguments(
             self, frame_id: str, args: T.Args
