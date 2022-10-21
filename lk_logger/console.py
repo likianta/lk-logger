@@ -27,4 +27,4 @@ class Console(BaseConsole):
 
 console = Console()
 con_print = partial(console.print, soft_wrap=True)
-con_error = partial(console.print_exception, show_locals=True)
+con_error = partial(console.print_exception)
