@@ -131,13 +131,16 @@ class LKLogger:
         elif flush_scheme == 1:
             con_print(msg, **kwargs)
         elif flush_scheme == 2:
+            if skipped_count := len(self._message_queue):
+                self._message_queue.clear()
+                print(':frp', f'[red dim](... skipped '
+                              f'{skipped_count} messages)[/]')
             con_print(msg, **kwargs)
-            self._message_queue.clear()
         elif flush_scheme == 3:
-            self._message_queue.append((msg, kwargs, None))
             while self._message_queue:
                 sleep(10E-3)
-    
+            con_print(msg, **kwargs)
+
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args)[0])
     
