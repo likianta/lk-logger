@@ -177,6 +177,9 @@ class LKLogger:
         
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return self._builder.quick_compose(args), flush_scheme
+        elif MarkMeaning.RICH_OBJECT in marks_meaning:
+            # assert len(args) == 1 and isinstance(args[1], rich.Renderable)
+            return (args[0] if args else None), flush_scheme
         
         info: T.Info = {
             'file_path'      : '',

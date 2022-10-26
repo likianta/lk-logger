@@ -17,6 +17,7 @@ class MarkMeaning(Enum):
     RESET_INDEX = auto()
     RESET_TIMER = auto()
     RICH_FORMAT = auto()
+    RICH_OBJECT = auto()
     START_TIMER = auto()
     STOP_TIMER = auto()
     UPDATE_INDEX = auto()
@@ -115,8 +116,10 @@ class MarkupAnalyser:
         if marks['l'] >= 0:
             out[MarkMeaning.EXPAND_MULTIPLE_LINES] = True
         
-        if marks['r'] >= 0:
+        if marks['r'] == 0:
             out[MarkMeaning.RICH_FORMAT] = True
+        elif marks['r'] == 1:
+            out[MarkMeaning.RICH_OBJECT] = True
         
         if marks['s'] == 0:
             out[MarkMeaning.MODERATE_PRUNE] = True
