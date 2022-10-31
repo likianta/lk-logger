@@ -2,17 +2,17 @@
 
 [中文版](https://blog.csdn.net/Likianta/article/details/124358443)
 
-Advanced print tool for Python.
+An alternative to Python built-in `print` function.
 
 ![](.assets/20220422181702.png)
 
 Features:
 
--   Show source map, function name and varnames in printing.
+-   Show source map, function name and varnames in console.
 
     ![](.assets/20220422183248.png)
 
--   Easy to start. Just add two lines code to enable lk-logger.
+-   Easy and simple.
 
     ```python
     # add this
@@ -27,7 +27,7 @@ Features:
 
     It will replace Python's built-in `print` function to take care all the leftovers.
 
--   Simple to write:
+-   Simplify writing:
 
     ```python
     # before
@@ -44,9 +44,7 @@ Features:
 
     ![](.assets/20220422183714.png)
 
--   Non-intrusive. After enable it like above, no more modifications on your source code projects (it is low-cost and low-effort to migrate). You will see the new effects at once.
-
-    This would be a good choice for developers who have dived into their projects with Python `print` to get a new start with a new logging util.
+-   Non-intrusive. Once import lk-logger, there's no more modifications to your code. Just follow the way you are using `print` **as usual**.
 
 -   Code highlight.
 
@@ -58,7 +56,7 @@ Features:
 pip install lk-logger
 ```
 
-The latest version is 5.0.0 or higher.
+The latest version is 5.4.0 or higher.
 
 ## Quick Start
 
@@ -80,11 +78,11 @@ Screenshot:
 
 ## Advanced Usage
 
-Usually, the above example is enough to use.
+Usually the above example is enough to use.
 
 The advanced feature is **"markup"** shorthand.
 
-Use a markup as in the first or the last parameter, the markup is a string that starts with ':', consists of multiple marks.
+A markup is a string starts with ':', layed on the first or the last position of positional arguments, and consists of multiple marks.
 
 For example:
 
@@ -122,12 +120,13 @@ print(':v5', 'this is a FATAL message')
 | :--- | :------------------------------------------- |
 | `:d` | divider line                                 |
 | `:i` | index                                        |
-| `:l` | long / loose format (multiple lines)         |
+| `:f` | flush                                        |
+| `:l` | long/loose format (multiple lines)           |
 | `:p` | parent layer                                 |
-| `:r` | rich format                                  |
-| `:s` | short / single line format                   |
-| `:t` | timestamp (not available in current version) |
-| `:v` | verbosity / log level                        |
+| `:r` | rich style                                   |
+| `:s` | short/simple/single line format              |
+| `:t` | timestamp                                    |
+| `:v` | verbosity/log level                          |
 
 **Markup options:**
 
@@ -136,37 +135,45 @@ print(':v5', 'this is a FATAL message')
 :d1+    user defined (if not, fallback to :d0)
 
 :i0     reset index
-:i1     number width fixed to 1 (1, 2, 3, ... 9, 10, 11, ...) (default)
-:i2     number width fixed to 2 (01, 02, 03, ..., 99, 100, 101, ...)
-:i3     number width fixed to 3 (001, 002, 003, ..., 999, 1000, 1001, ...)
-:i4+    number width fixed to *
-:i9+    reserved, not defined yet (will be fallback to :i1)
+:i1     a simple increamental index (starts from 1) (default)
+
+:f0     instantly print a message (default)
+:f1     instantly print a message, and drain out message queue in other thread
+:f2     wait until all messages in queue are printed, then print this message
 
 :l0     let lk-logger decides how to format long message (default)
 :l1     force expand all nodes
 
-:p0     self layer
-:p1     parent layer (default)
-:p2     grand parent layer
-:p3     great grand parent layer
-:p4     great great grand parent layer
-:p5+    great great great ... grand parent layer
-        note: be careful using :p2+, it may crash if the layer not exists
+:p0     current frame
+:p1     parent frame (default)
+:p2     grand parent frame
+:p3     great grand parent frame
+:p4     great great grand parent frame
+:p5+    great great great ... grand parent frame
+        note: be careful using :p2+, it may crash if the frame count exceeds
+        depth limit
 
-:v0     trace
-        if you don't like using number, you can use an alias :vT
-        (:vT is not supported in current version. we'll bring it soon)
-:v1     debug (alias is :vD) (default)
-:v2     info (alias is :vI)
-:v3     warning (alias is :vW)
-:v4     error (alias is :vE)
-:v5     fatal (alias is :vF)
+:r0     rich style. see also rich's documentation (default)
+:r1     rich renderable object, e.g. rich.table.Table, rich.panel.Panel, etc.
+
+:s0     do not show varnames (default)
+:s1     do not show source map, function name and varnames
+
+:t0     reset timer
+:t1     show time elapsed since last timer starts (default)
+
+:v0     trace (default color)
+:v1     debug (grey) (default)
+:v2     info (blue)
+:v3     warning (yellow)
+:v4     error (red)
+:v5     fatal (white text on red background)
 :v6+    user defined (if not, fallback to :v0)
 ```
 
 **Detailed examples:**
 
-See [examples/02_all_markup_usages.py](examples/02_all_markup_usages.py).
+See [examples/all_markup_usages.py](examples/all_markup_usages.py).
 
 Screenshot:
 
