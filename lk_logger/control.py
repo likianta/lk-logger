@@ -34,7 +34,7 @@ def setup(*, quiet=False, clear_preset=False, **kwargs):
     if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
         _HAS_WELCOME_MESSAGE_SHOWN = True
         
-        from random import randint
+        from random import choice
         color_pairs_group = (
             ('#0a87ee', '#9294f0'),  # calm blue -> light blue
             ('#2d34f1', '#9294f0'),  # ocean blue -> light blue
@@ -42,7 +42,7 @@ def setup(*, quiet=False, clear_preset=False, **kwargs):
             ('#f38cfd', '#d08bf3'),  # light magenta -> violet
             ('#f47fa4', '#f49364'),  # cold sandy -> camel tan
         )
-        color_pair = color_pairs_group[randint(0, len(color_pairs_group) - 1)]
+        color_pair = choice(color_pairs_group)
         slogan = _blend_text('♥ lk-logger is ready', color_pair)
         
         # debug(slogan)
