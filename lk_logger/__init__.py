@@ -1,8 +1,3 @@
-"""
-minimum usage: just import
-    import lk_logger  # noqa
-that's all.
-"""
 from . import console
 from ._print import bprint
 from .control import disable
@@ -22,4 +17,4 @@ def __init():
 
 
 __init()
-__version__ = '5.4.6'
+__version__ = '5.4.7'

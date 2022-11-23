@@ -11,7 +11,7 @@ STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
 _HAS_WELCOME_MESSAGE_SHOWN = False
 
 
-def setup(*, quiet=False, clear_preset=False, **kwargs):
+def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
     """
     args:
         quiet:
@@ -26,7 +26,12 @@ def setup(*, quiet=False, clear_preset=False, **kwargs):
         clear_preset:
         kwargs: see `./logger.py > LoggingConfig`.
     """
-    global _HAS_WELCOME_MESSAGE_SHOWN
+    global _HAS_WELCOME_MESSAGE_SHOWN, STATUS
+    
+    if _is_ipython_mode():
+        import IPython  # noqa
+        from .pipeline import pipeline
+        pipeline.add(IPython, bprint, scope=True)
     
     lk.configure(clear_preset, **kwargs)
     setattr(builtins, 'print', lk.log)
@@ -48,7 +53,6 @@ def setup(*, quiet=False, clear_preset=False, **kwargs):
         # debug(slogan)
         print(slogan, ':rsp')
     
-    global STATUS
     STATUS = 'enabled'
 
 
@@ -78,6 +82,8 @@ def disable():
 # other
 
 def start_ipython(user_ns: dict[str, Any] = None) -> None:
+    if _is_ipython_mode():
+        return
     try:
         import IPython
     except (ImportError, ModuleNotFoundError) as e:
@@ -147,3 +153,7 @@ def _blend_text(message: str, color_pair: tuple[str, str]):
         )
         text.stylize(color, index, index + 1)
     return text.markup
+
+
+def _is_ipython_mode() -> bool:
+    return getattr(builtins, '__IPYTHON__', False)
