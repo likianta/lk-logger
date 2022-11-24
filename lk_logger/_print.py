@@ -1,5 +1,6 @@
 import builtins
 from inspect import currentframe
+from os import name as os_name
 
 # DELETE: `builtin_print` is goint to be removed.
 bprint = builtin_print = builtins.print
@@ -16,5 +17,10 @@ def debug(*args, condition=True):
         bprint(source, '[LKDEBUG]', *args)
 
 
+_is_win = os_name == 'nt'
+
+
 def _normpath(path: str) -> str:
-    return path.replace('\\', '/').rstrip('/')
+    if _is_win:
+        return path.replace('\\', '/').rstrip('/')
+    return path.rstrip('/')
