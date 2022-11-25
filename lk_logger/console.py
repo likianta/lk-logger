@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 
 from rich.console import Console as BaseConsole
@@ -27,7 +28,7 @@ class Console(BaseConsole):
     def print(self, *objects: Any, sep=" ", end="\n", style=None, justify=None,
               overflow=None, no_wrap=None, emoji=None, markup=None,
               highlight=None, width=None, height=None, crop=True,
-              soft_wrap=True, new_line_start=False, **_) -> None:
+              soft_wrap=False, new_line_start=False, **_) -> None:
         super().print(*objects, sep=sep, end=end, style=style, justify=justify,
                       overflow=overflow, no_wrap=no_wrap, emoji=emoji,
                       markup=markup, highlight=highlight, width=width,
@@ -36,5 +37,5 @@ class Console(BaseConsole):
 
 
 console = Console()
-con_print = console.print
+con_print = partial(console.print, soft_wrap=True)
 con_error = console.print_exception
