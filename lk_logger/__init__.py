@@ -17,4 +17,4 @@ def __init():
 
 
 __init()
-__version__ = '5.4.7'
+__version__ = '5.4.8'

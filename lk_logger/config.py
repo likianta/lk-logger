@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 from sys import excepthook as _default_excepthook
 
@@ -116,7 +117,11 @@ class LoggingConfig:
         print(':r', '[red dim]drain out message queue[/]')
         from .logger import lk
         lk._stop_running()  # noqa
-        callback(type_, value, traceback)
+        if type_ is KeyboardInterrupt:
+            print(':r', '[red dim]KeyboardInterrupt[/]')
+            sys.exit(0)
+        else:
+            callback(type_, value, traceback)
     
     # -------------------------------------------------------------------------
     
