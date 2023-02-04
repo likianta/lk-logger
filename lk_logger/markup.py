@@ -9,6 +9,7 @@ from time import time
 # noinspection PyArgumentList
 class MarkMeaning(Enum):
     AGRESSIVE_PRUNE = auto()
+    BUILTIN_PRINT = auto()
     DIVIDER_LINE = auto()
     EXPAND_MULTIPLE_LINES = auto()
     FLUSH = auto()
@@ -123,8 +124,10 @@ class MarkupAnalyser:
         
         if marks['s'] == 0:
             out[MarkMeaning.MODERATE_PRUNE] = True
-        elif marks['s'] >= 1:
+        elif marks['s'] == 1:
             out[MarkMeaning.AGRESSIVE_PRUNE] = True
+        elif marks['s'] == 2:
+            out[MarkMeaning.BUILTIN_PRINT] = True
         
         if marks['t'] >= 0:
             out[MarkMeaning.RICH_FORMAT] = True
