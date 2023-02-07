@@ -149,7 +149,7 @@ class LKLogger:
             drain: drain the message queue.
                 if drain is True, the flush must be True.
         """
-        frame_id = f'{id(frame)}#{frame.f_lineno}'
+        frame_id = '{}:{}'.format(frame.f_code.co_filename, frame.f_lineno)
         args, markup_pos, markup = \
             self._extract_markup_from_arguments(frame_id, args)
         marks = self._analyser.extract(markup)
