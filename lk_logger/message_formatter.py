@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import typing as t
+from math import ceil
 from textwrap import indent
 from time import localtime
 from time import strftime as _strftime
+from traceback import format_exception
+
+from rich.pretty import pretty_repr
 
 from ._print import debug  # noqa
 
@@ -166,8 +170,7 @@ class MessageFormatter:
             3. rich
         """
         if expand:
-            from rich.pretty import pretty_repr
-            arguments = tuple(map(pretty_repr, arguments))
+            arguments = tuple(map(self._expand_object, arguments))
         if varnames:
             arguments = self._mix_arguments_with_varnames(arguments, varnames)
         else:
@@ -205,6 +208,13 @@ class MessageFormatter:
     # -------------------------------------------------------------------------
     
     @staticmethod
+    def _expand_object(obj: t.Any) -> str:
+        if isinstance(obj, Exception):
+            return '\n' + indent(''.join(format_exception(obj)), '│ ')
+        else:
+            return pretty_repr(obj)
+    
+    @staticmethod
     def _mix_arguments_with_varnames(
             arguments: t.Sequence[str], varnames: tuple[str, ...],
     ) -> t.Iterable[str]:
@@ -224,5 +234,4 @@ class MessageFormatter:
         if len(text) <= min_width:
             return text.ljust(min_width)
         else:
-            from math import ceil
             return text.ljust(ceil(len(text) / unit_spaces) * unit_spaces)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from enum import Enum
 from enum import auto
+from re import compile as re_compile
 from time import time
 
 
@@ -21,6 +22,7 @@ class MarkMeaning(Enum):
     RICH_OBJECT = auto()
     START_TIMER = auto()
     STOP_TIMER = auto()
+    TRACEBACK_EXCEPTION = auto()
     UPDATE_INDEX = auto()
     VERBOSITY = auto()
     WAIT_TO_FLUSH = auto()
@@ -30,6 +32,7 @@ class T:
     Markup = str
     Marks = t.TypedDict('Marks', {
         'd': int,  # divider line
+        'e': int,  # exception stack trace  # TODO
         'i': int,  # index
         'f': int,  # flush
         'l': int,  # long / loose / expanded (multiple lines)
@@ -46,9 +49,8 @@ class MarkupAnalyser:
     """
     readme: prj:/docs/markup.zh.md
     """
-    from re import compile
-    _mark_pattern_0 = compile(r'^:(?:[dfilprstv][0-9]?)+$')
-    _mark_pattern_1 = compile(r'\w\d?')
+    _mark_pattern_0 = re_compile(r'^:(?:[defilprstv][0-9]?)+$')
+    _mark_pattern_1 = re_compile(r'\w\d?')
     
     def is_valid_markup(self, text: str) -> bool:
         return bool(self._mark_pattern_0.match(text))
@@ -60,6 +62,7 @@ class MarkupAnalyser:
         """
         defaults = {
             'd': -1,
+            'e': -1,
             'f': -1,
             'i': -1,
             'l': -1,
@@ -71,6 +74,7 @@ class MarkupAnalyser:
         }
         shortcuts = {
             'd': 0,
+            'e': 0,
             'f': 0,
             'i': 1,
             'l': 0,
@@ -97,6 +101,9 @@ class MarkupAnalyser:
         
         if marks['d'] >= 0:
             out[MarkMeaning.DIVIDER_LINE] = '-' * 64
+        
+        if marks['e'] >= 0:
+            out[MarkMeaning.TRACEBACK_EXCEPTION] = True
         
         if marks['f'] >= 0:
             if marks['f'] == 0:
