@@ -1,27 +1,33 @@
 from __future__ import annotations
 
 import typing as t
+from atexit import register
+from collections import deque
 from inspect import currentframe
+from threading import Thread
 from time import sleep
+from types import FrameType as _FrameType
 
 from ._print import debug  # noqa
+from .cache import LoggingCache
+from .config import LoggingConfig
 from .console import con_print
+from .markup import MarkMeaning
+from .markup import MarkupAnalyser
+from .markup import T as T0
+from .message_builder import MessageBuilder
+from .path_helper import path_helper
 from .pipeline import pipeline
+from .sourcemap import sourcemap
 
 __all__ = ['LKLogger', 'lk']
 
 
-class T:  # Typehint
-    from types import FrameType as _FrameType
-    from .markup import T as _TMarkup  # noqa
-    
+class T(T0):  # Typehint
     Frame = _FrameType
     
     Args = t.Tuple[t.Any, ...]
     MarkupPos = int  # -1, 0, 1
-    Markup = str
-    Marks = _TMarkup.Marks
-    MarksMeaning = _TMarkup.MarksMeaning
     
     # MessageQueue = t.List[
     #     t.Tuple[t.Union[str, tuple], dict,
@@ -48,14 +54,6 @@ class T:  # Typehint
 class LKLogger:
     
     def __init__(self):
-        from atexit import register
-        from collections import deque
-        from threading import Thread
-        from .cache import LoggingCache
-        from .config import LoggingConfig
-        from .markup import MarkupAnalyser
-        from .message_builder import MessageBuilder
-        
         self._analyser = MarkupAnalyser()
         self._builder = MessageBuilder()
         self._cache = LoggingCache()
@@ -140,7 +138,7 @@ class LKLogger:
             while self._message_queue:
                 sleep(10E-3)
             con_print(msg, **kwargs)
-
+    
     def fmt(self, *args, **_) -> str:
         return str(self._build_message(currentframe().f_back, *args)[0])
     
@@ -151,8 +149,6 @@ class LKLogger:
             drain: drain the message queue.
                 if drain is True, the flush must be True.
         """
-        from .markup import MarkMeaning
-        
         frame_id = f'{id(frame)}#{frame.f_lineno}'
         args, markup_pos, markup = \
             self._extract_markup_from_arguments(frame_id, args)
@@ -195,7 +191,6 @@ class LKLogger:
                         MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
         if any((show_source, show_funcname, show_varnames)):
-            from .sourcemap import sourcemap
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
                 traceback_level=marks['p'],
@@ -203,7 +198,6 @@ class LKLogger:
             )
             
             if show_source:
-                
                 def update_sourcemap():
                     """
                     this function updates follows:
@@ -211,7 +205,7 @@ class LKLogger:
                         info['file_path']
                         info['line_number']
                     """
-                    from .path_helper import path_helper
+                    
                     path = srcmap.filepath
                     info['is_external_lib'] = path_helper.is_external_lib(path)
                     
