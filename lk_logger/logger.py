@@ -155,6 +155,16 @@ class LKLogger:
         marks = self._analyser.extract(markup)
         marks_meaning = self._analyser.analyse(marks)
         
+        if marks['p']:
+            real_frame = frame
+            for _ in range(marks['p']):
+                real_frame = real_frame.f_back
+            frame_id = '{}:{}'.format(
+                real_frame.f_code.co_filename,
+                real_frame.f_lineno
+            )
+        # debug(frame_id)
+        
         flush_scheme: T.FlushScheme = 0
         if MarkMeaning.FLUSH in marks_meaning:
             flush_scheme = 1
@@ -167,7 +177,8 @@ class LKLogger:
         if self._cache.is_cached(frame_id, markup):
             cached_info = self._cache.get_cache(frame_id, markup)
             return self._builder.compose(
-                args, marks_meaning, cached_info), flush_scheme
+                args, marks_meaning, cached_info
+            ), flush_scheme
         
         # ---------------------------------------------------------------------
         
@@ -191,6 +202,8 @@ class LKLogger:
                         MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
         if any((show_source, show_funcname, show_varnames)):
+            # PERF: here does redundant work in tracing real frame. we need to
+            #   merge this with the above tracing.
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
                 traceback_level=marks['p'],
