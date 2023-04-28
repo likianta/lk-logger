@@ -96,6 +96,7 @@ class LKLogger:
                         con_print(msg, **kwargs)
                 except Exception as e:
                     debug(e)
+                    # raise e
             else:
                 sleep(10E-3)
     
