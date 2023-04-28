@@ -85,10 +85,17 @@ class LKLogger:
         return self._config.to_dict()
     
     def _start_running(self):
+        
         def consume() -> None:
+            msg: t.Union[str, tuple]
+            kwargs: dict
+            custom_print: t.Optional[t.Callable]
+            
             for i in range(len(self._message_queue)):
                 msg, kwargs, custom_print = self._message_queue.popleft()
                 if custom_print:
+                    # debug(custom_print, msg, kwargs)
+                    kwargs.pop('file', None)
                     custom_print(*msg, **kwargs)
                 else:
                     con_print(msg, **kwargs)
