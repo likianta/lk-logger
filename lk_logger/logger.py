@@ -85,25 +85,27 @@ class LKLogger:
         return self._config.to_dict()
     
     def _start_running(self):
+        def consume() -> None:
+            for i in range(len(self._message_queue)):
+                msg, kwargs, custom_print = self._message_queue.popleft()
+                if custom_print:
+                    custom_print(*msg, **kwargs)
+                else:
+                    con_print(msg, **kwargs)
+        
         self._running = True
-        while self._running or self._message_queue:
+        while self._running:
             if self._message_queue:
-                try:
-                    msg, kwargs, custom_print = self._message_queue.popleft()
-                    if custom_print:
-                        custom_print(*msg, **kwargs)
-                    else:
-                        con_print(msg, **kwargs)
-                except Exception as e:
-                    debug(e)
-                    # raise e
+                consume()
             else:
                 sleep(10E-3)
+        else:
+            consume()
     
     def _stop_running(self):
-        self._running = False
         if self._config.clear_unfinished_stream:
             self._message_queue.clear()
+        self._running = False
         self._thread.join()
     
     # -------------------------------------------------------------------------
