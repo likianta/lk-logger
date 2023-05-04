@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import typing as t
+from collections import defaultdict
 from enum import Enum
 from enum import auto
 from re import compile as re_compile
@@ -14,7 +13,8 @@ class MarkMeaning(Enum):
     DIVIDER_LINE = auto()
     EXPAND_MULTIPLE_LINES = auto()
     FLUSH = auto()
-    FLUSH_AND_DRAIN = auto()
+    FLUSH_CUTOFF = auto()
+    FLUSH_EDDY = auto()
     MODERATE_PRUNE = auto()
     RESET_INDEX = auto()
     RESET_TIMER = auto()
@@ -25,14 +25,13 @@ class MarkMeaning(Enum):
     TRACEBACK_EXCEPTION = auto()
     UPDATE_INDEX = auto()
     VERBOSITY = auto()
-    WAIT_TO_FLUSH = auto()
 
 
 class T:
     Markup = str
     Marks = t.TypedDict('Marks', {
         'd': int,  # divider line
-        'e': int,  # exception stack trace  # TODO
+        'e': int,  # exception trace back
         'i': int,  # index
         'f': int,  # flush
         'l': int,  # long / loose / expanded (multiple lines)
@@ -57,38 +56,55 @@ class MarkupAnalyser:
     
     def extract(self, markup: T.Markup) -> T.Marks:
         """
+        description: (the asterisk * means default value)
+            * d0: divider line
+              d1: custom divider lines                        *(not supported)*
+            * e0: exception trace back                        *(not supported)*
+              i0: reset index
+            * i1: update index
+              f0: flush
+            * f1: flush cutoff
+              f2: flush eddy               *(not a good option, maybe removed)*
+            * l0: long / loose / expanded (multiple lines)
+              l1: force expand all nodes                      *(not supported)*
+              p0: self layer
+            * p1: parent layer
+              p2: grandparent layer                    *(be careful using p2+)*
+              p3: great-grandparent layer
+              p4: and so on...
+            * r0: rich style
+              r1: rich object (rich.table.Table, rich.panel.Panel, etc.)
+            * s0: short / simple / single line
+              s1: ellipsis for long text                      *(not supported)*
+              t0: reset timer
+              t1: start timer
+            * t2: stop timer and show statistics
+              v0: no obvious verbosity
+            * v1: debug
+              v2: info
+              v3: warning
+              v4: error
+              v5: critical
+        
         return:
-            dict[literal mark, int value]
+            dict[literal mark, int level]
         """
         defaults = {
-            'd': -1,
-            'e': -1,
-            'f': -1,
-            'i': -1,
-            'l': -1,
-            'p': 0,
-            'r': -1,
-            's': -1,
-            't': -1,
-            'v': 0,
-        }
-        shortcuts = {
             'd': 0,
             'e': 0,
-            'f': 0,
-            'i': 1,
+            'f': 1,
+            'i': 1,  # `:i0` is 'reset index'
             'l': 0,
-            'p': 1,
+            'p': 1,  # `:p0` points to 'self' layer
             'r': 0,
             's': 0,
-            't': 2,
-            'v': 1,
+            't': 2,  # `:t0` is 'reset timer'; `:t1` is 'start timer'
+            'v': 1,  # `:v0` is 'no obvious verbosity'
         }
-        
-        out = defaults.copy()
+        out = defaultdict(lambda : -1)
         for m in (self._mark_pattern_1.findall(markup) or ()):
             if len(m) == 1:
-                out[m[0]] = shortcuts[m[0]]
+                out[m[0]] = defaults[m[0]]
             else:
                 out[m[0]] = int(m[1:])
         return out
@@ -109,9 +125,9 @@ class MarkupAnalyser:
             if marks['f'] == 0:
                 out[MarkMeaning.FLUSH] = True
             elif marks['f'] == 1:
-                out[MarkMeaning.FLUSH_AND_DRAIN] = True
+                out[MarkMeaning.FLUSH_CUTOFF] = True
             elif marks['f'] == 2:
-                out[MarkMeaning.WAIT_TO_FLUSH] = True
+                out[MarkMeaning.FLUSH_EDDY] = True
         
         if marks['i'] == 0:
             self._simple_count = 0

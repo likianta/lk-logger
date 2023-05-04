@@ -137,6 +137,8 @@ class LKLogger:
             else:
                 con_print(msg, **kwargs)
         elif flush_scheme == 1:
+            while self._message_queue:
+                sleep(10E-3)
             con_print(msg, **kwargs)
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
@@ -145,8 +147,6 @@ class LKLogger:
                               f'{skipped_count} messages)[/]')
             con_print(msg, **kwargs)
         elif flush_scheme == 3:
-            while self._message_queue:
-                sleep(10E-3)
             con_print(msg, **kwargs)
     
     def fmt(self, *args, **_) -> str:
@@ -178,9 +178,9 @@ class LKLogger:
         flush_scheme: T.FlushScheme = 0
         if MarkMeaning.FLUSH in marks_meaning:
             flush_scheme = 1
-        elif MarkMeaning.FLUSH_AND_DRAIN in marks_meaning:
+        elif MarkMeaning.FLUSH_CUTOFF in marks_meaning:
             flush_scheme = 2
-        elif MarkMeaning.WAIT_TO_FLUSH in marks_meaning:
+        elif MarkMeaning.FLUSH_EDDY in marks_meaning:
             flush_scheme = 3
         
         # check cache
