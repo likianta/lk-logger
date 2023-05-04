@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 import typing as t
 from sys import excepthook as _default_excepthook
@@ -52,7 +50,7 @@ class LoggingConfig:
     """
     async_: bool
     clear_unfinished_stream: bool
-    console_width: int | None
+    console_width: t.Optional[int]
     path_style_for_external_lib: str
     rich_traceback: bool
     separator: str
@@ -74,21 +72,21 @@ class LoggingConfig:
         'show_varnames'              : False,
     }
     
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         for k, v in self._merge_dict(self._preset_conf, kwargs).items():
             self._apply(k, v)
     
-    def update(self, **kwargs):
+    def update(self, **kwargs) -> None:
         for k, v in kwargs.items():
             if k in self._preset_conf and v != getattr(self, k, None):
                 self._apply(k, v)
     
-    def reset(self):
+    def reset(self) -> None:
         for k, v in self._preset_conf.items():
             if v != getattr(self, k, None):
                 self._apply(k, v)
     
-    def _apply(self, key: str, val: bool | int | str):
+    def _apply(self, key: str, val: t.Union[bool, int, str]) -> None:
         setattr(self, key, val)
         if key == 'console_width':
             if val and isinstance(val, int):
@@ -125,7 +123,7 @@ class LoggingConfig:
     
     # -------------------------------------------------------------------------
     
-    def to_dict(self) -> dict[str, t.Any]:
+    def to_dict(self) -> t.Dict[str, t.Any]:
         return {
             k: getattr(self, k)
             for k in self._preset_conf

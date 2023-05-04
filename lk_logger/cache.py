@@ -1,18 +1,15 @@
-from __future__ import annotations
-
 import typing as t
+from .markup import T as T0
 
 
 class T:  # Typehint
-    from .markup import T as _TMarkup  # noqa
-    
     FrameId = str
     MarkupPos = int
     Markup = str
     
     Cache = t.Dict[FrameId, t.TypedDict('_SubDict0', {
         'markup_pos'   : MarkupPos,  # noqa
-        'marks_meaning': _TMarkup.MarksMeaning,  # noqa
+        'marks_meaning': T0.MarksMeaning,  # noqa
         'info'         : t.Dict[Markup, dict]
     })]
 
@@ -20,7 +17,7 @@ class T:  # Typehint
 class LoggingCache:
     _cache: T.Cache
     
-    def __init__(self):
+    def __init__(self) -> None:
         from collections import defaultdict
         self._cache = defaultdict(lambda: {
             'markup_pos'   : None,
@@ -28,12 +25,12 @@ class LoggingCache:
             'info'         : {},
         })
     
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         self._cache.clear()
     
     # -------------------------------------------------------------------------
     
-    def get_markup_pos(self, frame_id: T.FrameId) -> T.MarkupPos | None:
+    def get_markup_pos(self, frame_id: T.FrameId) -> t.Optional[T.MarkupPos]:
         return self._cache[frame_id].get('markup_pos', None)
     
     def is_cached(self, frame_id: T.FrameId, markup: T.Markup) -> bool:
