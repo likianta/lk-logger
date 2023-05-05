@@ -94,8 +94,8 @@ class MarkupAnalyser:
             * e0: exception trace back
               e1: exception trace back with showing locals
               e2: enter pdb                                   *(not supported)*
-              f0: flush
-            * f1: flush cutoff
+            * f0: flush
+              f1: flush cutoff
               f2: flush eddy               *(not a good option, maybe removed)*
               i0: reset index
             * i1: update index
@@ -129,7 +129,7 @@ class MarkupAnalyser:
         defaults = {
             'd': 0,
             'e': 0,
-            'f': 1,
+            'f': 0,
             'i': 1,  # `:i0` is 'reset index'
             'l': 0,
             'p': 1,  # `:p0` points to 'self' layer
