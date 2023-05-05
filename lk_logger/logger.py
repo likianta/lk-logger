@@ -6,7 +6,6 @@ from collections import deque
 from inspect import currentframe
 from threading import Thread
 from time import sleep
-from types import FrameType as _FrameType
 
 from rich.console import RenderableType
 from rich.traceback import Traceback
@@ -15,20 +14,18 @@ from ._print import debug  # noqa
 from .cache import LoggingCache
 from .config import LoggingConfig
 from .console import con_print
+from .frame_info import FrameInfo
 from .markup import MarkMeaning
 from .markup import MarkupAnalyser
 from .markup import T as T0
 from .message_builder import MessageBuilder
 from .path_helper import path_helper
 from .pipeline import pipeline
-from .sourcemap import sourcemap
 
 __all__ = ['LKLogger', 'lk']
 
 
 class T(T0):  # Typehint
-    Frame = _FrameType
-    
     Args = t.Tuple[t.Any, ...]
     MarkupPos = int  # -1, 0, 1
     
@@ -122,18 +119,19 @@ class LKLogger:
     
     # -------------------------------------------------------------------------
     
-    def log(self, *args, **kwargs) -> None:
-        caller_frame = currentframe().f_back
+    def log(self, *args, _frame_info: FrameInfo = None, **kwargs) -> None:
+        if _frame_info is None:
+            _frame_info = FrameInfo(currentframe().f_back)
         
-        if (path := caller_frame.f_globals.get('__file__')) and \
-                (custom_print := pipeline.get(path)):
+        if (path := _frame_info.filepath) \
+                and (custom_print := pipeline.get(path)):
             if self._config.async_:
                 self._message_queue.append((args, kwargs, custom_print))
             else:
                 custom_print(*args, **kwargs)
             return
         
-        msg, flush_scheme = self._build_message(caller_frame, *args)
+        msg, flush_scheme = self._build_message(_frame_info, *args)
         # debug(msg)
         
         if flush_scheme == 0:
@@ -154,35 +152,27 @@ class LKLogger:
         elif flush_scheme == 3:
             con_print(msg, **kwargs)
     
-    def fmt(self, *args, **_) -> str:
-        return str(self._build_message(currentframe().f_back, *args)[0])
+    def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:
+        return str(self._build_message(
+            _frame_info or FrameInfo(currentframe().f_back), *args
+        )[0])
     
-    def _build_message(self, frame: T.Frame, *args) -> T.ComposedMessage:
+    def _build_message(
+            self, frame_info: FrameInfo, *args
+    ) -> T.ComposedMessage:
         """
         return: (str message, bool is_flush, bool is_drain)
             flush: print the message immediately.
             drain: drain the message queue.
                 if drain is True, the flush must be True.
         """
-        frame_id = '{}:{}'.format(frame.f_code.co_filename, frame.f_lineno)
         args, markup_pos, markup = \
-            self._extract_markup_from_arguments(frame_id, args)
+            self._extract_markup_from_arguments(frame_info.id, args)
         marks = self._analyser.extract(markup)
         
-        if marks['p']:
-            real_frame = frame
-            for _ in range(marks['p']):
-                real_frame = real_frame.f_back
-            frame_id = '{}:{}'.format(
-                real_frame.f_code.co_filename,
-                real_frame.f_lineno
-            )
-        else:
-            real_frame = frame
-        # debug(frame_id)
-        marks_meaning = self._analyser.analyse(
-            marks, frame_id=frame_id, frame=real_frame
-        )
+        get_varnames = frame_info.collect_varnames  # backup method pointer
+        if marks['p']: frame_info = frame_info.get_parent(marks['p'])
+        marks_meaning = self._analyser.analyse(marks, frame_info=frame_info)
         del marks
         
         flush_scheme: T.FlushScheme = 0
@@ -194,8 +184,8 @@ class LKLogger:
             flush_scheme = 3
         
         # check cache
-        if self._cache.is_cached(frame_id, markup):
-            cached_info = self._cache.get_cache(frame_id, markup)
+        if self._cache.is_cached(frame_info.id, markup):
+            cached_info = self._cache.get_cache(frame_info.id, markup)
             return self._builder.compose(
                 args, marks_meaning, cached_info
             ), flush_scheme
@@ -228,14 +218,6 @@ class LKLogger:
                         MarkMeaning.MODERATE_PRUNE not in marks_meaning
         
         if any((show_source, show_funcname, show_varnames)):
-            # PERF: here does redundant work in tracing real frame. we need to
-            #   merge this with the above tracing.
-            srcmap = sourcemap.get_sourcemap(
-                frame=frame,
-                traceback_level=marks_meaning[MarkMeaning.PARENT_POINTER],
-                advanced=show_varnames,
-            )
-            
             if show_source:
                 def update_sourcemap():
                     """
@@ -244,8 +226,7 @@ class LKLogger:
                         info['file_path']
                         info['line_number']
                     """
-                    
-                    path = srcmap.filepath
+                    path = frame_info.filepath
                     info['is_external_lib'] = path_helper.is_external_lib(path)
                     
                     if info['is_external_lib']:
@@ -260,22 +241,23 @@ class LKLogger:
                     else:
                         info['file_path'] = path_helper.relpath(path)
                     
-                    info['line_number'] = str(srcmap.lineno)
+                    info['line_number'] = str(frame_info.lineno)
                 
                 update_sourcemap()
             
             if show_funcname:
-                info['function_name'] = srcmap.funcname
+                info['function_name'] = frame_info.funcname
             
             if show_varnames:
+                varnames = get_varnames()
                 if markup_pos == 0:
-                    info['variable_names'] = srcmap.varnames
+                    info['variable_names'] = varnames
                 elif markup_pos == 1:
-                    info['variable_names'] = srcmap.varnames[1:]
+                    info['variable_names'] = varnames[1:]
                 else:
-                    info['variable_names'] = srcmap.varnames[:-1]
+                    info['variable_names'] = varnames[:-1]
         
-        self._cache.store_info(frame_id, markup, info)
+        self._cache.store_info(frame_info.id, markup, info)
         
         return self._builder.compose(
             args, marks_meaning, info

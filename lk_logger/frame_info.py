@@ -1,81 +1,40 @@
+import inspect
 import re
-from collections import namedtuple
+import typing as t
 from types import FrameType
 
-from ._print import debug  # noqa
 from .scanner import get_all_blocks
 from .scanner import get_variables
+from .scanner.const import SUBSCRIPTABLE
+from .scanner.const import VARIABLE_NAME
+from .scanner.exceptions import ScanningError
+from .scanner.exceptions import UnresolvedCase
+
+
+class T:
+    VarNames = t.Tuple[str, ...]
+    SourceMap = t.Dict[str, t.Dict[int, VarNames]]
 
 
 class SourceMap:
+    _sourcemap: T.SourceMap
     
     def __init__(self):
         self._sourcemap = {}
-        #   dict[str filepath, dict[int lineno, tuple[str varname, ...]]]
     
-    @staticmethod
-    def get_frame_info(frame: FrameType, traceback_level: int):
-        from .path_helper import normpath
-        
-        frame_0 = frame
-        frame_x: FrameType
-        for _ in range(traceback_level):
-            frame = frame.f_back
-        frame_x = frame
-        
-        struct = namedtuple('FrameInfo', (
-            'direct_filepath', 'direct_lineno',
-            'target_filepath', 'target_lineno',
-            'target_funcname',
-        ))
-        
-        return struct(
-            normpath(frame_0.f_globals.get('__file__', '<unknown>')),
-            frame_0.f_lineno,
-            normpath(frame_x.f_globals.get('__file__', '<unknown>')),
-            frame_x.f_lineno,
-            frame_x.f_code.co_name,
-        )
+    def get_varnames(self, filepath: str, lineno: int) -> T.VarNames:
+        if filepath not in self._sourcemap:
+            self._indexing_filemap(filepath)
+        return self._sourcemap[filepath].get(lineno, ())
     
-    def get_sourcemap(self, frame: FrameType, traceback_level: int = 0,
-                      advanced=False):
-        info = self.get_frame_info(frame, traceback_level)
-        
-        struct = namedtuple('InfoStruct', (
-            'filepath', 'lineno', 'funcname', 'varnames'
-        ))
-        
-        if advanced:
-            if info.direct_filepath not in self._sourcemap:
-                self._indexing_filemap(info.direct_filepath)
-            varnames = self._sourcemap[info.direct_filepath].get(
-                info.direct_lineno, ())
-        else:
-            varnames = ()
-        
-        return struct(
-            info.target_filepath,
-            info.target_lineno,
-            info.target_funcname,
-            varnames,
-        )
-    
-    def _indexing_filemap(self, filepath: str):
-        """
-        Args:
-            filepath
-        """
+    def _indexing_filemap(self, filepath: str) -> None:
         if filepath.startswith('<'):
-            # see `FrameFinder.getinfo._fix_filepath_location`
+            # see `FrameInfo > property filepath > docstring notice`
             self._sourcemap.setdefault(filepath, {})
             return
         
-        from .scanner.const import VARIABLE_NAME
-        from .scanner.const import SUBSCRIPTABLE
-        from .scanner.exceptions import ScanningError
-        from .scanner.exceptions import UnresolvedCase
-        
-        def _get_blocks(lines):
+        def get_blocks(lines: t.Iterator[str]) -> t.Dict[int, T.VarNames]:
+            out = {}
             for match in get_all_blocks(*lines):
                 text = match.fulltext.strip()
                 if not text:
@@ -83,19 +42,18 @@ class SourceMap:
                 if not text.startswith('print'):  # FIXME: this is not stable
                     continue
                 try:
-                    nonlocal node
                     varnames = _analyse_block(text)
                     lineno = match.cursor.lineno + 1
-                    node[lineno] = tuple(varnames)
+                    out[lineno] = tuple(varnames)
                 except ScanningError:
-                    nonlocal filepath
                     raise ScanningError(
                         match.cursor.lineno + 1, text,
                         0, '<unknown>',
                         f'<filepath: {filepath}>'
                     )
+            return out
         
-        def _analyse_block(text: str):
+        def _analyse_block(text: str) -> t.List[str]:
             varnames = []
             try:
                 for element, type_ in get_variables(text):
@@ -112,9 +70,14 @@ class SourceMap:
             finally:
                 return varnames
         
+        _quotes_pattern_1 = re.compile(r'\'\'\'[\w\W]*\'\'\'|"""[\w\W]*"""')
+        _quotes_pattern_2 = re.compile(r'\'[^\']*\'|"[^"]*"')
+        
         def _analyse_subscriptables(
-                text: str, shorten_sub_substrings=True, threshold=20
-        ):
+                text: str,
+                shorten_sub_substrings: bool = True,
+                threshold: int = 20
+        ) -> str:
             """
             shorten_sub_strings:
                 example:
@@ -144,14 +107,11 @@ class SourceMap:
             if backslash_mask:
                 text = re.sub(r'\\.', '__BACKSLASK_MASK__', text)
             
-            quotes_pattern_1 = re.compile(r'\'\'\'[\w\W]*\'\'\'|"""[\w\W]*"""')
-            quotes_pattern_2 = re.compile(r'\'[^\']*\'|"[^"]*"')
-            
-            for i in set(quotes_pattern_1.findall(text)):
+            for i in set(_quotes_pattern_1.findall(text)):
                 if '\n' in i or len(i) > threshold:
                     text = text.replace(i, '"""..."""')
             
-            for i in set(quotes_pattern_2.findall(text)):
+            for i in set(_quotes_pattern_2.findall(text)):
                 if '\n' in i or len(i) > threshold:
                     text = text.replace(i, '"..."')
             
@@ -167,13 +127,52 @@ class SourceMap:
             
             return text
         
-        node = self._sourcemap.setdefault(filepath, {})
-        
         with open(filepath, 'r', encoding='utf-8') as f:
-            node = self._sourcemap.setdefault(filepath, {})
-            _get_blocks((x.rstrip('\n') for x in f.readlines()))
+            self._sourcemap.setdefault(
+                filepath, get_blocks((x.rstrip('\n') for x in f.readlines()))
+            )
 
 
 sourcemap = SourceMap()
 
-__all__ = ['sourcemap']
+
+class FrameInfo:
+    
+    def __init__(self, frame: FrameType):
+        self._frame = frame
+    
+    @property
+    def id(self) -> str:
+        return f'{self.filepath}:{self.lineno}'
+    
+    @property
+    def filepath(self) -> str:
+        """
+        notice: the returned value may be '<string>', '<unknown>' etc.
+        """
+        return self._frame.f_globals.get(
+            '__file__', self._frame.f_code.co_filename
+        )
+    
+    @property
+    def lineno(self) -> int:
+        return self._frame.f_lineno
+    
+    @property
+    def indentation(self) -> int:
+        # https://stackoverflow.com/a/39172552
+        ctx = inspect.getframeinfo(self._frame).code_context[0]
+        return len(ctx) - len(ctx.lstrip())
+    
+    @property
+    def funcname(self) -> str:
+        return self._frame.f_code.co_name
+    
+    def collect_varnames(self) -> T.VarNames:
+        return sourcemap.get_varnames(self.filepath, self.lineno)
+    
+    def get_parent(self, traceback_level: int = 1) -> 'FrameInfo':
+        frame = self._frame
+        for _ in range(traceback_level):
+            frame = frame.f_back
+        return FrameInfo(frame)

@@ -2,11 +2,12 @@ import typing as t
 from collections import defaultdict
 from enum import Enum
 from enum import auto
-from inspect import getframeinfo
 from random import choices
 from re import compile as re_compile
 from string import ascii_lowercase
 from time import time
+
+from .frame_info import FrameInfo
 
 
 # noinspection PyArgumentList
@@ -182,16 +183,10 @@ class MarkupAnalyser:
                 out[MarkMeaning.SIMPLE_COUNTER] = \
                     self._counter.update_simple_count()
             elif marks['i'] == 2:
-                # get indentation info from frame object.
-                # https://stackoverflow.com/a/39172552
-                # notice: this is slow code.
-                frame = kwargs['frame']
-                ctx = getframeinfo(frame).code_context[0]
-                indent = len(ctx) - len(ctx.lstrip())
+                info: FrameInfo = kwargs['frame_info']
                 out[MarkMeaning.SCOPED_COUNTER] = \
                     self._counter.update_scoped_count(
-                        kwargs['frame_id'],
-                        indent,
+                        info.id, info.indentation
                     )
             else:
                 raise E.UnsupportedMarkup(f':i{marks["i"]}')

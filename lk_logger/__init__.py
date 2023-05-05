@@ -9,6 +9,7 @@ from .control import start_ipython
 from .control import unload
 from .control import unload as restore_builtin_print
 from .control import update
+from .frame_info import FrameInfo
 from .logger import lk
 from .pipeline import pipeline
 
