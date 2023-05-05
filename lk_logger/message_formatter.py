@@ -168,6 +168,18 @@ class MessageFormatter:
         else:
             return self.markup((separator, 'bright_black')).join(arguments)
     
+    def fmt_scoped_index(self, idx: int, uid: str, color: str = '') -> str:
+        # return self.markup(
+        #     ('\\[', 'magenta'),
+        #     (f'{idx}', 'magenta'),
+        #     (f'/{uid}', 'magenta dim'),
+        #     (']', 'magenta'),
+        # )
+        return self.markup(
+            (f'\\[{uid}]', f'{color} dim'),
+            (f'\\[{idx}]', f'{color}'),
+        )
+    
     def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
         return self.markup((sep, color))
     

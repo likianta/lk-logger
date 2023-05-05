@@ -2,7 +2,10 @@ import typing as t
 from collections import defaultdict
 from enum import Enum
 from enum import auto
+from inspect import getframeinfo
+from random import choices
 from re import compile as re_compile
+from string import ascii_lowercase
 from time import time
 
 
@@ -16,15 +19,17 @@ class MarkMeaning(Enum):
     FLUSH_CUTOFF = auto()
     FLUSH_EDDY = auto()
     MODERATE_PRUNE = auto()
+    PARENT_POINTER = auto()
     RESET_INDEX = auto()
     RESET_TIMER = auto()
     RICH_FORMAT = auto()
     RICH_OBJECT = auto()
+    SCOPED_COUNTER = auto()
+    SIMPLE_COUNTER = auto()
     START_TIMER = auto()
     STOP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
     TRACEBACK_EXCEPTION_WITH_LOCALS = auto()
-    UPDATE_INDEX = auto()
     VERBOSITY = auto()
 
 
@@ -43,6 +48,17 @@ class T:
         'v': int,  # verbosity / log level
     })
     MarksMeaning = t.Dict[MarkMeaning, t.Any]
+    
+    class Counter:
+        ColorHex = str
+        Fid = str
+        Indent = int
+        Index = int
+        Uid = str
+        
+        Fid2Uid = t.DefaultDict[Indent, t.DefaultDict[Fid, Uid]]
+        ScopedCounts = t.DefaultDict[Uid, Index]
+        Uid2ColorHex = t.DefaultDict[Uid, ColorHex]
 
 
 class E:
@@ -54,8 +70,17 @@ class MarkupAnalyser:
     """
     readme: prj:/docs/markup.zh.md
     """
+    _counter: '_Counter'
+    _levels: t.Tuple[str, ...]
     _mark_pattern_0 = re_compile(r'^:(?:[defilprstv][0-9]?)+$')
     _mark_pattern_1 = re_compile(r'\w\d?')
+    _simple_time: float
+    
+    def __init__(self) -> None:
+        self._counter = _Counter()
+        self._simple_time = time()
+        # TODO or DELETE: not used. see also `def extract : local_var levels`
+        self._levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
     
     def is_valid_markup(self, text: str) -> bool:
         return bool(self._mark_pattern_0.match(text))
@@ -64,15 +89,16 @@ class MarkupAnalyser:
         """
         description: (the asterisk * means default value)
             * d0: divider line
-              d1: custom divider lines                        *(not supported)*
+              d1: divider block                               *(not supported)*
             * e0: exception trace back
               e1: exception trace back with showing locals
               e2: enter pdb                                   *(not supported)*
-              i0: reset index
-            * i1: update index
               f0: flush
             * f1: flush cutoff
               f2: flush eddy               *(not a good option, maybe removed)*
+              i0: reset index
+            * i1: update index
+              i2: scoped counter
             * l0: long / loose / expanded (multiple lines)
               l1: force expand all nodes                      *(not supported)*
               p0: self layer
@@ -118,10 +144,7 @@ class MarkupAnalyser:
                 out[m[0]] = int(m[1:])
         return out
     
-    _simple_count = 0
-    _simple_time = time()
-    
-    def analyse(self, marks: T.Marks) -> T.MarksMeaning:
+    def analyse(self, marks: T.Marks, **kwargs) -> T.MarksMeaning:
         out = {}
         
         if marks['d'] >= 0:
@@ -151,12 +174,24 @@ class MarkupAnalyser:
         
         if marks['i'] >= 0:
             if marks['i'] == 0:
-                self._simple_count = 0
-                out[MarkMeaning.RESET_INDEX] = 0
+                out[MarkMeaning.RESET_INDEX] = \
+                    self._counter.reset_simple_count()
                 out[MarkMeaning.RICH_FORMAT] = True
             elif marks['i'] == 1:
-                self._simple_count += 1
-                out[MarkMeaning.UPDATE_INDEX] = self._simple_count
+                out[MarkMeaning.SIMPLE_COUNTER] = \
+                    self._counter.update_simple_count()
+            elif marks['i'] == 2:
+                # get indentation info from frame object.
+                # https://stackoverflow.com/a/39172552
+                # notice: this is slow code.
+                frame = kwargs['frame']
+                ctx = getframeinfo(frame).code_context[0]
+                indent = len(ctx) - len(ctx.lstrip())
+                out[MarkMeaning.SCOPED_COUNTER] = \
+                    self._counter.update_scoped_count(
+                        kwargs['frame_id'],
+                        indent,
+                    )
             else:
                 raise E.UnsupportedMarkup(f':i{marks["i"]}')
         
@@ -165,6 +200,11 @@ class MarkupAnalyser:
                 out[MarkMeaning.EXPAND_MULTIPLE_LINES] = True
             else:
                 raise E.UnsupportedMarkup(f':l{marks["l"]}')
+        
+        if marks['p'] >= 0:
+            out[MarkMeaning.PARENT_POINTER] = marks['p']
+        else:
+            out[MarkMeaning.PARENT_POINTER] = 0
         
         if marks['r'] >= 0:
             if marks['r'] == 0:
@@ -204,3 +244,57 @@ class MarkupAnalyser:
             out[MarkMeaning.VERBOSITY] = levels[marks['v']]
         
         return out
+
+
+class _Counter:
+    _fid_2_uid: T.Counter.Fid2Uid
+    _last_indent: T.Counter.Indent
+    _last_uid: T.Counter.Uid
+    _scoped_counts: T.Counter.ScopedCounts
+    _simple_count: T.Counter.Index
+    _uid_2_color: T.Counter.Uid2ColorHex
+    
+    def __init__(self) -> None:
+        self._simple_count = 0
+        self._scoped_counts = defaultdict(lambda: 0)
+        self._fid_2_uid = defaultdict(lambda: defaultdict(self._generate_uid))
+        self._uid_2_color = defaultdict(self._get_random_bright_color)
+        self._last_indent = 0
+        self._last_uid = ''
+    
+    @staticmethod
+    def _generate_uid() -> T.Counter.Uid:
+        """
+        randomly generate a four-character uid.
+        """
+        return ''.join(choices(ascii_lowercase, k=4))
+    
+    @staticmethod
+    def _get_random_bright_color() -> T.Counter.ColorHex:
+        # https://stackoverflow.com/questions/43437309
+        return '#' + ''.join(choices('89ABCDEF', k=6))
+    
+    def update_simple_count(self) -> T.Counter.Index:
+        self._simple_count += 1
+        return self._simple_count
+    
+    def update_scoped_count(
+            self,
+            fid: T.Counter.Fid,
+            indent: T.Counter.Indent
+    ) -> t.Tuple[T.Counter.Index, T.Counter.Uid, T.Counter.ColorHex]:
+        if self._last_indent > indent:
+            # reset all counts in higher indented levels
+            for indent_j in sorted(self._fid_2_uid.keys(), reverse=True):
+                if indent_j <= indent: break
+                for uid in self._fid_2_uid[indent_j].values():
+                    self._scoped_counts[uid] = 0
+        self._last_indent = indent
+        
+        uid = self._fid_2_uid[indent][fid]
+        self._scoped_counts[uid] += 1
+        return self._scoped_counts[uid], uid, self._uid_2_color[uid]
+    
+    def reset_simple_count(self) -> T.Counter.Index:
+        self._simple_count = 0
+        return 0

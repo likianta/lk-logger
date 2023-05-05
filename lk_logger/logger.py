@@ -168,7 +168,6 @@ class LKLogger:
         args, markup_pos, markup = \
             self._extract_markup_from_arguments(frame_id, args)
         marks = self._analyser.extract(markup)
-        marks_meaning = self._analyser.analyse(marks)
         
         if marks['p']:
             real_frame = frame
@@ -178,7 +177,13 @@ class LKLogger:
                 real_frame.f_code.co_filename,
                 real_frame.f_lineno
             )
+        else:
+            real_frame = frame
         # debug(frame_id)
+        marks_meaning = self._analyser.analyse(
+            marks, frame_id=frame_id, frame=real_frame
+        )
+        del marks
         
         flush_scheme: T.FlushScheme = 0
         if MarkMeaning.FLUSH in marks_meaning:
@@ -227,7 +232,7 @@ class LKLogger:
             #   merge this with the above tracing.
             srcmap = sourcemap.get_sourcemap(
                 frame=frame,
-                traceback_level=marks['p'],
+                traceback_level=marks_meaning[MarkMeaning.PARENT_POINTER],
                 advanced=show_varnames,
             )
             

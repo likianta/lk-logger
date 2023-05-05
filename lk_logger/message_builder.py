@@ -94,10 +94,17 @@ class MessageBuilder:
                 message_elements.append(' ')
                 if not args:
                     args = ('[grey50]reset index[/]',)
-        elif MarkMeaning.UPDATE_INDEX in marks_meaning:
+        elif MarkMeaning.SIMPLE_COUNTER in marks_meaning:
             message_elements.append(
                 self._formatter.fmt_index(
-                    marks_meaning[MarkMeaning.UPDATE_INDEX]
+                    marks_meaning[MarkMeaning.SIMPLE_COUNTER]
+                )
+            )
+            message_elements.append(' ')
+        elif MarkMeaning.SCOPED_COUNTER in marks_meaning:
+            message_elements.append(
+                self._formatter.fmt_scoped_index(
+                    *marks_meaning[MarkMeaning.SCOPED_COUNTER]
                 )
             )
             message_elements.append(' ')
