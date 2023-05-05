@@ -126,7 +126,8 @@ class MarkupAnalyser:
         
         if marks['d'] >= 0:
             if marks['d'] == 0:
-                out[MarkMeaning.DIVIDER_LINE] = '-' * 64
+                out[MarkMeaning.DIVIDER_LINE] = '-'  # pattern
+                #   TODO: currently suggest using only one character.
             else:
                 raise E.UnsupportedMarkup(f':d{marks["d"]}')
         

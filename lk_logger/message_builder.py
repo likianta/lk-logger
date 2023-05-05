@@ -126,13 +126,13 @@ class MessageBuilder:
             s, e = marks_meaning[MarkMeaning.STOP_TIMER]
             args = (self._formatter.fmt_time(s, e), *args)
         
-        # 6. divider
-        if MarkMeaning.DIVIDER_LINE in marks_meaning:
-            div = marks_meaning[MarkMeaning.DIVIDER_LINE]
-            message_elements.append(
-                self._formatter.fmt_divider(div)
-            )
-            message_elements.append(' ')
+        # # 6. divider
+        # if MarkMeaning.DIVIDER_LINE in marks_meaning:
+        #     pattern = marks_meaning[MarkMeaning.DIVIDER_LINE]
+        #     message_elements.append(
+        #         self._formatter.fmt_divider(pattern)
+        #     )
+        #     message_elements.append(' ')
         
         # 7. arguments
         message_elements.append(
@@ -150,6 +150,16 @@ class MessageBuilder:
                 marks_meaning[MarkMeaning.VERBOSITY],
                 text=message_elements[-1]
             )
+        
+        # PERF: this is not a good design.
+        # 6. divider
+        if MarkMeaning.DIVIDER_LINE in marks_meaning:
+            message_elements.insert(len(message_elements) - 1, ' ')
+            pattern = marks_meaning[MarkMeaning.DIVIDER_LINE]
+            divider = self._formatter.fmt_divider(
+                pattern, context=message_elements
+            )
+            message_elements.insert(len(message_elements) - 2, divider)
         
         return ''.join(message_elements)
     

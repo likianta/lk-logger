@@ -11,6 +11,7 @@ from rich.pretty import pretty_repr
 from rich.traceback import Traceback
 
 from ._print import debug  # noqa
+from .console import console
 
 strftime = lambda t: _strftime('%H:%M:%S', localtime(t)) \
     if t is not None else ''
@@ -58,8 +59,40 @@ class MessageFormatter:
     
     # -------------------------------------------------------------------------
     
-    def fmt_divider(self, div_: str = '-' * 64) -> str:
-        return self.markup((div_, 'yellow'))
+    def fmt_divider(
+            self, pattern: str = '-', length: int = None,
+            context: list[str] = None
+    ) -> str:  # PERF: not a good design.
+        if length is None:
+            if context:
+                measure = console.measure(''.join(context))
+                # length = console.width - measure.maximum
+                length = min((console.width, 200)) - measure.maximum
+                # if length > 80:
+                #     length = 80
+                if length <= 0:
+                    if len(context) > 1 and context[-1]:
+                        # strip the last element and try again
+                        measure = console.measure(''.join(context[:-1]))
+                        length = console.width - measure.maximum
+                        if length > 0:
+                            # return self.markup((
+                            #     pattern * length + '\n' + pattern * 3,
+                            #     'yellow'
+                            # ))
+                            return self.markup(
+                                (pattern * length, 'yellow'),
+                                ('\n', ''),
+                                (pattern * 3, 'yellow dim')
+                            )
+                        else:
+                            length = 3
+                    else:
+                        # raise ValueError('invalid context', context)
+                        length = 80
+            else:
+                length = 80
+        return self.markup((pattern * length, 'yellow'))
     
     @staticmethod
     def fmt_exception(e: BaseException, show_locals=False) -> Traceback:
@@ -111,8 +144,10 @@ class MessageFormatter:
         if not text: text = labels[level]
         return self.markup((text, colors[level]))
     
-    def fmt_message(self, arguments: t.Iterable[t.Any], varnames: tuple[str],
-                    rich: bool, expand=False, separator=';   ') -> str:
+    def fmt_message(
+            self, arguments: t.Iterable[t.Any], varnames: tuple[str],
+            rich: bool, expand=False, separator=';   '
+    ) -> str:
         """
         notice the process sequence:
             1. expand
@@ -136,8 +171,10 @@ class MessageFormatter:
     def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
         return self.markup((sep, color))
     
-    def fmt_source(self, filepath: str, lineno: t.Union[int, str],
-                   is_external_lib: bool = False, fmt_width=False) -> str:
+    def fmt_source(
+            self, filepath: str, lineno: t.Union[int, str],
+            is_external_lib: bool = False, fmt_width=False
+    ) -> str:
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
             text_b = self._fmt_width(text_a, min_width=12)
