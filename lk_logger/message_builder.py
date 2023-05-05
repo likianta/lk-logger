@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
+from rich.traceback import Traceback
+
 from .markup import MarkMeaning
 from .message_formatter import MessageFormatter
 
@@ -35,10 +37,12 @@ class MessageBuilder:
             ).join(map(str, args))
         )
     
-    def compose(self,
-                args: T.Args,
-                marks_meaning: T.MarksMeaning,
-                info: dict) -> str:
+    def compose(
+            self,
+            args: T.Args,
+            marks_meaning: T.MarksMeaning,
+            info: dict
+    ) -> str:
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return self.quick_compose(args)
         
@@ -80,7 +84,7 @@ class MessageBuilder:
                     )
                 )
                 message_elements.append(' ')
-
+        
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:
             if MarkMeaning.MODERATE_PRUNE in marks_meaning:
@@ -148,3 +152,10 @@ class MessageBuilder:
             )
         
         return ''.join(message_elements)
+    
+    def compose_exception(
+            self,
+            e: BaseException,
+            show_locals: bool
+    ) -> Traceback:
+        return self._formatter.fmt_exception(e, show_locals)

@@ -8,6 +8,9 @@ from threading import Thread
 from time import sleep
 from types import FrameType as _FrameType
 
+from rich.console import RenderableType
+from rich.traceback import Traceback
+
 from ._print import debug  # noqa
 from .cache import LoggingCache
 from .config import LoggingConfig
@@ -47,8 +50,10 @@ class T(T0):  # Typehint
     #   1: instant flush
     #   2: instant flush and drain
     #   3: wait for flush
-    ComposedMessage = t.Tuple[str, FlushScheme]
-    #   tuple[str message, int flush_scheme]
+    ComposedMessage = t.Tuple[
+        t.Union[str, RenderableType, Traceback],
+        FlushScheme
+    ]
 
 
 class LKLogger:
@@ -195,8 +200,14 @@ class LKLogger:
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return self._builder.quick_compose(args), flush_scheme
         elif MarkMeaning.RICH_OBJECT in marks_meaning:
-            # assert len(args) == 1 and isinstance(args[1], rich.Renderable)
-            return (args[0] if args else None), flush_scheme
+            assert len(args) == 1 and isinstance(args[0], RenderableType)
+            return args[0], flush_scheme
+        elif MarkMeaning.TRACEBACK_EXCEPTION in marks_meaning:
+            assert len(args) == 1 and isinstance(args[0], BaseException)
+            return self._builder.compose_exception(args[0], False), flush_scheme
+        elif MarkMeaning.TRACEBACK_EXCEPTION_WITH_LOCALS in marks_meaning:
+            assert len(args) == 1 and isinstance(args[0], BaseException)
+            return self._builder.compose_exception(args[0], True), flush_scheme
         
         info: T.Info = {
             'file_path'      : '',

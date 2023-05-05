@@ -8,6 +8,7 @@ from time import strftime as _strftime
 from traceback import format_exception
 
 from rich.pretty import pretty_repr
+from rich.traceback import Traceback
 
 from ._print import debug  # noqa
 
@@ -57,6 +58,84 @@ class MessageFormatter:
     
     # -------------------------------------------------------------------------
     
+    def fmt_divider(self, div_: str = '-' * 64) -> str:
+        return self.markup((div_, 'yellow'))
+    
+    @staticmethod
+    def fmt_exception(e: BaseException, show_locals=False) -> Traceback:
+        trace = Traceback.from_exception(
+            type(e), e, e.__traceback__,
+            show_locals=show_locals
+        )
+        return trace
+    
+    def fmt_funcname(self, funcname: str, fmt_width=False) -> str:
+        is_func = not funcname.startswith('<')
+        if is_func:
+            funcname += '()'
+        else:
+            funcname = funcname[1:-1]
+        if fmt_width:
+            funcname = self._fmt_width(
+                funcname, min_width=8, unit_spaces=4
+            )
+        if is_func:
+            return self.markup((funcname, 'green'))
+        else:
+            return self.markup((funcname, 'magenta'))
+    
+    def fmt_index(self, idx: int) -> str:
+        return self.markup(
+            (f'[{idx}]', 'grey50' if idx == 0 else 'red')
+        )
+    
+    def fmt_level(self, level: str, text='') -> str:
+        if level == 'trace':
+            return ''
+        labels = {
+            'trace': '',
+            'debug': '[DEBUG]',
+            'info' : '[ INFO]',
+            'warn' : '[ WARN]',
+            'error': '[ERROR]',
+            'fatal': '[FATAL]',
+        }
+        colors = {
+            'trace': '',
+            'debug': 'grey50',
+            'info' : 'blue',
+            'warn' : 'yellow',
+            'error': 'red',
+            'fatal': 'bold #ffffff on red',
+        }
+        if not text: text = labels[level]
+        return self.markup((text, colors[level]))
+    
+    def fmt_message(self, arguments: t.Iterable[t.Any], varnames: tuple[str],
+                    rich: bool, expand=False, separator=';   ') -> str:
+        """
+        notice the process sequence:
+            1. expand
+            2. varnames
+            3. rich
+        """
+        if expand:
+            arguments = tuple(map(self._expand_object, arguments))
+        if varnames:
+            arguments = self._mix_arguments_with_varnames(arguments, varnames)
+        else:
+            arguments = map(str, arguments)
+        if not rich:
+            arguments = (x.replace('[', '\\[') for x in arguments)
+        
+        if expand:
+            return '\n' + indent('\n'.join(arguments), '    ')
+        else:
+            return self.markup((separator, 'bright_black')).join(arguments)
+    
+    def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
+        return self.markup((sep, color))
+    
     def fmt_source(self, filepath: str, lineno: t.Union[int, str],
                    is_external_lib: bool = False, fmt_width=False) -> str:
         if fmt_width:
@@ -87,29 +166,6 @@ class MessageFormatter:
                 (str(lineno), 'bold blue'),
                 (additional_space, ''),
             )
-    
-    def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
-        return self.markup((sep, color))
-    
-    def fmt_funcname(self, funcname: str, fmt_width=False) -> str:
-        is_func = not funcname.startswith('<')
-        if is_func:
-            funcname += '()'
-        else:
-            funcname = funcname[1:-1]
-        if fmt_width:
-            funcname = self._fmt_width(
-                funcname, min_width=8, unit_spaces=4
-            )
-        if is_func:
-            return self.markup((funcname, 'green'))
-        else:
-            return self.markup((funcname, 'magenta'))
-    
-    def fmt_index(self, idx: int) -> str:
-        return self.markup(
-            (f'[{idx}]', 'grey50' if idx == 0 else 'red')
-        )
     
     @staticmethod
     def fmt_time(start: float, end: float = None, color_s='green') -> str:
@@ -157,53 +213,6 @@ class MessageFormatter:
                 color_d=color_d,
             )
         )
-    
-    def fmt_divider(self, div_: str = '-' * 64) -> str:
-        return self.markup((div_, 'yellow'))
-    
-    def fmt_message(self, arguments: t.Iterable[t.Any], varnames: tuple[str],
-                    rich: bool, expand=False, separator=';   ') -> str:
-        """
-        notice the process sequence:
-            1. expand
-            2. varnames
-            3. rich
-        """
-        if expand:
-            arguments = tuple(map(self._expand_object, arguments))
-        if varnames:
-            arguments = self._mix_arguments_with_varnames(arguments, varnames)
-        else:
-            arguments = map(str, arguments)
-        if not rich:
-            arguments = (x.replace('[', '\\[') for x in arguments)
-        
-        if expand:
-            return '\n' + indent('\n'.join(arguments), '    ')
-        else:
-            return self.markup((separator, 'bright_black')).join(arguments)
-    
-    def fmt_level(self, level: str, text='') -> str:
-        if level == 'trace':
-            return ''
-        labels = {
-            'trace': '',
-            'debug': '[DEBUG]',
-            'info' : '[ INFO]',
-            'warn' : '[ WARN]',
-            'error': '[ERROR]',
-            'fatal': '[FATAL]',
-        }
-        colors = {
-            'trace': '',
-            'debug': 'grey50',
-            'info' : 'blue',
-            'warn' : 'yellow',
-            'error': 'red',
-            'fatal': 'bold #ffffff on red',
-        }
-        if not text: text = labels[level]
-        return self.markup((text, colors[level]))
     
     # -------------------------------------------------------------------------
     
