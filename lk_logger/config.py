@@ -58,6 +58,7 @@ class LoggingConfig:
     show_funcname: bool
     show_source: bool
     show_varnames: bool
+    v2_meaning: t.Literal['info', 'success']  # TODO: not used.
     
     _preset_conf = {
         'async_'                     : True,
@@ -70,6 +71,7 @@ class LoggingConfig:
         'show_funcname'              : True,
         'show_source'                : True,
         'show_varnames'              : False,
+        'v2_meaning'                 : 'info',
     }
     
     def __init__(self, **kwargs) -> None:

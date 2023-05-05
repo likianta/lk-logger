@@ -99,6 +99,7 @@ class MarkupAnalyser:
               i0: reset index
             * i1: update index
               i2: scoped counter
+              i3: progress                                    *(not supported)*
             * l0: long / loose / expanded (multiple lines)
               l1: force expand all nodes                      *(not supported)*
               p0: self layer
