@@ -10,6 +10,7 @@ from time import sleep
 from rich.console import RenderableType
 from rich.traceback import Traceback
 
+from ._print import bprint
 from ._print import debug  # noqa
 from .cache import LoggingCache
 from .config import LoggingConfig
@@ -23,6 +24,11 @@ from .path_helper import path_helper
 from .pipeline import pipeline
 
 __all__ = ['LKLogger', 'lk']
+
+
+class _RawArgs:  # a workaround. see its usage below.
+    def __init__(self, args: t.Tuple[t.Any, ...]):
+        self.args = args
 
 
 class T(T0):  # Typehint
@@ -48,7 +54,7 @@ class T(T0):  # Typehint
     #   2: instant flush and drain
     #   3: wait for flush
     ComposedMessage = t.Tuple[
-        t.Union[str, RenderableType, Traceback],
+        t.Union[str, RenderableType, Traceback, _RawArgs],
         FlushScheme
     ]
 
@@ -132,25 +138,41 @@ class LKLogger:
             return
         
         msg, flush_scheme = self._build_message(_frame_info, *args)
+        is_raw = isinstance(msg, _RawArgs)
         # debug(msg)
         
         if flush_scheme == 0:
             if self._config.async_:
-                self._message_queue.append((msg, kwargs, None))
+                if is_raw:
+                    self._message_queue.append((msg.args, kwargs, bprint))
+                else:
+                    self._message_queue.append((msg, kwargs, None))
             else:
-                con_print(msg, **kwargs)
+                if is_raw:
+                    bprint(*msg.args, **kwargs)
+                else:
+                    con_print(msg, **kwargs)
         elif flush_scheme == 1:
             while self._message_queue:
                 sleep(10E-3)
-            con_print(msg, **kwargs)
+            if is_raw:
+                bprint(*msg.args, **kwargs)
+            else:
+                con_print(msg, **kwargs)
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
                 print(':frp', f'[red dim](... skipped '
                               f'{skipped_count} messages)[/]')
-            con_print(msg, **kwargs)
+            if is_raw:
+                bprint(*msg.args, **kwargs)
+            else:
+                con_print(msg, **kwargs)
         elif flush_scheme == 3:
-            con_print(msg, **kwargs)
+            if is_raw:
+                bprint(*msg.args, **kwargs)
+            else:
+                con_print(msg, **kwargs)
     
     def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:
         return str(self._build_message(
@@ -194,6 +216,8 @@ class LKLogger:
         
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return self._builder.quick_compose(args), flush_scheme
+        elif MarkMeaning.BUILTIN_PRINT in marks_meaning:
+            return _RawArgs(args), flush_scheme
         elif MarkMeaning.RICH_OBJECT in marks_meaning:
             assert len(args) == 1 and isinstance(args[0], RenderableType)
             return args[0], flush_scheme
