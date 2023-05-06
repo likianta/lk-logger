@@ -6,9 +6,11 @@
 2. quick_started.py
 3. all_markup_usages.py
 4. counting.py
-5. pretty_error.py
-6. shorten_markups.py
-7. hide_source_prefix.py
+5. timestamp.py
+6. pretty_error.py
+7. shorten_markups.py
+8. hide_source_prefix.py
+9. start_ipython.py
 
 ### Edge cases
 

@@ -2,8 +2,10 @@
 from lk_logger import start_ipython
 
 
-def print_xx():
+def hello_world():
     print('[red]hello[/] [green]world[/]', ':r')
 
 
-start_ipython(user_ns=globals())
+if __name__ == '__main__':
+    print('call `hello_world` to see the effect')
+    start_ipython(user_ns=globals())

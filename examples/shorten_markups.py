@@ -5,7 +5,7 @@ lk_logger.setup(show_varnames=True)
 
 def shorten_verbosities() -> None:
     a, b = 1, 2
-    print(':vs', a, b)
+    print(':v0s', a, b)
     print(':v1s', a, b)
     print(':v2s', a, b)
     print(':v3s', a, b)
