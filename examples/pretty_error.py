@@ -3,10 +3,6 @@ import lk_logger
 lk_logger.setup()
 
 
-def _try_to_do_something_wrong():
-    return 3 / 0
-
-
 def catch_and_print():
     try:
         _try_to_do_something_wrong()
@@ -14,6 +10,10 @@ def catch_and_print():
         print(':e', e)
         # print(':l', e)
     print('over', ':v2')
+
+
+def _try_to_do_something_wrong():
+    return 3 / 0
 
 
 if __name__ == '__main__':
