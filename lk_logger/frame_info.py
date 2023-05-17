@@ -152,7 +152,7 @@ class FrameInfo:
         """
         return self._frame.f_globals.get(
             '__file__', self._frame.f_code.co_filename
-        )
+        ).replace('\\', '/')
     
     @property
     def lineno(self) -> int:
