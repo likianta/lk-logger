@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import typing as t
 from atexit import register
 from collections import deque
@@ -8,6 +6,7 @@ from threading import Thread
 from time import sleep
 
 from rich.console import RenderableType
+from rich.text import Text
 from rich.traceback import Traceback
 
 from ._print import bprint
@@ -40,16 +39,11 @@ class T:  # Typehint
     Pipe = T1.Pipe
     PipeId = T1.PipeId
     
-    # MessageQueue = t.List[
-    #     t.Tuple[t.Union[str, tuple], dict,
-    #             t.Optional[t.Callable]]
-    # ]
-    
     Info = t.TypedDict('Info', {
         'file_path'      : str,
-        'line_number'    : str,
-        'is_external_lib': bool,
         'function_name'  : str,
+        'is_external_lib': bool,
+        'line_number'    : str,
         'variable_names' : t.Iterable[str],
     })
     
@@ -70,7 +64,7 @@ class LKLogger:
         self._config = LoggingConfig()
         
         self._shunt = Shunt()
-        self._shunt.add(con_print)
+        # self._shunt.add(con_print)
         self.add_pipe = self._shunt.add
         self.remove_pipe = self._shunt.remove
         
@@ -99,7 +93,7 @@ class LKLogger:
     def config(self) -> dict:
         return self._config.to_dict()
     
-    def _start_running(self):
+    def _start_running(self) -> None:
         
         def consume() -> None:
             msg: t.Union[str, tuple]
@@ -113,7 +107,9 @@ class LKLogger:
                     kwargs.pop('file', None)
                     custom_print(*msg, **kwargs)
                 else:
-                    self._shunt(msg, **kwargs)
+                    con_print(msg, **kwargs)
+                    if self._shunt:
+                        self._shunt(self._purify(msg))
         
         self._running = True
         while self._running:
@@ -124,7 +120,7 @@ class LKLogger:
         else:
             consume()
     
-    def _stop_running(self):
+    def _stop_running(self) -> None:
         if self._config.clear_unfinished_stream:
             self._message_queue.clear()
         self._running = False
@@ -132,7 +128,12 @@ class LKLogger:
     
     # -------------------------------------------------------------------------
     
-    def log(self, *args, _frame_info: FrameInfo = None, **kwargs) -> None:
+    def log(
+            self,
+            *args: t.Any,
+            _frame_info: FrameInfo = None,
+            **kwargs
+    ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
         
@@ -167,14 +168,18 @@ class LKLogger:
                 if _is_raw:
                     bprint(*msg.args, **kwargs)
                 else:
-                    self._shunt(msg, **kwargs)
+                    con_print(msg, **kwargs)
+                    if self._shunt:
+                        self._shunt(self._purify(msg))
         elif flush_scheme == 1:
             while self._message_queue:
                 sleep(10E-3)
             if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                self._shunt(msg, **kwargs)
+                con_print(msg, **kwargs)
+                if self._shunt:
+                    self._shunt(self._purify(msg))
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
@@ -183,12 +188,23 @@ class LKLogger:
             if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                self._shunt(msg, **kwargs)
+                con_print(msg, **kwargs)
+                if self._shunt:
+                    self._shunt(self._purify(msg))
         elif flush_scheme == 3:
             if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                self._shunt(msg, **kwargs)
+                con_print(msg, **kwargs)
+                if self._shunt:
+                    self._shunt(self._purify(msg))
+    
+    @staticmethod
+    def _purify(msg: T.ComposedMessage) -> t.Optional[str]:
+        if isinstance(msg, str):
+            text = Text.from_markup(msg)
+            return text.plain
+        return None
     
     def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:
         return str(self._build_message(
@@ -305,7 +321,7 @@ class LKLogger:
     
     def _extract_markup_from_arguments(
             self, frame_id: str, args: T.Args
-    ) -> tuple[T.Args, T.MarkupPos, T.Markup]:
+    ) -> t.Tuple[T.Args, T.MarkupPos, T.Markup]:
         """
         return: (args, markup_pos, markup)
             markup_pos: which position of `markup` in `args`.
@@ -337,11 +353,6 @@ class LKLogger:
             return args[1:], markup_pos, args[0]
         else:
             return args[:-1], markup_pos, args[-1]
-    
-    # -------------------------------------------------------------------------
-    
-    # def add_pipe(self, pipe: T.Pipe, name: str = '') -> T.PipeId:
-    #     return self._shunt.add(pipe, name)
 
 
 lk = LKLogger()

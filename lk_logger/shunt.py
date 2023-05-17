@@ -14,12 +14,15 @@ class Shunt:
         self._pipes = {}
         self._id_gen = 0
         
+    def __bool__(self):
+        return bool(self._pipes)
+        
     def __call__(self, msg: t.Union[str, t.Any], **kwargs) -> None:
         for p in self._pipes.values():
             p(msg, **kwargs)
     
     def add(self, pipe: T.Pipe, name: str = '') -> T.PipeId:
-        self._pipes[id := name or self._random_id()] = pipe
+        self._pipes[(id := name or self._random_id())] = pipe
         return id
     
     def remove(self, id: T.PipeId) -> None:
