@@ -22,6 +22,8 @@ from .markup import T as T0
 from .message_builder import MessageBuilder
 from .path_helper import path_helper
 from .pipeline import pipeline
+from .shunt import Shunt
+from .shunt import T as T1
 
 __all__ = ['LKLogger', 'lk']
 
@@ -31,9 +33,12 @@ class _RawArgs:  # a workaround. see its usage below.
         self.args = args
 
 
-class T(T0):  # Typehint
+class T:  # Typehint
     Args = t.Tuple[t.Any, ...]
+    Markup = T0.Markup
     MarkupPos = int  # -1, 0, 1
+    Pipe = T1.Pipe
+    PipeId = T1.PipeId
     
     # MessageQueue = t.List[
     #     t.Tuple[t.Union[str, tuple], dict,
@@ -48,15 +53,12 @@ class T(T0):  # Typehint
         'variable_names' : t.Iterable[str],
     })
     
+    ComposedMessage = t.Union[str, RenderableType, Traceback, _RawArgs]
     FlushScheme = int
     #   0: no flush
     #   1: instant flush
     #   2: instant flush and drain
     #   3: wait for flush
-    ComposedMessage = t.Tuple[
-        t.Union[str, RenderableType, Traceback, _RawArgs],
-        FlushScheme
-    ]
 
 
 class LKLogger:
@@ -66,6 +68,11 @@ class LKLogger:
         self._builder = MessageBuilder()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
+        
+        self._shunt = Shunt()
+        self._shunt.add(con_print)
+        self.add_pipe = self._shunt.add
+        self.remove_pipe = self._shunt.remove
         
         self._running = False
         self._message_queue = deque()
@@ -106,7 +113,7 @@ class LKLogger:
                     kwargs.pop('file', None)
                     custom_print(*msg, **kwargs)
                 else:
-                    con_print(msg, **kwargs)
+                    self._shunt(msg, **kwargs)
         
         self._running = True
         while self._running:
@@ -141,38 +148,47 @@ class LKLogger:
         is_raw = isinstance(msg, _RawArgs)
         # debug(msg)
         
+        self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
+    
+    def _print(
+            self,
+            msg: T.ComposedMessage,
+            flush_scheme: T.FlushScheme = 0,
+            _is_raw: bool = False,
+            **kwargs
+    ) -> None:
         if flush_scheme == 0:
             if self._config.async_:
-                if is_raw:
+                if _is_raw:
                     self._message_queue.append((msg.args, kwargs, bprint))
                 else:
                     self._message_queue.append((msg, kwargs, None))
             else:
-                if is_raw:
+                if _is_raw:
                     bprint(*msg.args, **kwargs)
                 else:
-                    con_print(msg, **kwargs)
+                    self._shunt(msg, **kwargs)
         elif flush_scheme == 1:
             while self._message_queue:
                 sleep(10E-3)
-            if is_raw:
+            if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                con_print(msg, **kwargs)
+                self._shunt(msg, **kwargs)
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
                 print(':frp', f'[red dim](... skipped '
                               f'{skipped_count} messages)[/]')
-            if is_raw:
+            if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                con_print(msg, **kwargs)
+                self._shunt(msg, **kwargs)
         elif flush_scheme == 3:
-            if is_raw:
+            if _is_raw:
                 bprint(*msg.args, **kwargs)
             else:
-                con_print(msg, **kwargs)
+                self._shunt(msg, **kwargs)
     
     def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:
         return str(self._build_message(
@@ -181,7 +197,7 @@ class LKLogger:
     
     def _build_message(
             self, frame_info: FrameInfo, *args
-    ) -> T.ComposedMessage:
+    ) -> t.Tuple[T.ComposedMessage, T.FlushScheme]:
         """
         return: (str message, bool is_flush, bool is_drain)
             flush: print the message immediately.
@@ -321,6 +337,11 @@ class LKLogger:
             return args[1:], markup_pos, args[0]
         else:
             return args[:-1], markup_pos, args[-1]
+    
+    # -------------------------------------------------------------------------
+    
+    # def add_pipe(self, pipe: T.Pipe, name: str = '') -> T.PipeId:
+    #     return self._shunt.add(pipe, name)
 
 
 lk = LKLogger()
