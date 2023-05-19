@@ -1,20 +1,32 @@
-from __future__ import annotations
-
 import typing as t
+from dataclasses import dataclass
+from functools import partial
 from math import ceil
 from textwrap import indent
 from time import localtime
 from time import strftime as _strftime
 from traceback import format_exception
 
+# from rich.padding import Padding
 from rich.pretty import pretty_repr
+from rich.text import Text
 from rich.traceback import Traceback
 
 from ._print import debug  # noqa
 from .console import console
 
-strftime = lambda t: _strftime('%H:%M:%S', localtime(t)) \
-    if t is not None else ''
+strftime = lambda t: (t and _strftime('%H:%M:%S', localtime(t))) or ''
+
+
+@dataclass
+class MarkupText:
+    text: str
+    mark: str = None
+
+
+class T:
+    Level = t.Literal['trace', 'debug', 'info', 'warning', 'error', 'fatal']
+    RichText = Text
 
 
 class Color:  # TODO: not used yet (and not ready).
@@ -38,43 +50,29 @@ class Color:  # TODO: not used yet (and not ready).
 class MessageFormatter:
     
     @staticmethod
-    def markup(*markups: tuple[str, str]) -> str:
-        """
-        this method produces the final strings that could be directly printed.
-
-        args:
-            markups: tuple[tuple[str text, str mark], ...]
-                mark:
-                    any valid patterns of pytermgui markups. for example, 'red',
-                    'bold', 'dim', '#00FF00', ...
-                    ps: mark allows empty.
-        """
-        out = []
-        for text, mark in markups:
-            if mark:
-                out.append('[{}]{}[/]'.format(mark, text))
-            else:
-                out.append(text)
-        return ''.join(out)
+    def markup(*markups: t.Tuple[str, str]) -> T.RichText:
+        # text = Text()
+        # for t, m in markups:
+        #     text.append(t, m)
+        # return text
+        return Text.assemble(*markups)
     
     # -------------------------------------------------------------------------
     
     def fmt_divider(
-            self, pattern: str = '-', length: int = None,
-            context: list[str] = None
-    ) -> str:  # PERF: not a good design.
+            self,
+            pattern: str = '-',
+            length: int = None,
+            context: t.Tuple[T.RichText, ...] = None,
+    ) -> T.RichText:
         if length is None:
             if context:
-                measure = console.measure(''.join(context))
-                # length = console.width - measure.maximum
-                length = min((console.width, 200)) - measure.maximum
-                # if length > 80:
-                #     length = 80
+                length = min((console.width, 200)) - sum(map(len, context))
+                # if length > 80: length = 80
                 if length <= 0:
                     if len(context) > 1 and context[-1]:
                         # strip the last element and try again
-                        measure = console.measure(''.join(context[:-1]))
-                        length = console.width - measure.maximum
+                        length = console.width - sum(map(len, context[:-1]))
                         if length > 0:
                             # return self.markup((
                             #     pattern * length + '\n' + pattern * 3,
@@ -102,7 +100,7 @@ class MessageFormatter:
         )
         return trace
     
-    def fmt_funcname(self, funcname: str, fmt_width=False) -> str:
+    def fmt_funcname(self, funcname: str, fmt_width=False) -> T.RichText:
         is_func = not funcname.startswith('<')
         if is_func:
             funcname += '()'
@@ -110,44 +108,46 @@ class MessageFormatter:
             funcname = funcname[1:-1]
         if fmt_width:
             funcname = self._fmt_width(
-                funcname, min_width=8, unit_spaces=4
+                funcname, min_width=8, step_space=4
             )
-        if is_func:
-            return self.markup((funcname, 'green'))
-        else:
-            return self.markup((funcname, 'magenta'))
+        return Text(funcname, 'green' if is_func else 'magenta')
     
-    def fmt_index(self, idx: int) -> str:
-        return self.markup(
-            (f'[{idx}]', 'grey50' if idx == 0 else 'red')
-        )
+    @staticmethod
+    def fmt_index(idx: int) -> T.RichText:
+        return Text(f'[{idx}]', 'grey50' if idx == 0 else 'red')
     
-    def fmt_level(self, level: str, text='') -> str:
-        if level == 'trace':
-            return ''
-        labels = {
-            'trace': '',
-            'debug': '[DEBUG]',
-            'info' : '[ INFO]',
-            'warn' : '[ WARN]',
-            'error': '[ERROR]',
-            'fatal': '[FATAL]',
-        }
-        colors = {
-            'trace': '',
-            'debug': 'grey50',
-            'info' : 'blue',
-            'warn' : 'yellow',
-            'error': 'red',
-            'fatal': 'bold #ffffff on red',
-        }
-        if not text: text = labels[level]
-        return self.markup((text, colors[level]))
+    _level_2_color = {
+        'trace': '',
+        'debug': 'grey50',
+        'info' : 'blue',
+        'warn' : 'yellow',
+        'error': 'red',
+        'fatal': 'bold #ffffff on red',
+    }
+    _level_2_label = {
+        'trace': '',
+        'debug': '[DEBUG]',
+        'info' : '[ INFO]',
+        'warn' : '[ WARN]',
+        'error': '[ERROR]',
+        'fatal': '[FATAL]',
+    }
+    
+    def fmt_level(self, level: T.Level) -> t.Optional[T.RichText]:
+        if level == 'trace': return None
+        label = self._level_2_label[level]
+        color = self._level_2_color[level]
+        return Text(label, color)
     
     def fmt_message(
-            self, arguments: t.Iterable[t.Any], varnames: tuple[str],
-            rich: bool, expand=False, separator=';   '
-    ) -> str:
+            self,
+            arguments: t.Iterable[t.Any],
+            varnames: t.Tuple[str, ...],
+            rich: bool,
+            expand: bool = False,
+            separator: T.RichText = None,
+            overall_style: T.Level = None,
+    ) -> T.RichText:
         """
         notice the process sequence:
             1. expand
@@ -155,66 +155,87 @@ class MessageFormatter:
             3. rich
         """
         if expand:
-            arguments = tuple(map(self._expand_object, arguments))
+            # arguments = tuple(map(self._expand_object, arguments))
+            arguments = map(self._expand_object, arguments)
         if varnames:
-            arguments = self._mix_arguments_with_varnames(arguments, varnames)
+            arguments = self._mix_arguments_with_varnames(
+                tuple(arguments), varnames
+            )
         else:
             arguments = map(str, arguments)
         if not rich:
             arguments = (x.replace('[', '\\[') for x in arguments)
         
-        if expand:
-            return '\n' + indent('\n'.join(arguments), '    ')
+        # ---------------------------------------------------------------------
+        
+        if overall_style:
+            parse_text = partial(
+                Text.from_markup,
+                style=self._level_2_color[overall_style]
+            )
         else:
-            return self.markup((separator, 'bright_black')).join(arguments)
+            parse_text = Text.from_markup
+        
+        if expand:
+            text = Text.assemble(
+                Text('\n'),
+                Text('\n').join(map(parse_text, arguments))
+            )
+        else:
+            # text = Text(separator, 'bright_black').join(
+            #     map(Text.from_markup, arguments)
+            # )
+            assert separator
+            text = separator.join(
+                map(parse_text, arguments)
+            )
+        
+        return text
     
-    def fmt_scoped_index(self, idx: int, uid: str, color: str = '') -> str:
-        # return self.markup(
-        #     ('\\[', 'magenta'),
-        #     (f'{idx}', 'magenta'),
-        #     (f'/{uid}', 'magenta dim'),
-        #     (']', 'magenta'),
-        # )
+    def fmt_scoped_index(
+            self,
+            idx: int,
+            uid: str,
+            color: str = ''
+    ) -> T.RichText:
         return self.markup(
-            (f'\\[{uid}]', f'{color} dim'),
-            (f'\\[{idx}]', f'{color}'),
+            (f'[{uid}]', f'{color} dim'),
+            (f'[{idx}]', f'{color}'),
         )
     
-    def fmt_separator(self, sep: str = ' >> ', color='bright_black') -> str:
+    def fmt_separator(
+            self,
+            sep: str = ' >> ',
+            color='bright_black'
+    ) -> T.RichText:
         return self.markup((sep, color))
     
     def fmt_source(
             self, filepath: str, lineno: t.Union[int, str],
             is_external_lib: bool = False, fmt_width=False
-    ) -> str:
+    ) -> T.RichText:
+        text = Text()
+        
+        if is_external_lib:
+            assert filepath.startswith('[')
+            a, b = filepath[1:].split(']', 1)
+            text.append(f'[{a}]', 'bold {}'.format(
+                'red' if filepath.startswith('[unknown]') else 'magenta'
+            ))
+            text.append(b, 'bold blue')
+        else:
+            text.append(filepath, 'bold blue')
+        
+        text.append(':', 'bright_black')
+        text.append(str(lineno), 'bold blue')
+        
         if fmt_width:
             text_a = f'{filepath}:{lineno}'
             text_b = self._fmt_width(text_a, min_width=12)
             additional_space = ' ' * (len(text_b) - len(text_a))
-        else:
-            additional_space = ''
-        if is_external_lib:
-            assert filepath.startswith('[')
-            a, b = filepath[1:].split(']', 1)
-            filepath = self.markup(
-                ('\\[{}]'.format(a),
-                 'bold {}'.format('red' if filepath.startswith('[unknown]')
-                                  else 'magenta')),
-                (f'{b}', 'bold blue'),
-            )
-            return self.markup(
-                (filepath, ''),
-                (':', 'bright_black'),
-                (str(lineno), 'bold blue'),
-                (additional_space, ''),
-            )
-        else:
-            return self.markup(
-                (filepath.replace('[', '\\['), 'bold blue'),
-                (':', 'bright_black'),
-                (str(lineno), 'bold blue'),
-                (additional_space, ''),
-            )
+            text.append(additional_space)
+        
+        return text
     
     @staticmethod
     def fmt_time(start: float, end: float = None, color_s='green') -> str:
@@ -268,13 +289,16 @@ class MessageFormatter:
     @staticmethod
     def _expand_object(obj: t.Any) -> str:
         if isinstance(obj, Exception):
-            return '\n' + indent(''.join(format_exception(obj)), '│ ')
+            return indent('\n' + indent(
+                ''.join(format_exception(obj)), '│ '
+            ), '    ')
         else:
-            return pretty_repr(obj)
+            return indent(pretty_repr(obj), '    ')
     
     @staticmethod
     def _mix_arguments_with_varnames(
-            arguments: t.Sequence[str], varnames: tuple[str, ...],
+            arguments: t.Sequence[str],
+            varnames: tuple[str, ...],
     ) -> t.Iterable[str]:
         if not arguments:
             return ()
@@ -287,9 +311,28 @@ class MessageFormatter:
             return (f'{v} = {a}' if v else str(a)
                     for v, a in zip(varnames, arguments))
     
+    # @staticmethod
+    # def _mix_arguments_with_varnames(
+    #         arguments: t.Sequence[str],
+    #         varnames: t.Tuple[str, ...],
+    # ) -> t.Iterator[t.Tuple[str, t.Any]]:
+    #     if not arguments:
+    #         return
+    #     try:
+    #         assert len(varnames) == len(arguments), (varnames, arguments)
+    #     except AssertionError:
+    #         # debug('failed extracting varnames')
+    #         for arg in arguments:
+    #             yield '', arg
+    #     else:
+    #         yield from zip(varnames, arguments)
+    
     @staticmethod
-    def _fmt_width(text: str, min_width: int = None, unit_spaces=4) -> str:
+    def _fmt_width(text: str, min_width: int = None, step_space=4) -> str:
         if len(text) <= min_width:
             return text.ljust(min_width)
         else:
-            return text.ljust(ceil(len(text) / unit_spaces) * unit_spaces)
+            return text.ljust(ceil(len(text) / step_space) * step_space)
+
+
+formatter = MessageFormatter()

@@ -17,9 +17,9 @@ from .frame_info import FrameInfo
 from .markup import MarkMeaning
 from .markup import MarkupAnalyser
 from .markup import T as T0
-from .message_builder_2 import MessageStruct
-from .message_builder_2 import T as T1
-from .message_builder_2 import builder as message_builder
+from .message_builder import MessageStruct
+from .message_builder import T as T1
+from .message_builder import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
 from .shunt import Shunt
