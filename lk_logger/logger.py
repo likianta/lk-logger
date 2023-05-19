@@ -101,6 +101,7 @@ class LKLogger:
             custom_print: t.Optional[t.Callable]
             
             for i in range(len(self._message_queue)):
+                if not self._message_queue: break
                 msg, kwargs, custom_print = self._message_queue.popleft()
                 if custom_print:
                     # debug(custom_print, msg, kwargs)
