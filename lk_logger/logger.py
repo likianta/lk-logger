@@ -6,7 +6,6 @@ from threading import Thread
 from time import sleep
 
 from rich.console import RenderableType
-from rich.text import Text
 from rich.traceback import Traceback
 
 from ._print import bprint
@@ -18,11 +17,13 @@ from .frame_info import FrameInfo
 from .markup import MarkMeaning
 from .markup import MarkupAnalyser
 from .markup import T as T0
-from .message_builder import MessageBuilder
+from .message_builder_2 import MessageStruct
+from .message_builder_2 import T as T1
+from .message_builder_2 import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
 from .shunt import Shunt
-from .shunt import T as T1
+from .shunt import T as T2
 
 __all__ = ['LKLogger', 'lk']
 
@@ -34,32 +35,25 @@ class _RawArgs:  # a workaround. see its usage below.
 
 class T:  # Typehint
     Args = t.Tuple[t.Any, ...]
-    Markup = T0.Markup
-    MarkupPos = int  # -1, 0, 1
-    Pipe = T1.Pipe
-    PipeId = T1.PipeId
-    
-    Info = t.TypedDict('Info', {
-        'file_path'      : str,
-        'function_name'  : str,
-        'is_external_lib': bool,
-        'line_number'    : str,
-        'variable_names' : t.Iterable[str],
-    })
-    
-    ComposedMessage = t.Union[str, RenderableType, Traceback, _RawArgs]
+    ComposedMessage = t.Union[
+        RenderableType, T1.MessageStruct, Traceback, _RawArgs
+    ]
     FlushScheme = int
     #   0: no flush
     #   1: instant flush
     #   2: instant flush and drain
     #   3: wait for flush
+    Info = T1.Info
+    Markup = T0.Markup
+    MarkupPos = int  # -1, 0, 1
+    Pipe = T2.Pipe
+    PipeId = T2.PipeId
 
 
 class LKLogger:
     
     def __init__(self):
         self._analyser = MarkupAnalyser()
-        self._builder = MessageBuilder()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
         
@@ -82,7 +76,7 @@ class LKLogger:
         if 'show_varname' in kwargs:  # workaround for compatibility
             kwargs['show_varnames'] = kwargs.pop('show_varname')
         self._config.update(**kwargs)
-        self._builder.update_config(
+        message_builder.update_config(
             separator=self._config.separator,
             show_source=self._config.show_source,
             show_funcname=self._config.show_funcname,
@@ -108,9 +102,8 @@ class LKLogger:
                     kwargs.pop('file', None)
                     custom_print(*msg, **kwargs)
                 else:
-                    con_print(msg, **kwargs)
-                    if self._shunt:
-                        self._shunt(self._purify(msg))
+                    self._cprint(msg, **kwargs)
+                    self._dprint(msg)
         
         self._running = True
         while self._running:
@@ -167,60 +160,65 @@ class LKLogger:
                     self._message_queue.append((msg, kwargs, None))
             else:
                 if _is_raw:
-                    bprint(*msg.args, **kwargs)
+                    self._bprint(msg, **kwargs)
                 else:
-                    con_print(msg, **kwargs)
-                    if self._shunt:
-                        self._shunt(self._purify(msg))
+                    self._cprint(msg, **kwargs)
+                    self._dprint(msg)
         elif flush_scheme == 1:
             while self._message_queue:
                 sleep(10E-3)
             if _is_raw:
-                bprint(*msg.args, **kwargs)
+                self._bprint(msg, **kwargs)
             else:
-                con_print(msg, **kwargs)
-                if self._shunt:
-                    self._shunt(self._purify(msg))
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
                 print(':frp', f'[red dim](... skipped '
                               f'{skipped_count} messages)[/]')
             if _is_raw:
-                bprint(*msg.args, **kwargs)
+                self._bprint(msg, **kwargs)
             else:
-                con_print(msg, **kwargs)
-                if self._shunt:
-                    self._shunt(self._purify(msg))
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
         elif flush_scheme == 3:
             if _is_raw:
-                bprint(*msg.args, **kwargs)
+                self._bprint(msg, **kwargs)
             else:
-                con_print(msg, **kwargs)
-                if self._shunt:
-                    self._shunt(self._purify(msg))
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
+        else:
+            raise ValueError(flush_scheme)
     
     @staticmethod
-    def _purify(msg: T.ComposedMessage) -> t.Optional[str]:
-        if isinstance(msg, str):
-            text = Text.from_markup(msg)
-            return text.plain
-        return None
+    def _bprint(msg: _RawArgs, **kwargs) -> None:
+        bprint(*msg.args, **kwargs)
     
+    @staticmethod
+    def _cprint(msg: T.ComposedMessage, **kwargs) -> None:
+        if isinstance(msg, MessageStruct):
+            con_print(msg.text, **kwargs)
+        else:
+            con_print(msg, **kwargs)
+    
+    def _dprint(self, msg: T.ComposedMessage) -> None:
+        if self._shunt:
+            if isinstance(msg, MessageStruct):
+                for caller in self._shunt:
+                    caller(msg.body.plain)
+    
+    # FIXME
     def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:
         return str(self._build_message(
             _frame_info or FrameInfo(currentframe().f_back), *args
         )[0])
     
+    # -------------------------------------------------------------------------
+    
     def _build_message(
             self, frame_info: FrameInfo, *args
     ) -> t.Tuple[T.ComposedMessage, T.FlushScheme]:
-        """
-        return: (str message, bool is_flush, bool is_drain)
-            flush: print the message immediately.
-            drain: drain the message queue.
-                if drain is True, the flush must be True.
-        """
         args, markup_pos, markup = \
             self._extract_markup_from_arguments(frame_info.id, args)
         marks = self._analyser.extract(markup)
@@ -241,14 +239,14 @@ class LKLogger:
         # check cache
         if self._cache.is_cached(frame_info.id, markup):
             cached_info = self._cache.get_cache(frame_info.id, markup)
-            return self._builder.compose(
+            return message_builder.compose(
                 args, marks_meaning, cached_info
             ), flush_scheme
         
         # ---------------------------------------------------------------------
         
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
-            return self._builder.quick_compose(args), flush_scheme
+            return message_builder.quick_compose(args), flush_scheme
         elif MarkMeaning.BUILTIN_PRINT in marks_meaning:
             return _RawArgs(args), flush_scheme
         elif MarkMeaning.RICH_OBJECT in marks_meaning:
@@ -256,10 +254,14 @@ class LKLogger:
             return args[0], flush_scheme
         elif MarkMeaning.TRACEBACK_EXCEPTION in marks_meaning:
             assert len(args) == 1 and isinstance(args[0], BaseException)
-            return self._builder.compose_exception(args[0], False), flush_scheme
+            return message_builder.compose_exception(
+                args[0], show_locals=False
+            ), flush_scheme
         elif MarkMeaning.TRACEBACK_EXCEPTION_WITH_LOCALS in marks_meaning:
             assert len(args) == 1 and isinstance(args[0], BaseException)
-            return self._builder.compose_exception(args[0], True), flush_scheme
+            return message_builder.compose_exception(
+                args[0], show_locals=True
+            ), flush_scheme
         
         info: T.Info = {
             'file_path'      : '',
@@ -316,7 +318,7 @@ class LKLogger:
         
         self._cache.store_info(frame_info.id, markup, info)
         
-        return self._builder.compose(
+        return message_builder.compose(
             args, marks_meaning, info
         ), flush_scheme
     

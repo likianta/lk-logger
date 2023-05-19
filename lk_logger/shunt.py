@@ -21,6 +21,9 @@ class Shunt:
         for p in self._pipes.values():
             p(msg, **kwargs)
     
+    def __iter__(self) -> t.Iterator[T.Pipe]:
+        yield from self._pipes.values()
+    
     def add(self, pipe: T.Pipe, name: str = '') -> T.PipeId:
         self._pipes[(id := name or self._random_id())] = pipe
         return id
