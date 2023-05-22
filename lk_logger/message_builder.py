@@ -43,9 +43,6 @@ class T:
 class MessageBuilder:
     _separator_a: Text
     _separator_b: Text
-    _show_funcname: bool
-    _show_source: bool
-    _show_varnames: bool
     
     def __init__(self, **kwargs) -> None:
         self.update_config(**kwargs)
@@ -56,35 +53,25 @@ class MessageBuilder:
         #   alternatives: ➤ ⪢ >> ⮕ -> ~> | │
         self._separator_b = Text(
             config.get('separator', ';   '), 'bright_black')
-        self._show_source = config.get('show_source', False)
-        self._show_funcname = config.get('show_funcname', False)
-        self._show_varnames = config.get('show_varnames', False)
     
     # -------------------------------------------------------------------------
-    
-    def quick_compose(self, args: T.Args) -> T.MessageStruct:
-        body = Text()
-        for x in args:
-            body.append(str(x))
-            body.append_text(self._separator_b)
-        return MessageStruct(None, body)
     
     def compose(
             self,
             args: T.Args,
             marks_meaning: T.MarksMeaning,
-            info: T.Info
+            info: T.Info,
+            show_source: bool = True,
+            show_funcname: bool = True,
+            show_varnames: bool = False,
     ) -> T.MessageStruct:
-        if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
-            return self.quick_compose(args)
-        
         head = Text()
         body = Text()
         # body_parts: t.List[T.RichText] = [Text(), None, Text()]
         # body = body_parts[0]
         
         # 1. source
-        if self._show_source:
+        if show_source:
             head.append_text(
                 formatter.fmt_source(
                     info['file_path'],
@@ -96,7 +83,7 @@ class MessageBuilder:
             head.append_text(self._separator_a)
         
         # 2. funcname
-        if self._show_funcname:
+        if show_funcname:
             assert info['function_name']
             head.append_text(
                 formatter.fmt_funcname(
@@ -191,7 +178,7 @@ class MessageBuilder:
         # )
         temp = formatter.fmt_message(
             arguments=args,
-            varnames=info['variable_names'] if self._show_varnames else (),
+            varnames=info['variable_names'] if show_varnames else (),
             rich=MarkMeaning.RICH_FORMAT in marks_meaning,
             expand=MarkMeaning.EXPAND_MULTIPLE_LINES in marks_meaning,
             separator=self._separator_b,

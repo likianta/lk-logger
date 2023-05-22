@@ -83,9 +83,6 @@ class LKLogger:
         self._config.update(**kwargs)
         message_builder.update_config(
             separator=self._config.separator,
-            show_source=self._config.show_source,
-            show_funcname=self._config.show_funcname,
-            show_varnames=self._config.show_varnames,
         )
     
     @property
@@ -255,9 +252,7 @@ class LKLogger:
             if MarkMeaning.MODERATE_PRUNE in marks_meaning or \
                     MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
                 return _NoMessage, flush_scheme
-        if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
-            return message_builder.quick_compose(args), flush_scheme
-        elif MarkMeaning.BUILTIN_PRINT in marks_meaning:
+        if MarkMeaning.BUILTIN_PRINT in marks_meaning:
             return _RawArgs(args), flush_scheme
         elif MarkMeaning.RICH_OBJECT in marks_meaning:
             assert len(args) == 1 and isinstance(args[0], RenderableType)
@@ -281,10 +276,19 @@ class LKLogger:
             'variable_names' : (),
         }
         
-        show_source = self._config.show_source
-        show_funcname = self._config.show_funcname
-        show_varnames = self._config.show_varnames and \
-                        MarkMeaning.MODERATE_PRUNE not in marks_meaning
+        show_source = (
+                self._config.show_source and
+                (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+        )
+        show_funcname = (
+                self._config.show_funcname and
+                (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+        )
+        show_varnames = (
+                self._config.show_varnames and
+                MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+                MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        )
         
         if any((show_source, show_funcname, show_varnames)):
             if show_source:
@@ -329,7 +333,10 @@ class LKLogger:
         self._cache.store_info(frame_info.id, markup, info)
         
         return message_builder.compose(
-            args, marks_meaning, info
+            args, marks_meaning, info,
+            show_source=show_source,
+            show_funcname=show_funcname,
+            show_varnames=show_varnames,
         ), flush_scheme
     
     def _extract_markup_from_arguments(
