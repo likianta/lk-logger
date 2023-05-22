@@ -174,7 +174,11 @@ class MessageFormatter:
                 style=self._level_2_color[overall_style]
             )
         else:
-            parse_text = Text.from_markup
+            # parse_text = Text.from_markup
+            parse_text = partial(
+                Text.from_markup,
+                style='default'
+            )
         
         if expand:
             _indent = partial(indent, prefix='    ')
