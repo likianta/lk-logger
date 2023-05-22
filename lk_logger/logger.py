@@ -179,8 +179,8 @@ class LKLogger:
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
-                print(':frp', f'[red dim](... skipped '
-                              f'{skipped_count} messages)[/]')
+                print(':frp2', f'[red dim](... skipped '
+                               f'{skipped_count} messages)[/]')
             if _is_raw:
                 self._bprint(msg, **kwargs)
             else:
