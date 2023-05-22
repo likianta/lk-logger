@@ -243,7 +243,10 @@ class LKLogger:
         if self._cache.is_cached(frame_info.id, markup):
             cached_info = self._cache.get_cache(frame_info.id, markup)
             return message_builder.compose(
-                args, marks_meaning, cached_info
+                args, marks_meaning, cached_info,
+                self._config.show_source,
+                self._config.show_funcname,
+                self._config.show_varnames,
             ), flush_scheme
         
         # ---------------------------------------------------------------------

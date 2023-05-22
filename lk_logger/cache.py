@@ -1,16 +1,20 @@
 import typing as t
+
 from .markup import T as T0
+from .message_builder import T as T1
 
 
 class T:  # Typehint
     FrameId = str
+    Info = T1.Info
     MarkupPos = int
     Markup = str
     
-    Cache = t.Dict[FrameId, t.TypedDict('_SubDict0', {
-        'markup_pos'   : MarkupPos,  # noqa
-        'marks_meaning': T0.MarksMeaning,  # noqa
-        'info'         : t.Dict[Markup, dict]
+    # noinspection PyTypedDict
+    Cache = t.Dict[FrameId, t.TypedDict('CacheValue', {
+        'markup_pos'   : MarkupPos,
+        'marks_meaning': T0.MarksMeaning,
+        'info'         : t.Dict[Markup, T1.Info],
     })]
 
 
@@ -19,6 +23,7 @@ class LoggingCache:
     
     def __init__(self) -> None:
         from collections import defaultdict
+        # noinspection PyTypeChecker
         self._cache = defaultdict(lambda: {
             'markup_pos'   : None,
             'marks_meaning': {},
@@ -39,7 +44,7 @@ class LoggingCache:
                 markup in self._cache[frame_id]['info']
         )
     
-    def get_cache(self, frame_id: T.FrameId, markup: T.Markup) -> dict:
+    def get_cache(self, frame_id: T.FrameId, markup: T.Markup) -> T.Info:
         # suggest checking `self.is_cached` before calling this method.
         return self._cache[frame_id]['info'][markup]
     
@@ -48,5 +53,6 @@ class LoggingCache:
     def record_markup_pos(self, frame_id: T.FrameId, pos: T.MarkupPos) -> None:
         self._cache[frame_id]['markup_pos'] = pos
     
-    def store_info(self, frame_id: T.FrameId, markup: T.Markup, info) -> None:
+    def store_info(self, frame_id: T.FrameId, markup: T.Markup,
+                   info: T.Info) -> None:
         self._cache[frame_id]['info'][markup] = info

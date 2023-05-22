@@ -1,6 +1,5 @@
 /.idea/
 /dist/
-/legacy/
 /tests/
 __pycache__/
 .DS_Store

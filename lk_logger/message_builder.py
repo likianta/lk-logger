@@ -65,6 +65,14 @@ class MessageBuilder:
             show_funcname: bool = True,
             show_varnames: bool = False,
     ) -> T.MessageStruct:
+        show_source = show_source and \
+                      MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        show_funcname = show_funcname and \
+                        MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        show_varnames = show_varnames and \
+                        MarkMeaning.MODERATE_PRUNE not in marks_meaning and \
+                        MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        
         head = Text()
         body = Text()
         # body_parts: t.List[T.RichText] = [Text(), None, Text()]
