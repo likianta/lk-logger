@@ -33,10 +33,15 @@ class _RawArgs:  # a workaround. see its usage below.
         self.args = args
 
 
+class _NoMessage:
+    pass
+
+
 class T:  # Typehint
     Args = t.Tuple[t.Any, ...]
     ComposedMessage = t.Union[
-        RenderableType, T1.MessageStruct, Traceback, _RawArgs
+        RenderableType, T1.MessageStruct, Traceback,
+        _NoMessage, _RawArgs
     ]
     FlushScheme = int
     #   0: no flush
@@ -140,6 +145,7 @@ class LKLogger:
             return
         
         msg, flush_scheme = self._build_message(_frame_info, *args)
+        if msg is _NoMessage: return
         is_raw = isinstance(msg, _RawArgs)
         # debug(msg)
         
@@ -245,6 +251,10 @@ class LKLogger:
         
         # ---------------------------------------------------------------------
         
+        if not args:
+            if MarkMeaning.MODERATE_PRUNE in marks_meaning or \
+                    MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
+                return _NoMessage, flush_scheme
         if MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
             return message_builder.quick_compose(args), flush_scheme
         elif MarkMeaning.BUILTIN_PRINT in marks_meaning:
