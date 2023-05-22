@@ -298,7 +298,7 @@ class MessageFormatter:
     @staticmethod
     def _mix_arguments_with_varnames(
             arguments: t.Sequence[str],
-            varnames: tuple[str, ...],
+            varnames: t.Tuple[str, ...],
     ) -> t.Iterable[str]:
         if not arguments:
             return ()
