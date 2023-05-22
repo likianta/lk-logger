@@ -177,9 +177,12 @@ class MessageFormatter:
             parse_text = Text.from_markup
         
         if expand:
+            _indent = partial(indent, prefix='    ')
             text = Text.assemble(
                 Text('\n'),
-                Text('\n').join(map(parse_text, arguments))
+                Text('\n').join(
+                    map(parse_text, map(_indent, arguments))
+                )
             )
         else:
             # text = Text(separator, 'bright_black').join(
@@ -289,11 +292,11 @@ class MessageFormatter:
     @staticmethod
     def _expand_object(obj: t.Any) -> str:
         if isinstance(obj, Exception):
-            return indent('\n' + indent(
+            return '\n' + indent(
                 ''.join(format_exception(obj)), '│ '
-            ), '    ')
+            )
         else:
-            return indent(pretty_repr(obj), '    ')
+            return pretty_repr(obj)
     
     @staticmethod
     def _mix_arguments_with_varnames(
