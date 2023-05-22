@@ -132,6 +132,7 @@ class LKLogger:
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
+            # debug(_frame_info.info)
         
         if (path := _frame_info.filepath) \
                 and (custom_print := pipeline.get(path)):

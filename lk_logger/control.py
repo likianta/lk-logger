@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 import builtins
-from typing import Any
+import typing as t
 
 from ._print import bprint
 from ._print import debug  # noqa
@@ -56,23 +54,23 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
     STATUS = 'enabled'
 
 
-def update(clear_preset=False, **kwargs):
+def update(clear_preset=False, **kwargs) -> None:
     lk.configure(clear_preset, **kwargs)
 
 
-def unload():
+def unload() -> None:
     setattr(builtins, 'print', bprint)
     global STATUS
     STATUS = 'unloaded'
 
 
-def enable():
+def enable() -> None:
     setattr(builtins, 'print', lk.log)
     global STATUS
     STATUS = 'enabled'
 
 
-def disable():
+def disable() -> None:
     setattr(builtins, 'print', lambda *_, **__: None)
     global STATUS
     STATUS = 'disabled'
@@ -81,7 +79,9 @@ def disable():
 # -----------------------------------------------------------------------------
 # other
 
-def start_ipython(user_ns: dict[str, Any] = None) -> None:
+def start_ipython(
+        user_ns: t.Dict[str, t.Any] = None
+) -> None:
     if _is_ipython_mode():
         return
     try:
@@ -108,7 +108,9 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
           show_source=False, show_funcname=False, show_varnames=False)
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
     
-    app = TerminalIPythonApp.instance(user_ns=user_ns or {'print': lk.log})
+    app = TerminalIPythonApp.instance(
+        user_ns={'print': lk.log, **(user_ns or {})}
+    )
     app.initialize()
     
     # setup except hook for ipython
@@ -126,7 +128,7 @@ def start_ipython(user_ns: dict[str, Any] = None) -> None:
 # -----------------------------------------------------------------------------
 # neutral functions
 
-def _blend_text(message: str, color_pair: tuple[str, str]):
+def _blend_text(message: str, color_pair: t.Tuple[str, str]) -> str:
     """ blend text from one color to another.
     
     source: [lib:rich_cli/__main__.py : blend_text()]

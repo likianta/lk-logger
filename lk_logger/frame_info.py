@@ -1,6 +1,7 @@
 import inspect
 import re
 import typing as t
+from textwrap import dedent
 from types import FrameType
 
 from .scanner import get_all_blocks
@@ -141,6 +142,18 @@ class FrameInfo:
     def __init__(self, frame: FrameType):
         self._frame = frame
     
+    def __str__(self) -> str:
+        return self.info
+    
+    @property
+    def info(self) -> str:
+        return dedent(f'''
+            <FrameInfo object>
+                filepath: {self.filepath}
+                lineno: {self.lineno}
+                funcname: {self.funcname}
+        ''').rstrip()
+    
     @property
     def id(self) -> str:
         return f'{self.filepath}:{self.lineno}'
@@ -149,10 +162,16 @@ class FrameInfo:
     def filepath(self) -> str:
         """
         notice: the returned value may be '<string>', '<unknown>' etc.
+        update (2023-05-22):
+            we do not use `__file__` anymore, because it may cause markup
+            analyser broken when the `__file__` is not real (for example when
+            caller passes `globals()` to `exec` function).
+            see also `examples/start_ipython.py : line 11`.
         """
-        return self._frame.f_globals.get(
-            '__file__', self._frame.f_code.co_filename
-        ).replace('\\', '/')
+        return self._frame.f_code.co_filename.replace('\\', '/')
+        # return self._frame.f_globals.get(
+        #     '__file__', self._frame.f_code.co_filename
+        # ).replace('\\', '/')
     
     @property
     def lineno(self) -> int:
