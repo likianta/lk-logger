@@ -41,7 +41,7 @@ class T:  # Typehint
     Args = t.Tuple[t.Any, ...]
     ComposedMessage = t.Union[
         RenderableType, T1.MessageStruct, Traceback,
-        _NoMessage, _RawArgs
+        t.Type[_NoMessage], _RawArgs
     ]
     FlushScheme = int
     #   0: no flush
