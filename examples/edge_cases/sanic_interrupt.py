@@ -1,5 +1,5 @@
 """
-pip install sanic
+pip install lk-utils, requests, sanic
 py examples/edge_cases/sanic_interrupt.py
 """
 from time import sleep
