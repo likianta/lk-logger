@@ -1,5 +1,4 @@
 import typing as t
-from dataclasses import dataclass
 
 from rich.text import Text
 from rich.traceback import Traceback
@@ -9,14 +8,20 @@ from .markup import T as T0
 from .message_formatter import formatter
 
 
-@dataclass
 class MessageStruct:
     head: t.Optional[Text]
     body: Text
     
+    def __init__(self, head: t.Optional[Text], body: Text):
+        self.head = head if (head and len(head)) else None
+        self.body = body
+    
     @property
     def text(self) -> Text:
-        return Text.assemble(self.head, self.body)
+        if self.head:
+            return Text.assemble(self.head, self.body)
+        else:
+            return self.body
 
 
 class T:
@@ -47,7 +52,7 @@ class MessageBuilder:
     
     def update_config(self, **config) -> None:
         # https://fsymbols.com/signs/arrow/
-        self._separator_a = Text(' │ ', 'bright_black')
+        self._separator_a = Text(' ➤ ', 'bright_black')
         #   alternatives: ➤ ⪢ >> ⮕ -> ~> | │
         self._separator_b = Text(
             config.get('separator', ';   '), 'bright_black')
@@ -103,8 +108,8 @@ class MessageBuilder:
         
         # if not self._show_source and not self._show_funcname:
         #     head = None
-        if len(head) == 0:
-            head = None
+        # if len(head) == 0:
+        #     head = None
         
         # ---------------------------------------------------------------------
         
