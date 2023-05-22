@@ -13,9 +13,9 @@ def hide_source() -> None:
     print('no source prefix (before)', ':v4s')
     
     lk_logger.update(show_source=False)  # <- 1
-    bprint(' ' * 42, end='')
+    bprint(' ' * 39, end='')
     print('no source prefix  (after)', ':v2s')
-    print('[dim]~[/]' * 42, ':rs1f')
+    print('[dim]~[/]' * 39, ':rs1f')
     
     bprint()
     bprint()
@@ -26,9 +26,9 @@ def hide_funcname() -> None:
     print('no funcname prefix (before)', ':v4s')
     
     lk_logger.update(show_funcname=False)  # <- 2
-    bprint(' ' * 22, end='')
+    bprint(' ' * 19, end='')
     print('no funcname prefix  (after)', ':v2s')
-    print('[dim]~[/]' * 22, ':rs1f')
+    print('[dim]~[/]' * 19, ':rs1f')
     
     bprint()
     bprint()
@@ -44,7 +44,15 @@ def hide_varnames() -> None:
           c, d, c + d, ':r')
     
     bprint(' ' * 29, end='')
-    print('[dim]~[/]' * 59, ':rs1f')
+    # print('[dim]~[/]' * 59, ':rs1f')
+    print('[dim]'
+          '~~~~     '
+          '~~~~     '
+          '~~~~~~~~      '
+          '~~~~     '
+          '~~~~     '
+          '~~~~~~~~      '
+          '[/]', ':rs1f')
     
     lk_logger.update(show_varnames=False)  # <- 3
     print('[cyan]no varname shown  (after)[/]',
