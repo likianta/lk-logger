@@ -41,3 +41,8 @@ def test_source_scanning():
     a, b = 1, 2
     print(a, b)  # this is a comment
     print(a, b)
+
+
+if __name__ == '__main__':
+    test_code_include_linebreaks()
+    test_source_scanning()

@@ -45,8 +45,8 @@ def test_p__parent_layer():
                     print('assert root.main()', a, ':p5')
                     try:
                         print('assert ...', a, ':p6')
-                    except AssertionError as e:
-                        print('assert outbound error happend', e)
+                    except AttributeError as e:
+                        print('assert outbound error happend', e, ':v4')
                 
                 _ddd()  # _ccc._ddd()
             
@@ -75,3 +75,11 @@ def test_s__short():
 def test_nested_color_scope():
     print(':rv2', '[green]hello[/] [red]world[/] hi')
     print(':v3', 'aaa', 'bbb', 123)
+
+
+if __name__ == '__main__':
+    test_d__divider_line()
+    test_l__loose_format()
+    test_p__parent_layer()
+    test_s__short()
+    test_nested_color_scope()

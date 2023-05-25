@@ -60,5 +60,6 @@ def test_print_complicate_values():
 
 
 if __name__ == '__main__':
-    import pytest
-    pytest.main()
+    test_print_values()
+    test_print_empty()
+    test_print_complicate_values()

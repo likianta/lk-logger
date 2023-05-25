@@ -21,3 +21,7 @@ def test_backslash_brackets():
     
     x = {'a': 'aaa'}
     print(':i0', x['a'])  # 1 -> "x['a'] = aaa"
+
+
+if __name__ == '__main__':
+    test_backslash_brackets()
