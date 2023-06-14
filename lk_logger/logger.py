@@ -25,8 +25,6 @@ from .pipeline import pipeline
 from .shunt import Shunt
 from .shunt import T as T2
 
-__all__ = ['LKLogger', 'lk']
-
 
 class _RawArgs:  # a workaround. see its usage below.
     def __init__(self, args: t.Tuple[t.Any, ...]):
@@ -229,7 +227,7 @@ class LKLogger:
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
         if marks['p']: frame_info = frame_info.get_parent(marks['p'])
-        marks_meaning = self._analyser.analyse(marks, frame_info=frame_info)
+        marks_meaning = self._analyser.analyze(marks, frame_info=frame_info)
         del marks
         
         flush_scheme: T.FlushScheme = 0
