@@ -146,7 +146,7 @@ class MarkupAnalyser:
                 out[m[0]] = int(m[1:])
         return out
     
-    def analyse(self, marks: T.Marks, **kwargs) -> T.MarksMeaning:
+    def analyze(self, marks: T.Marks, **kwargs) -> T.MarksMeaning:
         out = {}
         
         if marks['d'] >= 0:
