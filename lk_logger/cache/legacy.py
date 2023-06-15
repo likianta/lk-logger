@@ -1,7 +1,7 @@
 import typing as t
 
-from .markup import T as T0
-from .message_builder import T as T1
+from ..markup import T as T0
+from ..message_builder import T as T1
 
 
 class T:  # Typehint
