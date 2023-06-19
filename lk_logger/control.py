@@ -37,16 +37,21 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
     if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
         _HAS_WELCOME_MESSAGE_SHOWN = True
         
-        from random import choice
-        color_pairs_group = (
-            ('#0a87ee', '#9294f0'),  # calm blue -> light blue
-            ('#2d34f1', '#9294f0'),  # ocean blue -> light blue
-            ('#ed3b3b', '#d08bf3'),  # rose red -> violet
-            ('#f38cfd', '#d08bf3'),  # light magenta -> violet
-            ('#f47fa4', '#f49364'),  # cold sandy -> camel tan
-        )
-        color_pair = choice(color_pairs_group)
+        from .markup import _Counter
+        random_color = _Counter._get_random_bright_color  # noqa
+        color_pair = (random_color(), random_color())
         slogan = _blend_text('♥ lk-logger is ready', color_pair)
+
+        # from random import choice
+        # color_pairs_group = (
+        #     ('#0a87ee', '#9294f0'),  # calm blue -> light blue
+        #     ('#2d34f1', '#9294f0'),  # ocean blue -> light blue
+        #     ('#ed3b3b', '#d08bf3'),  # rose red -> violet
+        #     ('#f38cfd', '#d08bf3'),  # light magenta -> violet
+        #     ('#f47fa4', '#f49364'),  # cold sandy -> camel tan
+        # )
+        # color_pair = choice(color_pairs_group)
+        # slogan = _blend_text('♥ lk-logger is ready', color_pair)
         
         # debug(slogan)
         print(slogan, ':rsp')
@@ -128,6 +133,7 @@ def start_ipython(
 # -----------------------------------------------------------------------------
 # neutral functions
 
+# DELETE
 def _blend_text(message: str, color_pair: t.Tuple[str, str]) -> str:
     """ blend text from one color to another.
     
