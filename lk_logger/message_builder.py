@@ -144,27 +144,34 @@ class MessageBuilder:
             body.append(' ')
         
         # 5. timestamp
-        if MarkMeaning.RESET_TIMER in marks_meaning:
+        if (
+                (x := MarkMeaning.RESET_TIMER in marks_meaning)
+                or MarkMeaning.START_ONETIME_TIMER in marks_meaning
+        ):
+            timestamp = (
+                    x and marks_meaning[MarkMeaning.RESET_TIMER]
+                    or marks_meaning[MarkMeaning.START_ONETIME_TIMER]
+            )
             if not args:
                 args = ('[grey50]reset timer: [/] {}'.format(
                     formatter.fmt_time(
-                        marks_meaning[MarkMeaning.RESET_TIMER],
+                        timestamp,
                         color_s='green dim'
                     )
                 ),)
             else:
                 args = (formatter.fmt_time(
-                    marks_meaning[MarkMeaning.RESET_TIMER],
+                    timestamp,
                     color_s='green dim'
                 ), *args)
-        elif MarkMeaning.START_TIMER in marks_meaning:
-            args = ('[cyan]start timer:[/] {}'.format(
-                formatter.fmt_time(
-                    marks_meaning[MarkMeaning.RESET_TIMER]
-                )
-            ), *args)
-        elif MarkMeaning.STOP_TIMER in marks_meaning:
-            s, e = marks_meaning[MarkMeaning.STOP_TIMER]
+        elif (
+                (x := MarkMeaning.STOP_TIMER in marks_meaning)
+                or MarkMeaning.STOP_ONETIME_TIMER in marks_meaning
+        ):
+            s, e = (
+                    x and marks_meaning[MarkMeaning.STOP_TIMER]
+                    or marks_meaning[MarkMeaning.STOP_ONETIME_TIMER]
+            )
             args = (formatter.fmt_time(s, e), *args)
         
         # # 6. divider

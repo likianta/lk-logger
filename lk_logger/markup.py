@@ -27,7 +27,8 @@ class MarkMeaning(Enum):
     RICH_OBJECT = auto()
     SCOPED_COUNTER = auto()
     SIMPLE_COUNTER = auto()
-    START_TIMER = auto()
+    START_ONETIME_TIMER = auto()
+    STOP_ONETIME_TIMER = auto()
     STOP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
     TRACEBACK_EXCEPTION_WITH_LOCALS = auto()
@@ -76,10 +77,12 @@ class MarkupAnalyser:
     _mark_pattern_0 = re_compile(r'^:(?:[defilprstv][0-9]?)+$')
     _mark_pattern_1 = re_compile(r'\w\d?')
     _simple_time: float
+    _temp_time: float
     
     def __init__(self) -> None:
         self._counter = _Counter()
         self._simple_time = time()
+        self._temp_time = time()
         # TODO or DELETE: not used. see also `def extract : local_var levels`
         self._levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
     
@@ -114,8 +117,9 @@ class MarkupAnalyser:
               s1: builtin-like print (remains markup features)
               s2: builtin print
               t0: reset timer
-              t1: start timer
-            * t2: stop timer and show statistics
+            * t1: stop timer and show statistics
+              t2: setup up onetime timer
+              t3: stop onetime timer and show statistics
               v0: no obvious verbosity
             * v1: debug
               v2: info
@@ -135,7 +139,7 @@ class MarkupAnalyser:
             'p': 1,  # `:p0` points to 'self' layer
             'r': 0,
             's': 0,
-            't': 2,  # `:t0` is 'reset timer'; `:t1` is 'start timer'
+            't': 1,  # `:t0` is 'reset timer'
             'v': 1,  # `:v0` is 'no obvious verbosity'
         }
         out = defaultdict(lambda: -1)
@@ -226,12 +230,16 @@ class MarkupAnalyser:
                 t = self._simple_time = time()
                 out[MarkMeaning.RESET_TIMER] = t
             elif marks['t'] == 1:
-                t = self._simple_time = time()
-                out[MarkMeaning.START_TIMER] = t
-            elif marks['t'] == 2:
                 start, end = self._simple_time, time()
                 self._simple_time = end
                 out[MarkMeaning.STOP_TIMER] = (start, end)
+            elif marks['t'] == 2:
+                t = self._temp_time = time()
+                out[MarkMeaning.START_ONETIME_TIMER] = t
+            elif marks['t'] == 3:
+                start, end = self._temp_time, time()
+                # self._temp_time = 0.0
+                out[MarkMeaning.STOP_ONETIME_TIMER] = (start, end)
             else:
                 raise E.UnsupportedMarkup(f':t{marks["t"]}')
         
