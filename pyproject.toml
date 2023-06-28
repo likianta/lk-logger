@@ -11,12 +11,10 @@ license = "MIT"
 python = "^3.8"
 rich = "*"
 
-[tool.poetry.dev-dependencies]
-
 [[tool.poetry.source]]
 name = "tsinghua"
 url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
-default = true
+priority = "default"
 
 [build-system]
 requires = ["poetry"]
