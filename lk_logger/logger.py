@@ -246,6 +246,7 @@ class LKLogger:
                 self._config.show_source,
                 self._config.show_funcname,
                 self._config.show_varnames,
+                self._config.sourcemap_alignment,
             ), flush_scheme
         
         # ---------------------------------------------------------------------
@@ -339,6 +340,7 @@ class LKLogger:
             show_source=show_source,
             show_funcname=show_funcname,
             show_varnames=show_varnames,
+            sourcemap_alignment=self._config.sourcemap_alignment,
         ), flush_scheme
     
     def _extract_markup_from_arguments(

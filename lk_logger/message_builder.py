@@ -1,8 +1,12 @@
 import typing as t
 
+from rich.console import Group
+from rich.padding import Padding  # DELETE
 from rich.text import Text
 from rich.traceback import Traceback
 
+from ._print import debug  # noqa
+from .console import console
 from .markup import MarkMeaning
 from .markup import T as T0
 from .message_formatter import formatter
@@ -11,15 +15,73 @@ from .message_formatter import formatter
 class MessageStruct:
     head: t.Optional[Text]
     body: Text
+    _reverse: bool
     
-    def __init__(self, head: t.Optional[Text], body: Text):
+    def __init__(self, head: t.Optional[Text], body: Text, reverse=False):
         self.head = head if (head and len(head)) else None
         self.body = body
+        self._reverse = reverse
     
     @property
-    def text(self) -> Text:
+    def text(self) -> t.Union[Text, Group, Padding]:
         if self.head:
-            return Text.assemble(self.head, self.body)
+            if not self._reverse:
+                return Text.assemble(self.head, self.body)
+            else:
+                con_width = console.width - 2
+                # debug(con_width)
+                if con_width <= len(self.head):  # fallback
+                    if '\n' not in self.body:
+                        self.body.pad_left(2)
+                        return self.body
+                    else:
+                        lines = self.body.split()
+                        for x in lines:
+                            x.pad_left(2)
+                        return Group(*lines)
+                
+                if '\n' not in self.body:  # body is single line
+                    self.body.pad_left(2)
+                    if (x := con_width - len(self.head) - len(self.body)) > 0:
+                        self.body.append(' ' * x)
+                        out = Text.assemble(self.body, self.head)
+                    else:
+                        part_1 = Text.assemble(
+                            self.body[:con_width - len(self.head)],
+                            self.head
+                        )
+                        part_2 = Text.assemble(
+                            '  ',
+                            Text('└─', 'dim'),
+                            self.body[con_width - len(self.head):]
+                        )
+                        out = Group(part_1, part_2)
+                else:  # body is multi-line
+                    lines = self.body.split('\n')
+                    for x in lines:
+                        x.pad_left(2)
+                    if (x := con_width - len(self.head) - len(lines[0])) > 0:
+                        part_1 = Text.assemble(
+                            lines[0],
+                            ' ' * x,
+                            self.head
+                        )
+                        part_2 = lines[1:]
+                        out = Group(part_1, *part_2)
+                    else:
+                        part_1 = Text.assemble(
+                            lines[0][:con_width - len(self.head)],
+                            self.head
+                        )
+                        part_2 = Text.assemble(
+                            '  ',
+                            Text('└─', 'dim'),
+                            lines[0][con_width - len(self.head):]
+                        )
+                        part_3 = lines[1:]
+                        out = Group(part_1, part_2, *part_3)
+                # return Padding(out, (0, 0, 0, 2))
+                return out
         else:
             return self.body
 
@@ -43,6 +105,7 @@ class T:
 class MessageBuilder:
     _separator_a: Text
     _separator_b: Text
+    _separator_c: Text
     
     def __init__(self, **kwargs) -> None:
         self.update_config(**kwargs)
@@ -55,6 +118,7 @@ class MessageBuilder:
         #       before it.
         self._separator_b = Text(
             config.get('separator', ';   '), 'bright_black')
+        self._separator_c = Text('  ⪡ ', 'bright_black')
     
     # -------------------------------------------------------------------------
     
@@ -66,6 +130,7 @@ class MessageBuilder:
             show_source: bool = True,
             show_funcname: bool = True,
             show_varnames: bool = False,
+            sourcemap_alignment: t.Literal['left', 'right'] = 'left',
     ) -> T.MessageStruct:
         show_source = show_source and \
                       MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
@@ -82,26 +147,52 @@ class MessageBuilder:
         
         # 1. source
         if show_source:
-            head.append_text(
-                formatter.fmt_source(
-                    info['file_path'],
-                    info['line_number'],
-                    is_external_lib=info['is_external_lib'],
-                    fmt_width=True,
-                )
+            head_part_1 = formatter.fmt_source(
+                info['file_path'],
+                info['line_number'],
+                is_external_lib=info['is_external_lib'],
+                fmt_width=True,
             )
-            head.append_text(self._separator_a)
+            # head.append_text(
+            #     formatter.fmt_source(
+            #         info['file_path'],
+            #         info['line_number'],
+            #         is_external_lib=info['is_external_lib'],
+            #         fmt_width=True,
+            #     )
+            # )
+            # head.append_text(self._separator_a)
+        else:
+            head_part_1 = None
         
         # 2. funcname
         if show_funcname:
             assert info['function_name']
-            head.append_text(
-                formatter.fmt_funcname(
-                    info['function_name'],
-                    fmt_width=True,
-                )
+            head_part_2 = formatter.fmt_funcname(
+                info['function_name'],
+                fmt_width=True,
             )
-            head.append_text(self._separator_a)
+            # head.append_text(
+            #     formatter.fmt_funcname(
+            #         info['function_name'],
+            #         fmt_width=True,
+            #     )
+            # )
+            # head.append_text(self._separator_a)
+        else:
+            head_part_2 = None
+        
+        if head_part_1 or head_part_2:
+            if sourcemap_alignment == 'left':
+                head = Text.assemble(
+                    *(head_part_1 and (head_part_1, self._separator_a)),
+                    *(head_part_2 and (head_part_2, self._separator_a)),
+                )
+            else:
+                head = Text.assemble(
+                    *(head_part_2 and (self._separator_c, head_part_2)),
+                    *(head_part_1 and (self._separator_c, head_part_1)),
+                )
         
         # if not self._show_source and not self._show_funcname:
         #     head = None
@@ -216,7 +307,10 @@ class MessageBuilder:
             body.append_text(temp)
         del temp
         
-        return MessageStruct(head, body)
+        return MessageStruct(
+            head, body,
+            reverse=(sourcemap_alignment == 'right')
+        )
     
     @staticmethod
     def compose_exception(

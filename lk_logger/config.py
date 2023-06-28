@@ -58,6 +58,7 @@ class LoggingConfig:
     show_funcname: bool
     show_source: bool
     show_varnames: bool
+    sourcemap_alignment: t.Literal['left', 'right']
     v2_meaning: t.Literal['info', 'success']  # TODO: not used.
     
     _preset_conf = {
@@ -71,6 +72,7 @@ class LoggingConfig:
         'show_funcname'              : True,
         'show_source'                : True,
         'show_varnames'              : False,
+        'sourcemap_alignment'        : 'left',
         'v2_meaning'                 : 'info',
     }
     

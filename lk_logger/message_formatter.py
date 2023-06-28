@@ -67,12 +67,13 @@ class MessageFormatter:
     ) -> T.RichText:
         if length is None:
             if context:
-                length = min((console.width, 200)) - sum(map(len, context))
+                con_width = console.width - 8
+                length = min((con_width, 200)) - sum(map(len, context))
                 # if length > 80: length = 80
                 if length <= 0:
                     if len(context) > 1 and context[-1]:
                         # strip the last element and try again
-                        length = console.width - sum(map(len, context[:-1]))
+                        length = con_width - sum(map(len, context[:-1]))
                         if length > 0:
                             # return self.markup((
                             #     pattern * length + '\n' + pattern * 3,
