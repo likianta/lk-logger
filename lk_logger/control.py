@@ -90,14 +90,14 @@ def start_ipython(
     if _is_ipython_mode():
         return
     try:
-        import IPython
+        import IPython  # noqa
     except (ImportError, ModuleNotFoundError) as e:
         print('ipython is not installed!', ':pv4')
         raise e
     else:
         import sys
-        from IPython.core.getipython import get_ipython
-        from IPython.terminal.ipapp import TerminalIPythonApp
+        from IPython.core.getipython import get_ipython  # noqa
+        from IPython.terminal.ipapp import TerminalIPythonApp  # noqa
         from rich.traceback import install
         from .console import console
         from .pipeline import pipeline
