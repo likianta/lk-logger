@@ -2,6 +2,7 @@ import inspect
 import re
 import typing as t
 from os.path import abspath
+from os.path import exists
 from textwrap import dedent
 from types import FrameType
 
@@ -30,9 +31,8 @@ class SourceMap:
         return self._sourcemap[filepath].get(lineno, ())
     
     def _indexing_filemap(self, filepath: str) -> None:
-        if filepath.startswith('<') or filepath.endswith('>'):
-            # e.g. '<string>', '<module>', '<stdin>',
-            #   'a/path/to/<ipython-input-1-xxxxxx>', etc.
+        if filepath.startswith('<') or filepath.endswith('>') \
+                or not exists(filepath):
             # see `FrameInfo > property filepath > docstring notice`
             self._sourcemap.setdefault(filepath, {})
             return
@@ -173,6 +173,9 @@ class FrameInfo:
                 see also `examples/start_ipython.py : line 11`.
             - in python 3.8, `co_filename` may be a relative path, so we need
                 to convert it to absolute.
+            - (2023-06-30):
+                the path may be unexisted, for example a kernel file using
+                `background_zmq_ipython` library.
         """
         # from ._print import debug
         # debug(self._frame.f_code.co_filename,

@@ -103,9 +103,9 @@ class T:
 
 
 class MessageBuilder:
-    _separator_a: Text
-    _separator_b: Text
-    _separator_c: Text
+    _separator_a: Text  # l2r sep
+    _separator_b: Text  # var sep
+    _separator_c: Text  # r2l sep
     
     def __init__(self, **kwargs) -> None:
         self.update_config(**kwargs)
@@ -142,8 +142,6 @@ class MessageBuilder:
         
         head = Text()
         body = Text()
-        # body_parts: t.List[T.RichText] = [Text(), None, Text()]
-        # body = body_parts[0]
         
         # 1. source
         if show_source:
