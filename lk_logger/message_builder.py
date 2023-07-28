@@ -188,8 +188,8 @@ class MessageBuilder:
                 )
             else:
                 head = Text.assemble(
-                    *(head_part_2 and (self._separator_c, head_part_2)),
-                    *(head_part_1 and (self._separator_c, head_part_1)),
+                    *(head_part_2 and (self._separator_c, head_part_2) or ()),
+                    *(head_part_1 and (self._separator_c, head_part_1) or ()),
                 )
         
         # if not self._show_source and not self._show_funcname:
