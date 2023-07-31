@@ -145,7 +145,7 @@ class MessageFormatter:
             arguments: t.Iterable[t.Any],
             varnames: t.Tuple[str, ...],
             rich: bool,
-            expand: bool = False,
+            expand_level: int = 0,
             separator: T.RichText = None,
             overall_style: T.Level = None,
     ) -> T.RichText:
@@ -155,9 +155,10 @@ class MessageFormatter:
             2. varnames
             3. rich
         """
-        if expand:
-            # arguments = tuple(map(self._expand_object, arguments))
+        if expand_level == 1:
             arguments = map(self._expand_object, arguments)
+        elif expand_level == 2:
+            arguments = map(self._inspect_object, arguments)
         if varnames:
             arguments = self._mix_arguments_with_varnames(
                 tuple(arguments), varnames
@@ -181,7 +182,7 @@ class MessageFormatter:
                 style='default'
             )
         
-        if expand:
+        if expand_level:
             _indent = partial(indent, prefix='    ')
             text = Text.assemble(
                 Text('\n'),
@@ -302,6 +303,18 @@ class MessageFormatter:
             )
         else:
             return pretty_repr(obj)
+    
+    @staticmethod
+    def _inspect_object(obj: t.Any, more_info: bool = False) -> str:
+        from objprint import objstr
+        if more_info:
+            return objstr(
+                obj,
+                arg_name=True,
+                line_number=True,
+                print_methods=True
+            )
+        return objstr(obj)
     
     @staticmethod
     def _mix_arguments_with_varnames(

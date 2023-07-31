@@ -123,14 +123,14 @@ class MessageBuilder:
     # -------------------------------------------------------------------------
     
     def compose(
-            self,
-            args: T.Args,
-            marks_meaning: T.MarksMeaning,
-            info: T.Info,
-            show_source: bool = True,
-            show_funcname: bool = True,
-            show_varnames: bool = False,
-            sourcemap_alignment: t.Literal['left', 'right'] = 'left',
+        self,
+        args: T.Args,
+        marks_meaning: T.MarksMeaning,
+        info: T.Info,
+        show_source: bool = True,
+        show_funcname: bool = True,
+        show_varnames: bool = False,
+        sourcemap_alignment: t.Literal['left', 'right'] = 'left',
     ) -> T.MessageStruct:
         show_source = show_source and \
                       MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
@@ -183,8 +183,8 @@ class MessageBuilder:
         if head_part_1 or head_part_2:
             if sourcemap_alignment == 'left':
                 head = Text.assemble(
-                    *(head_part_1 and (head_part_1, self._separator_a)),
-                    *(head_part_2 and (head_part_2, self._separator_a)),
+                    *(head_part_1 and (head_part_1, self._separator_a) or ()),
+                    *(head_part_2 and (head_part_2, self._separator_a) or ()),
                 )
             else:
                 head = Text.assemble(
@@ -203,7 +203,7 @@ class MessageBuilder:
         if MarkMeaning.VERBOSITY in marks_meaning:
             if MarkMeaning.MODERATE_PRUNE not in marks_meaning:
                 if x := formatter.fmt_level(
-                        marks_meaning[MarkMeaning.VERBOSITY],
+                    marks_meaning[MarkMeaning.VERBOSITY],
                 ):
                     body.append_text(x)
                     body.append(' ')
@@ -234,12 +234,12 @@ class MessageBuilder:
         
         # 5. timestamp
         if (
-                (x := MarkMeaning.RESET_TIMER in marks_meaning)
-                or MarkMeaning.START_ONETIME_TIMER in marks_meaning
+            (x := MarkMeaning.RESET_TIMER in marks_meaning)
+            or MarkMeaning.START_ONETIME_TIMER in marks_meaning
         ):
             timestamp = (
-                    x and marks_meaning[MarkMeaning.RESET_TIMER]
-                    or marks_meaning[MarkMeaning.START_ONETIME_TIMER]
+                x and marks_meaning[MarkMeaning.RESET_TIMER]
+                or marks_meaning[MarkMeaning.START_ONETIME_TIMER]
             )
             if not args:
                 args = ('[grey50]reset timer: [/] {}'.format(
@@ -254,12 +254,12 @@ class MessageBuilder:
                     color_s='green dim'
                 ), *args)
         elif (
-                (x := MarkMeaning.STOP_TIMER in marks_meaning)
-                or MarkMeaning.STOP_ONETIME_TIMER in marks_meaning
+            (x := MarkMeaning.STOP_TIMER in marks_meaning)
+            or MarkMeaning.STOP_ONETIME_TIMER in marks_meaning
         ):
             s, e = (
-                    x and marks_meaning[MarkMeaning.STOP_TIMER]
-                    or marks_meaning[MarkMeaning.STOP_ONETIME_TIMER]
+                x and marks_meaning[MarkMeaning.STOP_TIMER]
+                or marks_meaning[MarkMeaning.STOP_ONETIME_TIMER]
             )
             args = (formatter.fmt_time(s, e), *args)
         
@@ -286,7 +286,7 @@ class MessageBuilder:
             arguments=args,
             varnames=info['variable_names'] if show_varnames else (),
             rich=MarkMeaning.RICH_FORMAT in marks_meaning,
-            expand=MarkMeaning.EXPAND_MULTIPLE_LINES in marks_meaning,
+            expand_level=marks_meaning.get(MarkMeaning.EXPAND_OBJECT, 0),
             separator=self._separator_b,
             overall_style=marks_meaning.get(MarkMeaning.VERBOSITY, None),
         )
@@ -312,8 +312,8 @@ class MessageBuilder:
     
     @staticmethod
     def compose_exception(
-            e: BaseException,
-            show_locals: bool
+        e: BaseException,
+        show_locals: bool
     ) -> Traceback:
         return formatter.fmt_exception(e, show_locals)
 
