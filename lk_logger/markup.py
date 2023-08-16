@@ -27,9 +27,8 @@ class MarkMeaning(Enum):
     RICH_OBJECT = auto()
     SCOPED_COUNTER = auto()
     SIMPLE_COUNTER = auto()
-    START_ONETIME_TIMER = auto()
-    STOP_ONETIME_TIMER = auto()
     STOP_TIMER = auto()
+    TEMP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
     TRACEBACK_EXCEPTION_WITH_LOCALS = auto()
     VERBOSITY = auto()
@@ -118,8 +117,7 @@ class MarkupAnalyser:
               s2: builtin print
               t0: reset timer
             * t1: stop timer and show statistics
-              t2: setup up onetime timer
-              t3: stop onetime timer and show statistics
+              t2: temporary timer
               v0: no obvious verbosity
             * v1: debug
               v2: info
@@ -228,15 +226,12 @@ class MarkupAnalyser:
                 out[MarkMeaning.RESET_TIMER] = t
             elif marks['t'] == 1:
                 start, end = self._simple_time, time()
-                self._simple_time = end
                 out[MarkMeaning.STOP_TIMER] = (start, end)
+                self._simple_time = end
             elif marks['t'] == 2:
-                t = self._temp_time = time()
-                out[MarkMeaning.START_ONETIME_TIMER] = t
-            elif marks['t'] == 3:
                 start, end = self._temp_time, time()
-                # self._temp_time = 0.0
-                out[MarkMeaning.STOP_ONETIME_TIMER] = (start, end)
+                out[MarkMeaning.TEMP_TIMER] = (start, end)
+                self._temp_time = end
             else:
                 raise E.UnsupportedMarkup(f':t{marks["t"]}')
         

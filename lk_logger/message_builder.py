@@ -47,13 +47,12 @@ class MessageStruct:
                         out = Text.assemble(self.body, self.head)
                     else:
                         part_1 = Text.assemble(
-                            self.body[:con_width - len(self.head)],
-                            self.head
+                            self.body[: con_width - len(self.head)], self.head
                         )
                         part_2 = Text.assemble(
                             '  ',
                             Text('└─', 'dim'),
-                            self.body[con_width - len(self.head):]
+                            self.body[con_width - len(self.head) :],
                         )
                         out = Group(part_1, part_2)
                 else:  # body is multi-line
@@ -61,22 +60,17 @@ class MessageStruct:
                     for x in lines:
                         x.pad_left(2)
                     if (x := con_width - len(self.head) - len(lines[0])) > 0:
-                        part_1 = Text.assemble(
-                            lines[0],
-                            ' ' * x,
-                            self.head
-                        )
+                        part_1 = Text.assemble(lines[0], ' ' * x, self.head)
                         part_2 = lines[1:]
                         out = Group(part_1, *part_2)
                     else:
                         part_1 = Text.assemble(
-                            lines[0][:con_width - len(self.head)],
-                            self.head
+                            lines[0][: con_width - len(self.head)], self.head
                         )
                         part_2 = Text.assemble(
                             '  ',
                             Text('└─', 'dim'),
-                            lines[0][con_width - len(self.head):]
+                            lines[0][con_width - len(self.head) :],
                         )
                         part_3 = lines[1:]
                         out = Group(part_1, part_2, *part_3)
@@ -93,13 +87,16 @@ class T:
     MessageStruct = MessageStruct
     RichText = Text
     
-    Info = t.TypedDict('Info', {
-        'file_path'      : str,
-        'function_name'  : str,
-        'is_external_lib': bool,
-        'line_number'    : str,
-        'variable_names' : t.Tuple[str, ...],
-    })
+    Info = t.TypedDict(
+        'Info',
+        {
+            'file_path': str,
+            'function_name': str,
+            'is_external_lib': bool,
+            'line_number': str,
+            'variable_names': t.Tuple[str, ...],
+        },
+    )
 
 
 class MessageBuilder:
@@ -116,8 +113,8 @@ class MessageBuilder:
         #   alternatives: ➤ ⪢ >> ⮕ -> ~> | │
         #   note: if we use single char, make sure there are two whitespaces
         #       before it.
-        self._separator_b = Text(
-            config.get('separator', ';   '), 'bright_black')
+        b = config.get('separator', ';   ')
+        self._separator_b = Text(b, 'bright_black')
         self._separator_c = Text('  ⪡ ', 'bright_black')
     
     # -------------------------------------------------------------------------
@@ -132,13 +129,23 @@ class MessageBuilder:
         show_varnames: bool = False,
         sourcemap_alignment: t.Literal['left', 'right'] = 'left',
     ) -> T.MessageStruct:
-        show_source = show_source and \
-                      MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
-        show_funcname = show_funcname and \
-                        MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
-        show_varnames = show_varnames and \
-                        MarkMeaning.MODERATE_PRUNE not in marks_meaning and \
-                        MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        show_source = (
+            show_source  # fmt:skip
+            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        )
+        show_funcname = (
+            show_funcname  # fmt:skip
+            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        )
+        show_varnames = (
+            show_varnames
+            and MarkMeaning.MODERATE_PRUNE not in marks_meaning
+            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        )
+        has_any_prune_scheme = (
+            MarkMeaning.MODERATE_PRUNE in marks_meaning
+            or MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
+        )
         
         head = Text()
         body = Text()
@@ -201,7 +208,7 @@ class MessageBuilder:
         
         # 3. verbosity
         if MarkMeaning.VERBOSITY in marks_meaning:
-            if MarkMeaning.MODERATE_PRUNE not in marks_meaning:
+            if not has_any_prune_scheme:
                 if x := formatter.fmt_level(
                     marks_meaning[MarkMeaning.VERBOSITY],
                 ):
@@ -210,18 +217,14 @@ class MessageBuilder:
         
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:
-            if MarkMeaning.MODERATE_PRUNE in marks_meaning:
-                pass
-            else:
+            if not has_any_prune_scheme:
                 body.append_text(formatter.fmt_index(0))
                 body.append(' ')
                 if not args:
                     args = ('[grey50]reset index[/]',)
         elif MarkMeaning.SIMPLE_COUNTER in marks_meaning:
             body.append_text(
-                formatter.fmt_index(
-                    marks_meaning[MarkMeaning.SIMPLE_COUNTER]
-                )
+                formatter.fmt_index(marks_meaning[MarkMeaning.SIMPLE_COUNTER])
             )
             body.append(' ')
         elif MarkMeaning.SCOPED_COUNTER in marks_meaning:
@@ -233,35 +236,25 @@ class MessageBuilder:
             body.append(' ')
         
         # 5. timestamp
-        if (
-            (x := MarkMeaning.RESET_TIMER in marks_meaning)
-            or MarkMeaning.START_ONETIME_TIMER in marks_meaning
-        ):
-            timestamp = (
-                x and marks_meaning[MarkMeaning.RESET_TIMER]
-                or marks_meaning[MarkMeaning.START_ONETIME_TIMER]
-            )
-            if not args:
-                args = ('[grey50]reset timer: [/] {}'.format(
-                    formatter.fmt_time(
-                        timestamp,
-                        color_s='green dim'
-                    )
-                ),)
+        if timestamp := MarkMeaning.RESET_TIMER in marks_meaning:
+            if args:
+                args = (
+                    formatter.fmt_time(timestamp, color_s='green dim'),
+                    *args,
+                )
             else:
-                args = (formatter.fmt_time(
-                    timestamp,
-                    color_s='green dim'
-                ), *args)
-        elif (
-            (x := MarkMeaning.STOP_TIMER in marks_meaning)
-            or MarkMeaning.STOP_ONETIME_TIMER in marks_meaning
-        ):
-            s, e = (
-                x and marks_meaning[MarkMeaning.STOP_TIMER]
-                or marks_meaning[MarkMeaning.STOP_ONETIME_TIMER]
-            )
-            args = (formatter.fmt_time(s, e), *args)
+                args = (
+                    '[grey50]reset timer: [/] {}'.format(
+                        formatter.fmt_time(timestamp, color_s='green dim')
+                    ),
+                )
+        elif MarkMeaning.STOP_TIMER in marks_meaning:
+            start, end = marks_meaning[MarkMeaning.STOP_TIMER]
+            args = (formatter.fmt_time(start, end), *args)
+        elif MarkMeaning.TEMP_TIMER in marks_meaning:
+            if not has_any_prune_scheme:
+                start, end = marks_meaning[MarkMeaning.TEMP_TIMER]
+                args = ('[i]{}[/]'.format(formatter.fmt_time(start, end)), *args)
         
         # # 6. divider
         # if MarkMeaning.DIVIDER_LINE in marks_meaning:
@@ -295,9 +288,7 @@ class MessageBuilder:
         # 8. divider
         if MarkMeaning.DIVIDER_LINE in marks_meaning:
             pattern = marks_meaning[MarkMeaning.DIVIDER_LINE]
-            divider = formatter.fmt_divider(
-                pattern, context=(head, body, temp)
-            )
+            divider = formatter.fmt_divider(pattern, context=(head, body, temp))
             body.append_text(divider)
             body.append(' ')
             body.append_text(temp)
@@ -306,15 +297,11 @@ class MessageBuilder:
         del temp
         
         return MessageStruct(
-            head, body,
-            reverse=(sourcemap_alignment == 'right')
+            head, body, reverse=(sourcemap_alignment == 'right')
         )
     
     @staticmethod
-    def compose_exception(
-        e: BaseException,
-        show_locals: bool
-    ) -> Traceback:
+    def compose_exception(e: BaseException, show_locals: bool) -> Traceback:
         return formatter.fmt_exception(e, show_locals)
 
 
