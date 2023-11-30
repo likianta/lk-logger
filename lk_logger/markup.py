@@ -104,7 +104,7 @@ class MarkupAnalyser:
               i2: scoped counter
               i3: progress                                    *(not supported)*
             * l0: long / loose / expanded (multiple lines)
-              l1: inspect object (use `objprint`)             *(not supported)*
+              l1: inspect object
               p0: self layer
             * p1: parent layer
               p2: grandparent layer                    *(be careful using p2+)*
