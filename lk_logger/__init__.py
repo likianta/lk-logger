@@ -21,4 +21,4 @@ def __init() -> None:
 
 
 __init()
-__version__ = '5.6.3'
+__version__ = '5.6.4'

@@ -1,12 +1,17 @@
 import typing as t
 from dataclasses import dataclass
 from functools import partial
+from io import StringIO
 from math import ceil
 from textwrap import indent
 from time import localtime
 from time import strftime as _strftime
 from traceback import format_exception
 
+import rich
+# noinspection PyProtectedMember
+from rich._inspect import Inspect
+from rich.console import RenderableType
 # from rich.padding import Padding
 from rich.pretty import pretty_repr
 from rich.text import Text
@@ -60,10 +65,10 @@ class MessageFormatter:
     # -------------------------------------------------------------------------
     
     def fmt_divider(
-            self,
-            pattern: str = '-',
-            length: int = None,
-            context: t.Tuple[T.RichText, ...] = None,
+        self,
+        pattern: str = '-',
+        length: int = None,
+        context: t.Tuple[T.RichText, ...] = None,
     ) -> T.RichText:
         if length is None:
             if context:
@@ -141,13 +146,13 @@ class MessageFormatter:
         return Text(label, color)
     
     def fmt_message(
-            self,
-            arguments: t.Iterable[t.Any],
-            varnames: t.Tuple[str, ...],
-            rich: bool,
-            expand_level: int = 0,
-            separator: T.RichText = None,
-            overall_style: T.Level = None,
+        self,
+        arguments: t.Iterable[t.Any],
+        varnames: t.Tuple[str, ...],
+        rich: bool,
+        expand_level: int = 0,
+        separator: T.RichText = None,
+        overall_style: T.Level = None,
     ) -> T.RichText:
         """
         notice the process sequence:
@@ -202,10 +207,10 @@ class MessageFormatter:
         return text
     
     def fmt_scoped_index(
-            self,
-            idx: int,
-            uid: str,
-            color: str = ''
+        self,
+        idx: int,
+        uid: str,
+        color: str = ''
     ) -> T.RichText:
         return self.markup(
             (f'[{uid}]', f'{color} dim'),
@@ -213,15 +218,15 @@ class MessageFormatter:
         )
     
     def fmt_separator(
-            self,
-            sep: str = ' >> ',
-            color='bright_black'
+        self,
+        sep: str = ' >> ',
+        color='bright_black'
     ) -> T.RichText:
         return self.markup((sep, color))
     
     def fmt_source(
-            self, filepath: str, lineno: t.Union[int, str],
-            is_external_lib: bool = False, fmt_width=False
+        self, filepath: str, lineno: t.Union[int, str],
+        is_external_lib: bool = False, fmt_width=False
     ) -> T.RichText:
         text = Text()
         
@@ -298,28 +303,27 @@ class MessageFormatter:
     @staticmethod
     def _expand_object(obj: t.Any) -> str:
         if isinstance(obj, Exception):
-            return '\n' + indent(
-                ''.join(format_exception(obj)), '│ '
-            )
+            return '\n' + indent(''.join(format_exception(obj)), '│ ')
         else:
             return pretty_repr(obj)
     
     @staticmethod
-    def _inspect_object(obj: t.Any, more_info: bool = False) -> str:
-        from objprint import objstr
-        if more_info:
-            return objstr(
-                obj,
-                arg_name=True,
-                line_number=True,
-                print_methods=True
-            )
-        return objstr(obj)
+    def _inspect_object(obj: t.Any) -> str:
+        def to_str(rich_obj: RenderableType) -> str:
+            """
+            convert rich renderable type to plain (raw) string.
+            """
+            s = StringIO()
+            rich.print(rich_obj, file=s)
+            s.seek(0)
+            return s.read()
+    
+        return to_str(Inspect(obj))
     
     @staticmethod
     def _mix_arguments_with_varnames(
-            arguments: t.Sequence[str],
-            varnames: t.Tuple[str, ...],
+        arguments: t.Sequence[str],
+        varnames: t.Tuple[str, ...],
     ) -> t.Iterable[str]:
         if not arguments:
             return ()

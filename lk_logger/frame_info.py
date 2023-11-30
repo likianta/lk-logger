@@ -189,8 +189,10 @@ class FrameInfo:
     @property
     def indentation(self) -> int:
         # https://stackoverflow.com/a/39172552
-        ctx = inspect.getframeinfo(self._frame).code_context[0]
-        return len(ctx) - len(ctx.lstrip())
+        if x := inspect.getframeinfo(self._frame).code_context:
+            ctx = x[0]
+            return len(ctx) - len(ctx.lstrip())
+        return 0
     
     @property
     def funcname(self) -> str:
