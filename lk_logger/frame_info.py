@@ -211,10 +211,7 @@ class FrameInfo:
         return sourcemap.get_varnames(self.filepath, self.lineno)
     
     def get_parent(self, traceback_level: int = 1) -> 'FrameInfo':
-        frame = self._frame
-        for _ in range(traceback_level):
-            frame = frame.f_back
-        return FrameInfo(frame)
+        return FrameInfo(_get_parent_frame(self._frame, traceback_level))
 
 
 @dataclass
@@ -226,7 +223,7 @@ class FrozenFrameInfo:
     lineno: int
     indentation: int
     funcname: str
-    parent: 'FrozenFrameInfo' = None
+    _parent: 'FrozenFrameInfo' = None
 
     @property
     def id(self) -> str:
@@ -234,6 +231,10 @@ class FrozenFrameInfo:
 
     def collect_varnames(self) -> T.VarNames:
         return sourcemap.get_varnames(self.filepath, self.lineno)
+    
+    def get_parent(self, _) -> 'FrozenFrameInfo':
+        assert self._parent
+        return self._parent
 
 
 def freeze_frame_info(
