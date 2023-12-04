@@ -1,7 +1,8 @@
 import inspect
+import os
 import re
 import typing as t
-from os.path import abspath
+from dataclasses import dataclass
 from os.path import exists
 from textwrap import dedent
 from types import FrameType
@@ -12,6 +13,11 @@ from .scanner.const import SUBSCRIPTABLE
 from .scanner.const import VARIABLE_NAME
 from .scanner.exceptions import ScanningError
 from .scanner.exceptions import UnresolvedCase
+
+if os.name == 'nt':
+    _abspath = lambda x: os.path.abspath(x).replace('\\', '/')
+else:
+    _abspath = os.path.abspath
 
 
 class T:
@@ -31,8 +37,11 @@ class SourceMap:
         return self._sourcemap[filepath].get(lineno, ())
     
     def _indexing_filemap(self, filepath: str) -> None:
-        if filepath.startswith('<') or filepath.endswith('>') \
-                or not exists(filepath):
+        if (
+            filepath.startswith('<') or
+            filepath.endswith('>') or
+            not exists(filepath)
+        ):
             # see `FrameInfo > property filepath > docstring notice`
             self._sourcemap.setdefault(filepath, {})
             return
@@ -78,9 +87,9 @@ class SourceMap:
         _quotes_pattern_2 = re.compile(r'\'[^\']*\'|"[^"]*"')
         
         def _analyse_subscriptables(
-                text: str,
-                shorten_sub_substrings: bool = True,
-                threshold: int = 20
+            text: str,
+            shorten_sub_substrings: bool = True,
+            threshold: int = 20
         ) -> str:
             """
             shorten_sub_strings:
@@ -180,7 +189,7 @@ class FrameInfo:
         # from ._print import debug
         # debug(self._frame.f_code.co_filename,
         #       self._frame.f_globals.get('__file__'))
-        return abspath(self._frame.f_code.co_filename).replace('\\', '/')
+        return _abspath(self._frame.f_code.co_filename).replace('\\', '/')
     
     @property
     def lineno(self) -> int:
@@ -206,3 +215,48 @@ class FrameInfo:
         for _ in range(traceback_level):
             frame = frame.f_back
         return FrameInfo(frame)
+
+
+@dataclass
+class FrozenFrameInfo:
+    """
+    this is picklable. used for multiprocessing queue.
+    """
+    filepath: str
+    lineno: int
+    indentation: int
+    funcname: str
+    parent: 'FrozenFrameInfo' = None
+
+    @property
+    def id(self) -> str:
+        return f'{self.filepath}:{self.lineno}'
+
+    def collect_varnames(self) -> T.VarNames:
+        return sourcemap.get_varnames(self.filepath, self.lineno)
+
+
+def freeze_frame_info(
+    frame: FrameType,
+    _traceback_level: int = 0,
+) -> FrozenFrameInfo:
+    info = FrameInfo(frame)
+    return FrozenFrameInfo(
+        info.filepath,
+        info.lineno,
+        info.indentation,
+        info.funcname,
+        (
+            _traceback_level > 0
+            and freeze_frame_info(
+                _get_parent_frame(frame, _traceback_level)
+            )
+            or None
+        )
+    )
+
+
+def _get_parent_frame(frame: FrameType, level: int = 1) -> FrameType:
+    for _ in range(level):
+        frame = frame.f_back
+    return frame
