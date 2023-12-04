@@ -14,6 +14,7 @@ from .cache import LoggingCache
 from .config import LoggingConfig
 from .console import con_print
 from .frame_info import FrameInfo
+from .frame_info import FrozenFrameInfo
 from .markup import MarkMeaning
 from .markup import MarkupAnalyser
 from .markup import T as T0
@@ -46,6 +47,7 @@ class T:  # Typehint
     #   1: instant flush
     #   2: instant flush and drain
     #   3: wait for flush
+    FrameInfo = t.Union[FrameInfo, FrozenFrameInfo]
     Info = T1.Info
     Markup = T0.Markup
     MarkupPos = int  # -1, 0, 1
@@ -53,9 +55,9 @@ class T:  # Typehint
     PipeId = T2.PipeId
 
 
-class LKLogger:
+class Logger:
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._analyser = MarkupAnalyser()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
@@ -123,17 +125,19 @@ class LKLogger:
     # -------------------------------------------------------------------------
     
     def log(
-            self,
-            *args: t.Any,
-            _frame_info: FrameInfo = None,
-            **kwargs
+        self,
+        *args: t.Any,
+        _frame_info: T.FrameInfo = None,
+        **kwargs
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
             # debug(_frame_info.info)
         
-        if (path := _frame_info.filepath) \
-                and (custom_print := pipeline.get(path)):
+        if (
+            (path := _frame_info.filepath)
+            and (custom_print := pipeline.get(path))
+        ):
             if self._config.async_:
                 self._message_queue.append((args, kwargs, custom_print))
             else:
@@ -148,11 +152,11 @@ class LKLogger:
         self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
     
     def _print(
-            self,
-            msg: T.ComposedMessage,
-            flush_scheme: T.FlushScheme = 0,
-            _is_raw: bool = False,
-            **kwargs
+        self,
+        msg: T.ComposedMessage,
+        flush_scheme: T.FlushScheme = 0,
+        _is_raw: bool = False,
+        **kwargs
     ) -> None:
         if flush_scheme == 0:
             if self._config.async_:
@@ -177,8 +181,10 @@ class LKLogger:
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
-                print(':frp2', f'[red dim](... skipped '
-                               f'{skipped_count} messages)[/]')
+                print(
+                    ':frp2',
+                    f'[red dim](... skipped {skipped_count} messages)[/]'
+                )
             if _is_raw:
                 self._bprint(msg, **kwargs)
             else:
@@ -219,10 +225,10 @@ class LKLogger:
     # -------------------------------------------------------------------------
     
     def _build_message(
-            self, frame_info: FrameInfo, *args
+        self, frame_info: T.FrameInfo, *args
     ) -> t.Tuple[T.ComposedMessage, T.FlushScheme]:
         args, markup_pos, markup = \
-            self._extract_markup_from_arguments(frame_info.id, args)
+            self._separate_markup_from_arguments(frame_info.id, args)
         marks = self._analyser.extract(markup)
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
@@ -252,8 +258,10 @@ class LKLogger:
         # ---------------------------------------------------------------------
         
         if not args:
-            if MarkMeaning.MODERATE_PRUNE in marks_meaning or \
-                    MarkMeaning.AGRESSIVE_PRUNE in marks_meaning:
+            if (
+                MarkMeaning.MODERATE_PRUNE in marks_meaning or
+                MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
+            ):
                 return _NoMessage, flush_scheme
         if MarkMeaning.BUILTIN_PRINT in marks_meaning:
             return _RawArgs(args), flush_scheme
@@ -280,17 +288,17 @@ class LKLogger:
         }
         
         show_source = (
-                self._config.show_source and
-                (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+            self._config.show_source and
+            (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
         )
         show_funcname = (
-                self._config.show_funcname and
-                (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+            self._config.show_funcname and
+            (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
         )
         show_varnames = (
-                self._config.show_varnames and
-                MarkMeaning.MODERATE_PRUNE not in marks_meaning and
-                MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+            self._config.show_varnames and
+            MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         
         if any((show_source, show_funcname, show_varnames)):
@@ -343,8 +351,8 @@ class LKLogger:
             sourcemap_alignment=self._config.sourcemap_alignment,
         ), flush_scheme
     
-    def _extract_markup_from_arguments(
-            self, frame_id: str, args: T.Args
+    def _separate_markup_from_arguments(
+        self, frame_id: str, args: T.Args
     ) -> t.Tuple[T.Args, T.MarkupPos, T.Markup]:
         """
         return: (args, markup_pos, markup)
@@ -354,17 +362,17 @@ class LKLogger:
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
             is_markup = self._analyser.is_valid_markup
             if (
-                    len(args) > 0 and
-                    isinstance(args[0], str) and
-                    args[0].startswith(':') and
-                    is_markup(args[0])
+                len(args) > 0 and
+                isinstance(args[0], str) and
+                args[0].startswith(':') and
+                is_markup(args[0])
             ):
                 markup_pos = 1
             elif (
-                    len(args) > 1 and
-                    isinstance(args[-1], str) and
-                    args[-1].startswith(':') and
-                    is_markup(args[-1])
+                len(args) > 1 and
+                isinstance(args[-1], str) and
+                args[-1].startswith(':') and
+                is_markup(args[-1])
             ):
                 markup_pos = -1
             else:
@@ -379,4 +387,4 @@ class LKLogger:
             return args[:-1], markup_pos, args[-1]
 
 
-lk = LKLogger()
+logger = Logger()

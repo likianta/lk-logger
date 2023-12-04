@@ -3,13 +3,19 @@ import typing as t
 
 from ._print import bprint
 from ._print import debug  # noqa
-from .logger import lk
+from .logger import logger
 
 STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
 _HAS_WELCOME_MESSAGE_SHOWN = False
 
 
-def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
+def setup(
+    *,
+    quiet: bool = False,
+    clear_preset: bool = False,
+    _stdout: t.Callable = None,  # TODO: experimental
+    **kwargs
+) -> None:
     """
     args:
         quiet:
@@ -31,8 +37,8 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
         from .pipeline import pipeline
         pipeline.add(IPython, bprint, scope=True)
     
-    lk.configure(clear_preset, **kwargs)
-    setattr(builtins, 'print', lk.log)
+    logger.configure(clear_preset, **kwargs)
+    setattr(builtins, 'print', _stdout or logger.log)
     
     if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
         _HAS_WELCOME_MESSAGE_SHOWN = True
@@ -40,7 +46,7 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
         from .markup import _Counter
         random_color = _Counter._get_random_bright_color  # noqa
         color_pair = (random_color(), random_color())
-        slogan = _blend_text('♥ lk-logger is ready', color_pair)
+        slogan = _blend_text('lk-logger is ready', color_pair)
 
         # from random import choice
         # color_pairs_group = (
@@ -51,7 +57,7 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
         #     ('#f47fa4', '#f49364'),  # cold sandy -> camel tan
         # )
         # color_pair = choice(color_pairs_group)
-        # slogan = _blend_text('♥ lk-logger is ready', color_pair)
+        # slogan = _blend_text('lk-logger is ready', color_pair)
         
         # debug(slogan)
         print(slogan, ':rsp')
@@ -60,7 +66,7 @@ def setup(*, quiet=False, clear_preset=False, **kwargs) -> None:
 
 
 def update(clear_preset=False, **kwargs) -> None:
-    lk.configure(clear_preset, **kwargs)
+    logger.configure(clear_preset, **kwargs)
 
 
 def unload() -> None:
@@ -70,7 +76,7 @@ def unload() -> None:
 
 
 def enable() -> None:
-    setattr(builtins, 'print', lk.log)
+    setattr(builtins, 'print', logger.log)
     global STATUS
     STATUS = 'enabled'
 
@@ -79,6 +85,12 @@ def disable() -> None:
     setattr(builtins, 'print', lambda *_, **__: None)
     global STATUS
     STATUS = 'disabled'
+
+
+# aliases
+mute = disable
+unmute = enable
+reload = enable
 
 
 # -----------------------------------------------------------------------------
@@ -105,7 +117,7 @@ def start_ipython(
     pipeline.add(IPython, bprint, scope=True)
     
     backups = {
-        'lklogger_config': lk.config.copy(),
+        'lklogger_config': logger.config.copy(),
         'sys.argv'       : sys.argv.copy(),
     }
     
@@ -114,7 +126,7 @@ def start_ipython(
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
     
     app = TerminalIPythonApp.instance(
-        user_ns={'print': lk.log, **(user_ns or {})}
+        user_ns={'print': logger.log, **(user_ns or {})}
     )
     app.initialize()
     
@@ -125,7 +137,7 @@ def start_ipython(
     app.start()
     
     # afterwards
-    lk.configure(**backups['lklogger_config'])
+    logger.configure(**backups['lklogger_config'])
     sys.argv = backups['sys.argv']
     del backups
 
