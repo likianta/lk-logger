@@ -10,7 +10,7 @@ from .control import unload
 from .control import unload as restore_builtin_print
 from .control import update
 from .frame_info import FrameInfo
-from .logger import lk
+from .logger import logger
 from .pipeline import pipeline
 
 
@@ -21,4 +21,4 @@ def __init() -> None:
 
 
 __init()
-__version__ = '5.6.4'
+__version__ = '5.6.5'

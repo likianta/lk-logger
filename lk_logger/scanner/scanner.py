@@ -174,9 +174,6 @@ def get_variables(line: str):
 
 
 def _debug(linex, line, charx, char, symbols=None):
-    # from lk_logger_3_6 import lk
-    # lk.logt('[D4011]', visualize_line(
-    #     linex, line, charx, char, symbols), h='parent')
     print(visualize_line(linex, line, charx, char, symbols))
 
 
