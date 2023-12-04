@@ -233,8 +233,9 @@ class FrozenFrameInfo:
         return sourcemap.get_varnames(self.filepath, self.lineno)
     
     def get_parent(self, _) -> 'FrozenFrameInfo':
-        assert self._parent
-        return self._parent
+        # assert self._parent
+        # return self._parent
+        return self
 
 
 def freeze_frame_info(

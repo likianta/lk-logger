@@ -18,6 +18,8 @@ if _os.getenv('LK_LOGGER_MULTIPROCESSING', '1') == '1':
     if _mp.IS_MAIN_PROCESS:
         _mp.start_mainloop()
         setup(quiet=True)
+    else:
+        mute()
 else:
     import traceback as _traceback
     from .control import mute
