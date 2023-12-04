@@ -1,6 +1,7 @@
 import inspect
 import re
 import typing as t
+from dataclasses import dataclass
 from os.path import abspath
 from os.path import exists
 from textwrap import dedent
@@ -202,7 +203,53 @@ class FrameInfo:
         return sourcemap.get_varnames(self.filepath, self.lineno)
     
     def get_parent(self, traceback_level: int = 1) -> 'FrameInfo':
-        frame = self._frame
-        for _ in range(traceback_level):
-            frame = frame.f_back
-        return FrameInfo(frame)
+        return FrameInfo(_get_parent_frame(self._frame, traceback_level))
+
+
+@dataclass
+class FrozenFrameInfo:
+    """
+    this is picklable. used for multiprocessing queue.
+    """
+    filepath: str
+    lineno: int
+    indentation: int
+    funcname: str
+    _parent: 'FrozenFrameInfo' = None
+
+    @property
+    def id(self) -> str:
+        return f'{self.filepath}:{self.lineno}'
+
+    def collect_varnames(self) -> T.VarNames:
+        return sourcemap.get_varnames(self.filepath, self.lineno)
+    
+    def get_parent(self, _) -> 'FrozenFrameInfo':
+        assert self._parent
+        return self._parent
+
+
+def freeze_frame_info(
+    frame: FrameType,
+    _traceback_level: int = 0,
+) -> FrozenFrameInfo:
+    info = FrameInfo(frame)
+    return FrozenFrameInfo(
+        info.filepath,
+        info.lineno,
+        info.indentation,
+        info.funcname,
+        (
+            _traceback_level > 0
+            and freeze_frame_info(
+                _get_parent_frame(frame, _traceback_level)
+            )
+            or None
+        )
+    )
+
+
+def _get_parent_frame(frame: FrameType, level: int = 1) -> FrameType:
+    for _ in range(level):
+        frame = frame.f_back
+    return frame
