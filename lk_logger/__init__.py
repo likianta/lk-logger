@@ -6,7 +6,7 @@ from ._print import bprint
 from .frame_info import FrameInfo
 from .pipeline import pipeline
 
-if _os.getenv('LK_LOGGER_MULTIPROCESSING', '1') == '1':
+if _os.getenv('LK_LOGGER_STANDALONE', '1') == '1':
     from .multiprocessing import logger
     from .multiprocessing.delegate_control import mute
     from .multiprocessing.delegate_control import reload
@@ -15,6 +15,8 @@ if _os.getenv('LK_LOGGER_MULTIPROCESSING', '1') == '1':
     from .multiprocessing.delegate_control import unload
     from .multiprocessing.delegate_control import unmute
     from .multiprocessing.delegate_control import update
+    # from ._print import debug
+    # debug(_mp.IS_MAIN_PROCESS)
     if _mp.IS_MAIN_PROCESS:
         _mp.start_mainloop()
         setup(quiet=True)
