@@ -1,5 +1,5 @@
+import atexit
 import typing as t
-from atexit import register
 from collections import deque
 from inspect import currentframe
 from threading import Thread
@@ -10,7 +10,6 @@ from rich.traceback import Traceback
 
 from .cache import LoggingCache
 from .config import LoggingConfig
-from .console import con_print
 from .frame_info import FrameInfo
 from .frame_info import FrozenFrameInfo
 from .markup import MarkMeaning
@@ -22,8 +21,9 @@ from .message_builder import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
 from .printer import printer_manager
-from .printer import std_print
+from .printer import con_print
 from .printer import dbg_print  # noqa
+from .printer import std_print
 
 
 class _RawArgs:  # a workaround. see its usage below.
@@ -61,7 +61,7 @@ class Logger:
         
         self._running = False
         self._message_queue = deque()
-        register(self._stop_running)
+        atexit.register(self._stop_running)
         self._thread = Thread(target=self._start_running)
         self._thread.daemon = True
         self._thread.start()

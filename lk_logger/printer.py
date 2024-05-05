@@ -4,6 +4,8 @@ from inspect import currentframe
 from contextlib import contextmanager
 from os import name as os_name
 
+from .console import console
+
 
 class BasePrinter:
     def __call__(self, *msg: t.Any) -> None:
@@ -25,6 +27,8 @@ class NothingPrinter(BasePrinter):
 
 
 std_print = t.cast(BasePrinter, builtins.print)
+con_print = console.print
+con_error = console.print_exception
 dbg_print = DebugPrinter()
 non_print = NothingPrinter()
 
