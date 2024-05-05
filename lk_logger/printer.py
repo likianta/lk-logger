@@ -6,21 +6,21 @@ from os import name as os_name
 
 
 class BasePrinter:
-    def __call__(self, msg: str, *_, **__) -> None:
+    def __call__(self, *msg: t.Any) -> None:
         raise NotImplementedError
 
 
 class DebugPrinter(BasePrinter):
-    def __call__(self, msg: str, *_, **__) -> None:
+    def __call__(self, *msg: t.Any) -> None:
         frame = currentframe().f_back
         filepath = _normpath(frame.f_globals["__file__"])
         lineno = frame.f_lineno
         source = '{}:{}'.format(filepath, lineno)
-        std_print(source, '[LKDEBUG]', msg)
+        std_print(source, '[LKDEBUG]', *msg)
 
 
 class NothingPrinter(BasePrinter):
-    def __call__(self, msg: str, *_, **__) -> None:
+    def __call__(self, *msg: t.Any) -> None:
         pass  # do nothing
 
 

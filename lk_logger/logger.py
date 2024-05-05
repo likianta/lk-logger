@@ -23,6 +23,7 @@ from .path_helper import path_helper
 from .pipeline import pipeline
 from .printer import printer_manager
 from .printer import std_print
+from .printer import dbg_print  # noqa
 
 
 class _RawArgs:  # a workaround. see its usage below.

@@ -62,7 +62,7 @@ class LoggingConfig:
     v2_meaning: t.Literal['info', 'success']  # TODO: not used.
     
     _preset_conf = {
-        'async_'                     : True,
+        'async_'                     : False,
         'clear_unfinished_stream'    : False,
         'console_width'              : None,
         'path_style_for_external_lib': 'pretty_relpath',
