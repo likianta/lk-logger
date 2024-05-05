@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.6.5a0"
+version = "5.7.0a0"
 homepage = "https://github.com/likianta/lk-logger"
-description = "Python advanced print with varnames."
+description = "Python print with source and varnames."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
@@ -14,7 +14,7 @@ rich = "^13.0"
 [[tool.poetry.source]]
 name = "tsinghua"
 url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
-priority = "default"
+priority = "primary"
 
 [build-system]
 requires = ["poetry"]
