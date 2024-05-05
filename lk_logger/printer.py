@@ -37,14 +37,16 @@ dprint = dbg_print
 # group control
 
 class T:
-    Printers = t.Tuple[BasePrinter, ...]
+    Printer = t.Union[BasePrinter, t.Callable[[str], None]]
+    Printers = t.Tuple[Printer, ...]
 
 
 class PrinterManager:
     _group: t.List[T.Printers]
     
     def __init__(self) -> None:
-        self._group = [(std_print,)]
+        # self._group = [(std_print,)]
+        self._group = [()]
     
     @property
     def printers(self) -> T.Printers:
@@ -61,9 +63,7 @@ printer_manager = PrinterManager()
 
 
 @contextmanager
-def parallel_printing(
-    *printers: BasePrinter, inherit: bool = True
-) -> t.Iterator:
+def parallel_printing(*printers: T.Printer, inherit: bool = True) -> t.Iterator:
     """
     params:
         inherit: if True, will inherit the previous printers.

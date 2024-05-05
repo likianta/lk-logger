@@ -21,10 +21,8 @@ from .message_builder import T as T1
 from .message_builder import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
-from .printer import bprint
-from .printer import dprint  # noqa
-from .shunt import Shunt
-from .shunt import T as T2
+from .printer import printer_manager
+from .printer import std_print
 
 
 class _RawArgs:  # a workaround. see its usage below.
@@ -51,8 +49,6 @@ class T:  # Typehint
     Info = T1.Info
     Markup = T0.Markup
     MarkupPos = int  # -1, 0, 1
-    Pipe = T2.Pipe
-    PipeId = T2.PipeId
 
 
 class Logger:
@@ -61,11 +57,6 @@ class Logger:
         self._analyser = MarkupAnalyser()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
-        
-        self._shunt = Shunt()
-        # self._shunt.add(con_print)
-        self.add_pipe = self._shunt.add
-        self.remove_pipe = self._shunt.remove
         
         self._running = False
         self._message_queue = deque()
@@ -161,7 +152,7 @@ class Logger:
         if flush_scheme == 0:
             if self._config.async_:
                 if _is_raw:
-                    self._message_queue.append((msg.args, kwargs, bprint))
+                    self._message_queue.append((msg.args, kwargs, std_print))
                 else:
                     self._message_queue.append((msg, kwargs, None))
             else:
@@ -201,7 +192,7 @@ class Logger:
     
     @staticmethod
     def _bprint(msg: _RawArgs, **kwargs) -> None:
-        bprint(*msg.args, **kwargs)
+        std_print(*msg.args, **kwargs)
     
     @staticmethod
     def _cprint(msg: T.ComposedMessage, **kwargs) -> None:
@@ -210,11 +201,12 @@ class Logger:
         else:
             con_print(msg, **kwargs)
     
-    def _dprint(self, msg: T.ComposedMessage) -> None:
-        if self._shunt:
-            if isinstance(msg, MessageStruct):
-                for caller in self._shunt:
-                    caller(msg.body.plain)
+    @staticmethod
+    def _dprint(msg: T.ComposedMessage) -> None:
+        if isinstance(msg, MessageStruct):
+            msg = msg.body.plain
+        for p in printer_manager.printers:
+            p(msg)
     
     # FIXME
     def fmt(self, _frame_info: FrameInfo = None, *args, **_) -> str:

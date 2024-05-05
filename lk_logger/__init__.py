@@ -1,5 +1,5 @@
 from . import console
-from .printer import bprint
+from . import printer
 from .control import disable
 from .control import disable as mute
 from .control import enable
@@ -12,6 +12,8 @@ from .control import update
 from .frame_info import FrameInfo
 from .logger import logger
 from .pipeline import pipeline
+from .printer import bprint
+from .printer import parallel_printing
 
 
 def __init() -> None:
