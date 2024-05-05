@@ -1,5 +1,5 @@
 from . import console
-from ._print import bprint
+from .printer import bprint
 from .control import disable
 from .control import disable as mute
 from .control import enable

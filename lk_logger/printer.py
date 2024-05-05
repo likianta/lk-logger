@@ -28,6 +28,10 @@ std_print = t.cast(BasePrinter, builtins.print)
 dbg_print = DebugPrinter()
 non_print = NothingPrinter()
 
+# alias
+bprint = std_print
+dprint = dbg_print
+
 
 # -----------------------------------------------------------------------------
 # group control

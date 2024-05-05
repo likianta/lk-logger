@@ -1,9 +1,8 @@
 import builtins
 import typing as t
 
-from ._print import bprint
-from ._print import debug  # noqa
 from .logger import logger
+from .printer import bprint
 
 STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
 _HAS_WELCOME_MESSAGE_SHOWN = False
@@ -59,7 +58,7 @@ def setup(
         # color_pair = choice(color_pairs_group)
         # slogan = _blend_text('lk-logger is ready', color_pair)
         
-        # debug(slogan)
+        # dprint(slogan)
         print(slogan, ':rsp')
     
     STATUS = 'enabled'

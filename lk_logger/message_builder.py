@@ -5,7 +5,6 @@ from rich.padding import Padding  # DELETE
 from rich.text import Text
 from rich.traceback import Traceback
 
-from ._print import debug  # noqa
 from .console import console
 from .markup import MarkMeaning
 from .markup import T as T0
@@ -29,7 +28,7 @@ class MessageStruct:
                 return Text.assemble(self.head, self.body)
             else:
                 con_width = console.width - 2
-                # debug(con_width)
+                # dprint(con_width)
                 if con_width <= len(self.head):  # fallback
                     if '\n' not in self.body:
                         self.body.pad_left(2)

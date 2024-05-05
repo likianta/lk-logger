@@ -10,7 +10,7 @@ from .analyser import Analyser
 from .const import *
 from .exceptions import *
 from .typehint import *
-from .._print import debug  # noqa
+from ..printer import dprint  # noqa
 
 
 def get_all_blocks(*lines: str, end_mark='\n'):
@@ -73,7 +73,7 @@ def get_all_blocks(*lines: str, end_mark='\n'):
                 while char != end_mark:
                     cursor.update_charno()
                     char = line_[cursor.charno]
-                    # debug(cursor.charno, char)
+                    # dprint(cursor.charno, char)
                 yield from _submit()
                 break
             elif ret_code == UNREACHABLE_CASE:
@@ -110,7 +110,7 @@ def get_variables(line: str):
         
         for match1 in get_all_blocks(line, end_mark=','):
             element = match1.fulltext.strip()
-            # debug(f'{element = }')
+            # dprint(f'{element = }')
             
             if not element:
                 # # continue

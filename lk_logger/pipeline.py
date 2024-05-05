@@ -5,8 +5,8 @@ from os import name as _os_name
 from os.path import abspath
 from os.path import dirname
 
-from ._print import bprint
-from ._print import debug  # noqa
+from .printer import bprint
+# from .printer import dprint
 
 
 class T:
@@ -45,11 +45,11 @@ class Pipeline:
                 path = _normpath(x)
         else:
             # x is a package or a module
-            # debug(x, x.__file__)
+            # dprint(x, x.__file__)
             path = _normpath(x.__file__)
             if scope:
                 path = dirname(path)
-        # debug('add path to pipeline', path)
+        # dprint('add path to pipeline', path)
         if prt is None:
             prt = _mute_print
         if path.startswith('['):
@@ -64,14 +64,14 @@ class Pipeline:
         """
         # the path is an absolute path.
         path = _normpath(path)
-        # debug(path)
+        # dprint(path)
         if path in self._cache:
-            # debug('path in cache', path, self._cache[path])
+            # dprint('path in cache', path, self._cache[path])
             return self._cache[path]
         for root, prt in self._lines.abspath.items():
             if path.startswith(root):
                 self._cache[path] = prt
-                # debug('use custom print', path)
+                # dprint('use custom print', path)
                 return prt
         self._cache[path] = None
         return None

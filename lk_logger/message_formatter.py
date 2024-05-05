@@ -17,7 +17,6 @@ from rich.pretty import pretty_repr
 from rich.text import Text
 from rich.traceback import Traceback
 
-from ._print import debug  # noqa
 from .console import console
 
 strftime = lambda t: (t and _strftime('%H:%M:%S', localtime(t))) or ''
@@ -330,7 +329,7 @@ class MessageFormatter:
         try:
             assert len(varnames) == len(arguments), (varnames, arguments)
         except AssertionError:
-            # debug('failed extracting varnames')
+            # dprint('failed extracting varnames')
             return map(str, arguments)
         else:
             return (f'{v} = {a}' if v else str(a)
@@ -346,7 +345,7 @@ class MessageFormatter:
     #     try:
     #         assert len(varnames) == len(arguments), (varnames, arguments)
     #     except AssertionError:
-    #         # debug('failed extracting varnames')
+    #         # dprint('failed extracting varnames')
     #         for arg in arguments:
     #             yield '', arg
     #     else:

@@ -8,8 +8,6 @@ from time import sleep
 from rich.console import RenderableType
 from rich.traceback import Traceback
 
-from ._print import bprint
-from ._print import debug  # noqa
 from .cache import LoggingCache
 from .config import LoggingConfig
 from .console import con_print
@@ -23,6 +21,8 @@ from .message_builder import T as T1
 from .message_builder import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
+from .printer import bprint
+from .printer import dprint  # noqa
 from .shunt import Shunt
 from .shunt import T as T2
 
@@ -100,7 +100,7 @@ class Logger:
                 if not self._message_queue: break
                 msg, kwargs, custom_print = self._message_queue.popleft()
                 if custom_print:
-                    # debug(custom_print, msg, kwargs)
+                    # dprint(custom_print, msg, kwargs)
                     kwargs.pop('file', None)
                     custom_print(*msg, **kwargs)
                 else:
@@ -132,7 +132,7 @@ class Logger:
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
-            # debug(_frame_info.info)
+            # dprint(_frame_info.info)
         
         if (
             (path := _frame_info.filepath)
@@ -147,7 +147,7 @@ class Logger:
         msg, flush_scheme = self._build_message(_frame_info, *args)
         if msg is _NoMessage: return
         is_raw = isinstance(msg, _RawArgs)
-        # debug(msg)
+        # dprint(msg)
         
         self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
     
