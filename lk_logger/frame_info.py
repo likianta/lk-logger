@@ -3,7 +3,6 @@ import os
 import re
 import typing as t
 from dataclasses import dataclass
-from os.path import exists
 from textwrap import dedent
 from types import FrameType
 
@@ -40,7 +39,7 @@ class SourceMap:
         if (
             filepath.startswith('<') or
             filepath.endswith('>') or
-            not exists(filepath)
+            not os.path.exists(filepath)
         ):
             # see `FrameInfo > property filepath > docstring notice`
             self._sourcemap.setdefault(filepath, {})

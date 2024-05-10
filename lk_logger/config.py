@@ -9,19 +9,19 @@ class LoggingConfig:
         show_source: bool[true]
             add source info (filepath and line number) prefix to log messages.
             example:
-                lk.log('hello world')
+                logger.log('hello world')
                 # enabled : './main.py:10  >>  hello world'
                 # disabled: 'hello world'
         show_varnames: bool[false]
             show both var names and values. (magic reflection)
             example:
                 a, b = 1, 2
-                lk.log(a, b, a + b)
+                logger.log(a, b, a + b)
                 # enabled : 'main.py:11  >>  a = 1; b = 2; a + b = 3'
                 # disabled: 'main.py:11  >>  1, 2, 3'
         show_external_lib: bool[true]
             if `param source` came from an external library, whether to print.
-            for example, if a third-party library 'xxx' also used `lk.log`,
+            for example, if a third-party library 'xxx' also used `logger.log`,
             its source path (relative to current working dir) may be very long,
             if you don't want to see any prints except your own project, you'd
             set this to False.

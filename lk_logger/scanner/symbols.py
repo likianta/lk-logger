@@ -71,17 +71,17 @@ class Symbols:
                     continue
                 pos_i = pos_list[i]
                 pos_o = matches[pos_i]
-                # lk.logt('[D1605]', pos_i, pos_o, 'field range', pos_s, pos_e)
+                # debug(pos_i, pos_o, 'field range', pos_s, pos_e)
                 
                 if pos_o < pos_e:
-                    # lk.logt('[D1427]', 'subset of node', pos_i, pos_o, node)
+                    # debug('subset of node', pos_i, pos_o, node)
                     loop(
                         master=node, node=node.setdefault((pos_i, pos_o), {}),
                         pos_s=pos_i, pos_e=pos_o,
                         start=i + 1, end=find_nearest_index(pos_o, i + 1)
                     )
                 else:
-                    # lk.logt('[D1453]', 'adjacent to node', pos_i, pos_o, master)
+                    # debug('adjacent to node', pos_i, pos_o, master)
                     loop(
                         master=master, node=master.setdefault((pos_i, pos_o), {}),
                         pos_s=pos_i, pos_e=pos_o,

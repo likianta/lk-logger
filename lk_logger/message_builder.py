@@ -5,7 +5,6 @@ from rich.padding import Padding  # DELETE
 from rich.text import Text
 from rich.traceback import Traceback
 
-from ._print import debug  # noqa
 from .console import console
 from .markup import MarkMeaning
 from .markup import T as T0
@@ -29,7 +28,7 @@ class MessageStruct:
                 return Text.assemble(self.head, self.body)
             else:
                 con_width = console.width - 2
-                # debug(con_width)
+                # dprint(con_width)
                 if con_width <= len(self.head):  # fallback
                     if '\n' not in self.body:
                         self.body.pad_left(2)
@@ -109,13 +108,13 @@ class MessageBuilder:
     
     def update_config(self, **config) -> None:
         # https://fsymbols.com/signs/arrow/
-        self._separator_a = Text(' ⪢  ', 'bright_black')
-        #   alternatives: ➤ ⪢ >> ⮕ -> ~> | │
-        #   note: if we use single char, make sure there are two whitespaces
-        #       before it.
+        self._separator_a = Text(' >  ', 'bright_black')
+        #   alternatives: ➤ ⪢ > >> -> ~> | │
+        #   note: if we use single char, make sure there are two whitespaces \
+        #   after it.
         b = config.get('separator', ';   ')
         self._separator_b = Text(b, 'bright_black')
-        self._separator_c = Text('  ⪡ ', 'bright_black')
+        self._separator_c = Text('  < ', 'bright_black')
     
     # -------------------------------------------------------------------------
     
