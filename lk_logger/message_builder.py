@@ -108,13 +108,13 @@ class MessageBuilder:
     
     def update_config(self, **config) -> None:
         # https://fsymbols.com/signs/arrow/
-        self._separator_a = Text(' ⪢  ', 'bright_black')
-        #   alternatives: ➤ ⪢ >> ⮕ -> ~> | │
-        #   note: if we use single char, make sure there are two whitespaces
-        #       before it.
+        self._separator_a = Text(' >  ', 'bright_black')
+        #   alternatives: ➤ ⪢ > >> -> ~> | │
+        #   note: if we use single char, make sure there are two whitespaces \
+        #   after it.
         b = config.get('separator', ';   ')
         self._separator_b = Text(b, 'bright_black')
-        self._separator_c = Text('  ⪡ ', 'bright_black')
+        self._separator_c = Text('  < ', 'bright_black')
     
     # -------------------------------------------------------------------------
     
