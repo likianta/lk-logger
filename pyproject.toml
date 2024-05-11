@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.7.0b5"
+version = "5.7.0"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source and varnames."
 readme = "README.md"
@@ -10,6 +10,9 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 rich = "^13.0"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "*"  # examples/start_ipython.py
 
 [[tool.poetry.source]]
 name = "tsinghua"

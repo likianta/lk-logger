@@ -389,24 +389,6 @@ class SubThreadedLogger(MainThreadedLogger):
                 self._dprint(msg)
         else:
             raise ValueError(flush_scheme)
-    
-    @staticmethod
-    def _bprint(msg: _RawArgs, **kwargs) -> None:
-        std_print(*msg.args, **kwargs)
-    
-    @staticmethod
-    def _cprint(msg: T.ComposedMessage, **kwargs) -> None:
-        if isinstance(msg, MessageStruct):
-            con_print(msg.text, **kwargs)
-        else:
-            con_print(msg, **kwargs)
-    
-    @staticmethod
-    def _dprint(msg: T.ComposedMessage) -> None:
-        if isinstance(msg, MessageStruct):
-            msg = msg.body.plain
-        for p in printer_manager.printers:
-            p(msg)
 
 
 logger = MainThreadedLogger()
