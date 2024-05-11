@@ -20,9 +20,9 @@ from .message_builder import T as T1
 from .message_builder import builder as message_builder
 from .path_helper import path_helper
 from .pipeline import pipeline
-from .printer import printer_manager
 from .printer import con_print
 from .printer import dbg_print  # noqa
+from .printer import printer_manager
 from .printer import std_print
 
 
@@ -52,67 +52,25 @@ class T:  # Typehint
     MarkupPos = int  # -1, 0, 1
 
 
-class Logger:
+class MainThreadedLogger:
     
     def __init__(self) -> None:
         self._analyser = MarkupAnalyser()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
-        
-        self._running = False
-        self._message_queue = deque()
-        atexit.register(self._stop_running)
-        self._thread = Thread(target=self._start_running)
-        self._thread.daemon = True
-        self._thread.start()
     
-    def configure(self, clear_preset=False, **kwargs) -> None:
+    def configure(self, clear_preset: bool = False, **kwargs) -> None:
         self._cache.clear_cache()
         if clear_preset:
             self._config.reset()
         if 'show_varname' in kwargs:  # workaround for compatibility
             kwargs['show_varnames'] = kwargs.pop('show_varname')
         self._config.update(**kwargs)
-        message_builder.update_config(
-            separator=self._config.separator,
-        )
+        message_builder.update_config(separator=self._config.separator)
     
     @property
     def config(self) -> dict:
         return self._config.to_dict()
-    
-    def _start_running(self) -> None:
-        
-        def consume() -> None:
-            msg: t.Union[str, tuple]
-            kwargs: dict
-            custom_print: t.Optional[t.Callable]
-            
-            for i in range(len(self._message_queue)):
-                if not self._message_queue: break
-                msg, kwargs, custom_print = self._message_queue.popleft()
-                if custom_print:
-                    # dprint(custom_print, msg, kwargs)
-                    kwargs.pop('file', None)
-                    custom_print(*msg, **kwargs)
-                else:
-                    self._cprint(msg, **kwargs)
-                    self._dprint(msg)
-        
-        self._running = True
-        while self._running:
-            if self._message_queue:
-                consume()
-            else:
-                sleep(10E-3)
-        else:
-            consume()
-    
-    def _stop_running(self) -> None:
-        if self._config.clear_unfinished_stream:
-            self._message_queue.clear()
-        self._running = False
-        self._thread.join()
     
     # -------------------------------------------------------------------------
     
@@ -127,13 +85,10 @@ class Logger:
             # dprint(_frame_info.info)
         
         if (
-            (path := _frame_info.filepath)
-            and (custom_print := pipeline.get(path))
+            (path := _frame_info.filepath) and
+            (custom_print := pipeline.get(path))
         ):
-            if self._config.async_:
-                self._message_queue.append((args, kwargs, custom_print))
-            else:
-                custom_print(*args, **kwargs)
+            custom_print(*args, **kwargs)
             return
         
         msg, flush_scheme = self._build_message(_frame_info, *args)
@@ -141,55 +96,16 @@ class Logger:
         is_raw = isinstance(msg, _RawArgs)
         # dprint(msg)
         
-        self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
+        self._print(msg, _is_raw=is_raw, **kwargs)
     
     def _print(
-        self,
-        msg: T.ComposedMessage,
-        flush_scheme: T.FlushScheme = 0,
-        _is_raw: bool = False,
-        **kwargs
+        self, msg: T.ComposedMessage, _is_raw: bool = False, **kwargs
     ) -> None:
-        if flush_scheme == 0:
-            if self._config.async_:
-                if _is_raw:
-                    self._message_queue.append((msg.args, kwargs, std_print))
-                else:
-                    self._message_queue.append((msg, kwargs, None))
-            else:
-                if _is_raw:
-                    self._bprint(msg, **kwargs)
-                else:
-                    self._cprint(msg, **kwargs)
-                    self._dprint(msg)
-        elif flush_scheme == 1:
-            while self._message_queue:
-                sleep(10E-3)
-            if _is_raw:
-                self._bprint(msg, **kwargs)
-            else:
-                self._cprint(msg, **kwargs)
-                self._dprint(msg)
-        elif flush_scheme == 2:
-            if skipped_count := len(self._message_queue):
-                self._message_queue.clear()
-                print(
-                    ':frp2',
-                    f'[red dim](... skipped {skipped_count} messages)[/]'
-                )
-            if _is_raw:
-                self._bprint(msg, **kwargs)
-            else:
-                self._cprint(msg, **kwargs)
-                self._dprint(msg)
-        elif flush_scheme == 3:
-            if _is_raw:
-                self._bprint(msg, **kwargs)
-            else:
-                self._cprint(msg, **kwargs)
-                self._dprint(msg)
+        if _is_raw:
+            self._bprint(msg, **kwargs)
         else:
-            raise ValueError(flush_scheme)
+            self._cprint(msg, **kwargs)
+            self._dprint(msg)
     
     @staticmethod
     def _bprint(msg: _RawArgs, **kwargs) -> None:
@@ -198,9 +114,8 @@ class Logger:
     @staticmethod
     def _cprint(msg: T.ComposedMessage, **kwargs) -> None:
         if isinstance(msg, MessageStruct):
-            con_print(msg.text, **kwargs)
-        else:
-            con_print(msg, **kwargs)
+            msg = msg.text
+        con_print(msg, **kwargs)
     
     @staticmethod
     def _dprint(msg: T.ComposedMessage) -> None:
@@ -380,4 +295,118 @@ class Logger:
             return args[:-1], markup_pos, args[-1]
 
 
-logger = Logger()
+class SubThreadedLogger(MainThreadedLogger):
+    # TODO: not enabled in v5.7.0
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self._running = False
+        self._message_queue = deque()
+        atexit.register(self._stop_running)
+        self._thread = Thread(target=self._start_running)
+        self._thread.daemon = True
+        self._thread.start()
+    
+    def _start_running(self) -> None:
+        
+        def consume() -> None:
+            msg: t.Union[str, tuple]
+            kwargs: dict
+            custom_print: t.Optional[t.Callable]
+            
+            for i in range(len(self._message_queue)):
+                if not self._message_queue: break
+                msg, kwargs, custom_print = self._message_queue.popleft()
+                if custom_print:
+                    # dprint(custom_print, msg, kwargs)
+                    kwargs.pop('file', None)
+                    custom_print(*msg, **kwargs)
+                else:
+                    self._cprint(msg, **kwargs)
+                    self._dprint(msg)
+        
+        self._running = True
+        while self._running:
+            if self._message_queue:
+                consume()
+            else:
+                sleep(10E-3)
+        else:
+            consume()
+    
+    def _stop_running(self) -> None:
+        if self._config.clear_unfinished_stream:
+            self._message_queue.clear()
+        self._running = False
+        self._thread.join()
+    
+    # -------------------------------------------------------------------------
+    
+    def _print(
+        self,
+        msg: T.ComposedMessage,
+        flush_scheme: T.FlushScheme = 0,
+        _is_raw: bool = False,
+        **kwargs
+    ) -> None:
+        if flush_scheme == 0:
+            if self._config.async_:
+                if _is_raw:
+                    self._message_queue.append((msg.args, kwargs, std_print))
+                else:
+                    self._message_queue.append((msg, kwargs, None))
+            else:
+                if _is_raw:
+                    self._bprint(msg, **kwargs)
+                else:
+                    self._cprint(msg, **kwargs)
+                    self._dprint(msg)
+        elif flush_scheme == 1:
+            while self._message_queue:
+                sleep(10E-3)
+            if _is_raw:
+                self._bprint(msg, **kwargs)
+            else:
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
+        elif flush_scheme == 2:
+            if skipped_count := len(self._message_queue):
+                self._message_queue.clear()
+                print(
+                    ':frp2',
+                    f'[red dim](... skipped {skipped_count} messages)[/]'
+                )
+            if _is_raw:
+                self._bprint(msg, **kwargs)
+            else:
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
+        elif flush_scheme == 3:
+            if _is_raw:
+                self._bprint(msg, **kwargs)
+            else:
+                self._cprint(msg, **kwargs)
+                self._dprint(msg)
+        else:
+            raise ValueError(flush_scheme)
+    
+    @staticmethod
+    def _bprint(msg: _RawArgs, **kwargs) -> None:
+        std_print(*msg.args, **kwargs)
+    
+    @staticmethod
+    def _cprint(msg: T.ComposedMessage, **kwargs) -> None:
+        if isinstance(msg, MessageStruct):
+            con_print(msg.text, **kwargs)
+        else:
+            con_print(msg, **kwargs)
+    
+    @staticmethod
+    def _dprint(msg: T.ComposedMessage) -> None:
+        if isinstance(msg, MessageStruct):
+            msg = msg.body.plain
+        for p in printer_manager.printers:
+            p(msg)
+
+
+logger = MainThreadedLogger()

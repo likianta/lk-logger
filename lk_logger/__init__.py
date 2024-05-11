@@ -16,11 +16,11 @@ from .printer import bprint
 from .printer import parallel_printing
 
 
-def __init() -> None:
-    import traceback
-    pipeline.add(traceback, bprint)
-    setup(quiet=True)
-
-
-__init()
+# def __init() -> None:
+#     import traceback
+#     pipeline.add(traceback, bprint)
+#     setup(quiet=True)
+#
+#
+# __init()
 __version__ = '5.7.0'

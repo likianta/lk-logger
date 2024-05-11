@@ -5,7 +5,7 @@ from rich.console import Console as BaseConsole
 
 class Console(BaseConsole):
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         if self._color_system is None:
             try:
@@ -22,15 +22,12 @@ class Console(BaseConsole):
         #   split sourcemap and message into different lines.
         pass
     
-    def print(self, *objects: Any, sep=" ", end="\n", style=None, justify=None,
-              overflow=None, no_wrap=None, emoji=None, markup=None,
-              highlight=None, width=None, height=None, crop=True,
-              soft_wrap=True, new_line_start=False, **_) -> None:
-        super().print(*objects, sep=sep, end=end, style=style, justify=justify,
-                      overflow=overflow, no_wrap=no_wrap, emoji=emoji,
-                      markup=markup, highlight=highlight, width=width,
-                      height=height, crop=crop, soft_wrap=soft_wrap,
-                      new_line_start=new_line_start)
+    def print(self, *objects: Any, soft_wrap: bool = True, **kwargs) -> None:
+        from .message_builder import MessageStruct
+        if len(objects) == 1 and isinstance(objects[0], MessageStruct):
+            super().print(objects[0].text, soft_wrap=soft_wrap, **kwargs)
+        else:
+            super().print(*objects, soft_wrap=soft_wrap, **kwargs)
 
 
 console = Console()
