@@ -116,9 +116,10 @@ class LoggingConfig:
     def _wrap_system_excepthook(
         type_, value, traceback, callback=_default_excepthook
     ) -> None:
-        print(':r', '[red dim]drain out message queue[/]')
-        from .logger import logger
-        logger._stop_running()  # noqa
+        # print(':r', '[red dim]drain out message queue[/]')
+        # from .logger import logger
+        # if hasattr(logger, '_stop_running'):
+        #     logger._stop_running()  # noqa
         if type_ is KeyboardInterrupt:
             print(':r', '[red dim]KeyboardInterrupt[/]')
             sys.exit(0)
