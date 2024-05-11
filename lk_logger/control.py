@@ -31,11 +31,6 @@ def setup(
     """
     global _HAS_WELCOME_MESSAGE_SHOWN, STATUS
     
-    if _is_ipython_mode():
-        import IPython  # noqa
-        from .pipeline import pipeline
-        pipeline.add(IPython, bprint, scope=True)
-    
     logger.configure(clear_preset, **kwargs)
     setattr(builtins, 'print', _stdout or logger.log)
     
