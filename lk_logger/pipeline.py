@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 import typing as t
 from os import name as _os_name
 from os.path import abspath
 from os.path import dirname
 
-from .printer import bprint
-# from .printer import dprint
+from .printer import non_print
+from .printer import std_print
 
 
 class T:
@@ -27,17 +25,19 @@ class Pipeline:
     _cache: T.Cache
     _lines: T.PipeLines
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache = {}
         self._lines = T.PipeLines({}, {})
     
     def dump_list(self) -> t.List[str]:
         return list(self._lines.abspath.keys())
     
-    def add(self,
-            x: t.Union[str, object],
-            prt: t.Optional[t.Callable] = bprint,
-            scope=False) -> None:
+    def add(
+        self,
+        x: t.Union[str, object],
+        prt: t.Optional[t.Callable] = std_print,
+        scope: bool = False
+    ) -> None:
         if isinstance(x, str):
             if x.startswith('['):
                 path = x
@@ -51,7 +51,7 @@ class Pipeline:
                 path = dirname(path)
         # dprint('add path to pipeline', path)
         if prt is None:
-            prt = _mute_print
+            prt = non_print
         if path.startswith('['):
             self._lines.libname[path] = prt
         else:
@@ -77,19 +77,12 @@ class Pipeline:
         return None
 
 
-class _MutePrint:
-    def __call__(self, *_, **__):
-        pass
-
-
-_mute_print = _MutePrint()
-
-_is_win = _os_name == 'nt'
+_IS_WIN = _os_name == 'nt'
 
 
 def _normpath(path: str) -> str:
     path = abspath(path)
-    if _is_win:
+    if _IS_WIN:
         path = path.replace('\\', '/')
     return path
 

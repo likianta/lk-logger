@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # d1 = forloop(lk_logger.console.con_print)
     
     lk_logger.setup(quiet=True, show_varnames=True)
-    d2 = forloop(lk_logger.lk.log)
+    d2 = forloop(lk_logger.logger.log)
     
     print('{:5.2f}, {:5.2f}, {:5.2f}'.format(
         d0, d2, d2 / d0

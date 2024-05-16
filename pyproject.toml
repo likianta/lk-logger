@@ -12,9 +12,12 @@ python = "^3.8"
 multiprocess = "^0.70"
 rich = "^13.0"
 
+[tool.poetry.group.dev.dependencies]
+ipython = "*"  # examples/start_ipython.py
+
 [[tool.poetry.source]]
 name = "tsinghua"
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 priority = "primary"
 
 [build-system]

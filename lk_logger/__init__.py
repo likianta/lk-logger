@@ -44,7 +44,16 @@ else:
     from .control import unmute
     from .control import update
     from .logger import logger
+    
     pipeline.add(_traceback, bprint)
+    try:
+        __IPYTHON__  # noqa
+    except NameError:
+        pass
+    else:
+        import IPython
+        pipeline.add(IPython, bprint, scope=True)
+    
     setup(quiet=True)
 
 __all__ = [
