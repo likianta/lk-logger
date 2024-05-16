@@ -129,21 +129,21 @@ class MessageBuilder:
         sourcemap_alignment: t.Literal['left', 'right'] = 'left',
     ) -> T.MessageStruct:
         show_source = (
-            show_source  # fmt:skip
-            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+            show_source and
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         show_funcname = (
-            show_funcname  # fmt:skip
-            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+            show_funcname and
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         show_varnames = (
-            show_varnames
-            and MarkMeaning.MODERATE_PRUNE not in marks_meaning
-            and MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+            show_varnames and
+            MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         has_any_prune_scheme = (
-            MarkMeaning.MODERATE_PRUNE in marks_meaning
-            or MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
+            MarkMeaning.MODERATE_PRUNE in marks_meaning or
+            MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
         )
         
         head = Text()
@@ -278,6 +278,11 @@ class MessageBuilder:
             arguments=args,
             varnames=info['variable_names'] if show_varnames else (),
             rich=MarkMeaning.RICH_FORMAT in marks_meaning,
+            expand_rich=(
+                MarkMeaning.RICH_OBJECT in marks_meaning or
+                MarkMeaning.RICHABLE_DATA in marks_meaning or
+                MarkMeaning.TABULAR_DATA in marks_meaning
+            ),
             expand_level=marks_meaning.get(MarkMeaning.EXPAND_OBJECT, 0),
             separator=self._separator_b,
             overall_style=marks_meaning.get(MarkMeaning.VERBOSITY, None),

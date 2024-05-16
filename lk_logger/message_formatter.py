@@ -3,17 +3,22 @@ from dataclasses import dataclass
 from functools import partial
 from io import StringIO
 from math import ceil
+from textwrap import dedent
 from textwrap import indent
 from time import localtime
 from time import strftime as _strftime
 from traceback import format_exception
+from types import GeneratorType
 
 import rich
 # noinspection PyProtectedMember
 from rich._inspect import Inspect
+from rich.box import ROUNDED as BOX_ROUNDED
 from rich.console import RenderableType
-# from rich.padding import Padding
+from rich.markdown import Markdown
+from rich.padding import Padding
 from rich.pretty import pretty_repr
+from rich.table import Table
 from rich.text import Text
 from rich.traceback import Traceback
 
@@ -31,6 +36,7 @@ class MarkupText:
 class T:
     Level = t.Literal['trace', 'debug', 'info', 'warning', 'error', 'fatal']
     RichText = Text
+    Traceback = Traceback
 
 
 class Color:  # TODO: not used yet (and not ready).
@@ -98,7 +104,7 @@ class MessageFormatter:
         return self.markup((pattern * length, 'yellow'))
     
     @staticmethod
-    def fmt_exception(e: BaseException, show_locals=False) -> Traceback:
+    def fmt_exception(e: BaseException, show_locals=False) -> T.Traceback:
         trace = Traceback.from_exception(
             type(e), e, e.__traceback__,
             show_locals=show_locals
@@ -149,16 +155,59 @@ class MessageFormatter:
         arguments: t.Iterable[t.Any],
         varnames: t.Tuple[str, ...],
         rich: bool,
+        expand_rich: bool = False,  # expand rich definition
         expand_level: int = 0,
         separator: T.RichText = None,
         overall_style: T.Level = None,
+        _padding: int = 0,
     ) -> T.RichText:
         """
+        the differ of `expand_rich` and `rich`:
+            rich: renders a string like '[red]text[/]' to colored text.
+            expand_rich: renders a union[str, list[list], dict] object to:
+                str  -> markdown object
+                list[list] -> table object
+                dict -> table object. keys are column fields.
+        
         notice the process sequence:
             1. expand
             2. varnames
             3. rich
         """
+        if expand_rich:  # TODO: need a better design
+            assert not rich  # rich and expand_rich are mutually exclusive
+            arguments = tuple(arguments)
+            assert len(arguments) == 1 and isinstance(
+                arguments[0], (str, dict, list, tuple, GeneratorType)
+            )
+            arg = arguments[0]
+            if isinstance(arg, str):
+                out = Markdown(dedent(arg))
+            elif isinstance(arg, dict):
+                table = Table(
+                    *arg.keys(), header_style='yellow', box=BOX_ROUNDED
+                )
+                for row in zip(*arg.values()):
+                    table.add_row(*map(str, row))
+                out = table
+            else:
+                table = None
+                for i, row in enumerate(arg):
+                    if i == 0:
+                        table = Table(
+                            *map(str, row),
+                            header_style='yellow',
+                            box=BOX_ROUNDED
+                        )
+                    else:
+                        table.add_row(*map(str, row))
+                assert table
+                out = table
+            # noinspection PyTypeChecker
+            return Padding(out, (0, 0, 0, _padding)) if _padding else out
+        
+        # ---------------------------------------------------------------------
+        
         if expand_level == 1:
             arguments = map(self._expand_object, arguments)
         elif expand_level == 2:

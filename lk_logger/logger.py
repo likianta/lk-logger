@@ -17,7 +17,8 @@ from .markup import MarkupAnalyser
 from .markup import T as T0
 from .message_builder import MessageStruct
 from .message_builder import T as T1
-from .message_builder import builder as message_builder
+from .message_builder import builder as msg_builder
+from .message_formatter import formatter as msg_formatter
 from .path_helper import path_helper
 from .pipeline import pipeline
 from .printer import con_print
@@ -66,7 +67,7 @@ class MainThreadedLogger:
         if 'show_varname' in kwargs:  # workaround for compatibility
             kwargs['show_varnames'] = kwargs.pop('show_varname')
         self._config.update(**kwargs)
-        message_builder.update_config(separator=self._config.separator)
+        msg_builder.update_config(separator=self._config.separator)
     
     @property
     def config(self) -> dict:
@@ -155,7 +156,7 @@ class MainThreadedLogger:
         # check cache
         if self._cache.is_cached(frame_info.id, markup):
             cached_info = self._cache.get_cache(frame_info.id, markup)
-            return message_builder.compose(
+            return msg_builder.compose(
                 args, marks_meaning, cached_info,
                 self._config.show_source,
                 self._config.show_funcname,
@@ -171,19 +172,37 @@ class MainThreadedLogger:
                 MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
             ):
                 return _NoMessage, flush_scheme
+        if (
+            MarkMeaning.RICH_OBJECT in marks_meaning or
+            MarkMeaning.RICHABLE_DATA in marks_meaning or
+            MarkMeaning.TABULAR_DATA in marks_meaning or
+            MarkMeaning.TRACEBACK_EXCEPTION in marks_meaning or
+            MarkMeaning.TRACEBACK_EXCEPTION_WITH_LOCALS in marks_meaning
+        ):
+            assert len(args) == 1
         if MarkMeaning.BUILTIN_PRINT in marks_meaning:
             return _RawArgs(args), flush_scheme
         elif MarkMeaning.RICH_OBJECT in marks_meaning:
-            assert len(args) == 1 and isinstance(args[0], RenderableType)
+            assert isinstance(args[0], RenderableType)
             return args[0], flush_scheme
+        elif (
+            MarkMeaning.RICHABLE_DATA in marks_meaning or
+            MarkMeaning.TABULAR_DATA in marks_meaning
+        ):
+            # TODO: need a better design.
+            print(':p2')
+            return msg_formatter.fmt_message(
+                arguments=args, varnames=(), rich=False, expand_rich=True,
+                _padding=4
+            ), flush_scheme
         elif MarkMeaning.TRACEBACK_EXCEPTION in marks_meaning:
-            assert len(args) == 1 and isinstance(args[0], BaseException)
-            return message_builder.compose_exception(
+            assert isinstance(args[0], BaseException)
+            return msg_builder.compose_exception(
                 args[0], show_locals=False
             ), flush_scheme
         elif MarkMeaning.TRACEBACK_EXCEPTION_WITH_LOCALS in marks_meaning:
-            assert len(args) == 1 and isinstance(args[0], BaseException)
-            return message_builder.compose_exception(
+            assert isinstance(args[0], BaseException)
+            return msg_builder.compose_exception(
                 args[0], show_locals=True
             ), flush_scheme
         
@@ -251,7 +270,7 @@ class MainThreadedLogger:
         
         self._cache.store_info(frame_info.id, markup, info)
         
-        return message_builder.compose(
+        return msg_builder.compose(
             args, marks_meaning, info,
             show_source=show_source,
             show_funcname=show_funcname,

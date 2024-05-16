@@ -25,9 +25,11 @@ class MarkMeaning(Enum):
     RESET_TIMER = auto()
     RICH_FORMAT = auto()
     RICH_OBJECT = auto()
+    RICHABLE_DATA = auto()
     SCOPED_COUNTER = auto()
     SIMPLE_COUNTER = auto()
     STOP_TIMER = auto()
+    TABULAR_DATA = auto()
     TEMP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
     TRACEBACK_EXCEPTION_WITH_LOCALS = auto()
@@ -45,7 +47,7 @@ class T:
         'p': int,  # parent layer
         'r': int,  # rich style
         's': int,  # short / simple / single line
-        't': int,  # timer / timestamp
+        't': int,  # timer / timestamp / tabular
         'v': int,  # verbosity / log level
     })
     MarksMeaning = t.Dict[MarkMeaning, t.Any]
@@ -178,9 +180,9 @@ class MarkupAnalyser:
         
         if marks['i'] >= 0:
             if marks['i'] == 0:
+                out[MarkMeaning.RICH_FORMAT] = True
                 out[MarkMeaning.RESET_INDEX] = \
                     self._counter.reset_simple_count()
-                out[MarkMeaning.RICH_FORMAT] = True
             elif marks['i'] == 1:
                 out[MarkMeaning.SIMPLE_COUNTER] = \
                     self._counter.update_simple_count()
@@ -206,6 +208,8 @@ class MarkupAnalyser:
                 out[MarkMeaning.RICH_FORMAT] = True
             elif marks['r'] == 1:
                 out[MarkMeaning.RICH_OBJECT] = True
+            elif marks['r'] == 2:
+                out[MarkMeaning.RICHABLE_DATA] = True
             else:
                 raise E.UnsupportedMarkup(f':r{marks["r"]}')
         
@@ -220,18 +224,22 @@ class MarkupAnalyser:
                 raise E.UnsupportedMarkup(f':s{marks["s"]}')
         
         if marks['t'] >= 0:
-            out[MarkMeaning.RICH_FORMAT] = True
             if marks['t'] == 0:
+                out[MarkMeaning.RICH_FORMAT] = True
                 t = self._simple_time = time()
                 out[MarkMeaning.RESET_TIMER] = t
             elif marks['t'] == 1:
+                out[MarkMeaning.RICH_FORMAT] = True
                 start, end = self._simple_time, time()
                 out[MarkMeaning.STOP_TIMER] = (start, end)
                 self._simple_time = end
             elif marks['t'] == 2:
+                out[MarkMeaning.RICH_FORMAT] = True
                 start, end = self._temp_time, time()
                 out[MarkMeaning.TEMP_TIMER] = (start, end)
                 self._temp_time = end
+            elif marks['t'] == 3:
+                out[MarkMeaning.TABULAR_DATA] = True
             else:
                 raise E.UnsupportedMarkup(f':t{marks["t"]}')
         
