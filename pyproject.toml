@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.7.0"
+version = "5.7.1"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source and varnames."
 readme = "README.md"
@@ -16,7 +16,7 @@ ipython = "*"  # examples/start_ipython.py
 
 [[tool.poetry.source]]
 name = "tsinghua"
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 priority = "primary"
 
 [build-system]

@@ -16,11 +16,22 @@ from .printer import bprint
 from .printer import parallel_printing
 
 
-# def __init() -> None:
-#     import traceback
-#     pipeline.add(traceback, bprint)
-#     setup(quiet=True)
-#
-#
-# __init()
-__version__ = '5.7.0'
+def __init() -> None:
+    # import traceback
+    # pipeline.add(traceback, bprint)
+    # setup(quiet=True)
+    
+    # from .printer import dprint
+    # dprint(f'{__IPYTHON__=}')
+    try:
+        __IPYTHON__  # noqa
+    except NameError:
+        pass
+    else:
+        import IPython
+        pipeline.add(IPython, bprint, scope=True)
+        # pipeline.add('[ipython]', bprint)
+
+
+__init()
+__version__ = '5.7.1'
