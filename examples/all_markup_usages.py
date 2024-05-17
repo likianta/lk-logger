@@ -1,8 +1,18 @@
 import lk_logger
+from rich.markdown import Markdown
+
 lk_logger.setup(show_varnames=True)
 
 # -----------------------------------------------------------------------------
-print(':d', '`:i` usage')
+print(':dr', '`:e` is [yellow][u]E[/]xception[/]')
+
+try:
+    raise Exception('this is an exception with locals info')
+except Exception as e:
+    print(':e1', e)
+
+# -----------------------------------------------------------------------------
+print(':dr', '`:i` is [yellow][u]I[/]ndexing[/]')
 
 print(':i', 'sunday')
 print(':i', 'monday')
@@ -21,7 +31,7 @@ print(':i', 'friday in new week')
 print(':i', 'saturday in new week')
 
 # -----------------------------------------------------------------------------
-print(':d', '`:l` usage')
+print(':dr', '`:l` is [yellow][u]L[/]ong/[u]L[/]oose[/] format')
 
 print(':l', {
     'name': 'John',
@@ -34,7 +44,7 @@ print(':l', {
 })
 
 # -----------------------------------------------------------------------------
-print(':d', '`:p` usage')
+print(':dr', '`:p` is [yellow][u]P[/]arent[/] frame')
 
 
 def func1():
@@ -47,23 +57,45 @@ response = func1()
 print(response)
 
 # -----------------------------------------------------------------------------
-print(':d', '`:r` usage')
+print(':dr', '`:r` is [yellow][u]R[/]ich[/] format')
 
 print(':r', '[cyan]hello[/] [yellow]world[/]')
 
+# print a rich renderable object
+print(':r1', Markdown('''
+# Hello World
+
+This is a markdown document.
+
+- item 1
+- item 2
+- item 3
+
+Find more usages at [rich](https://github.com/textualize/rich) documentation.
+'''))
+
+# automatically convert a dict to a table
+print(':r2', {
+    'Name': ('Alice', 'Bob', 'Charlie'),
+    'Age': (18, 19, 20),
+    'City': ('Shanghai', 'Beijing', 'Guangzhou'),
+})
+
 # -----------------------------------------------------------------------------
-print(':d', '`:s` usage')
+print(':dr', '`:s` [yellow][u]S[/]hort/[u]S[/]imple/[u]S[/]ingle-line[/] format')
 
 a, b = 1, 2
-print(':s', a, b, a + b)
+print(':s', a, b, a + b)  # without varnames
+print(':s1', a, b, a + b)  # similar to built-in print (but kept color style)
+print(':s2', a, b, a + b)  # totally same with built-in print
 
 # -----------------------------------------------------------------------------
-print(':d', '`:t` usage')
+print(':dr', '`:t` is [yellow][u]T[/]iming[/]')
 
 print(':t', 'for now')
 
 # -----------------------------------------------------------------------------
-print(':d', '`:v` usage')
+print(':dr', '`:v` is [yellow][u]V[/]erbosity[/]')
 
 print(':v0', 'this is a TRACE message')
 print(':v1', 'this is a DEBUG message')
