@@ -22,8 +22,14 @@ class Console(BaseConsole):
         #   split sourcemap and message into different lines.
         pass
     
-    def print(self, *objects: Any, soft_wrap: bool = True, **kwargs) -> None:
+    def print(
+        self, *objects: Any, soft_wrap: bool = True, **kwargs
+    ) -> None:
         from .message_builder import MessageStruct
+        # pop incompatible arguments
+        # bg: streamlit passes `file` to `sys.stdout` which causes an error here.
+        kwargs.pop('file', None)
+        # kwargs.pop('flush', None)
         if len(objects) == 1 and isinstance(objects[0], MessageStruct):
             super().print(
                 objects[0].text, overflow='fold', soft_wrap=soft_wrap, **kwargs
