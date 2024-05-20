@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 import os
 import sys
+import typing as t
 
 
 def normpath(path: str) -> str:
@@ -10,9 +9,9 @@ def normpath(path: str) -> str:
 
 class PathHelper:
     __project_root: str
-    __external_libs: dict[str, str] | None
+    __external_libs: t.Dict[str, str] | None
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._cwd = os.getcwd()
         self.__project_root = self._find_project_root()
         self.__external_libs = None
@@ -30,6 +29,7 @@ class PathHelper:
                if there is none, return current working dir.
         """
         cwd = normpath(os.getcwd())
+        # noinspection PyTypeChecker
         paths = tuple(
             x for x in map(normpath, map(os.path.abspath, sys.path))
             if cwd.startswith(x) and os.path.isdir(x)
@@ -44,7 +44,7 @@ class PathHelper:
     # -------------------------------------------------------------------------
     
     @property
-    def external_libs(self) -> dict[str, str]:
+    def external_libs(self) -> t.Dict[str, str]:
         if self.__external_libs is None:
             self.__external_libs = self._indexing_external_libs()
         return self.__external_libs
@@ -53,7 +53,7 @@ class PathHelper:
         return not filepath.startswith(self.__project_root)
     
     @staticmethod
-    def _indexing_external_libs() -> dict[str, str]:
+    def _indexing_external_libs() -> t.Dict[str, str]:
         """
         return:
             dict[str path, str lib_name]
