@@ -47,14 +47,23 @@ class T:
 
 class PrinterManager:
     _group: t.List[T.Printers]
+    _is_under_iterating: bool
     
     def __init__(self) -> None:
+        # self.is_scoping = False
         # self._group = [(std_print,)]
         self._group = [()]
+        self._is_under_iterating = False
     
     @property
-    def printers(self) -> T.Printers:
-        return self._group[-1]
+    def printers(self) -> t.Iterator[T.Printer]:
+        # prevent recursive call
+        if self._is_under_iterating:
+            # dprint('under iteration')
+            return ()
+        self._is_under_iterating = True
+        yield from self._group[-1]
+        self._is_under_iterating = False
     
     def add_group(self, printers: T.Printers) -> None:
         self._group.append(printers)
@@ -82,7 +91,7 @@ def parallel_printing(*printers: T.Printer, inherit: bool = True) -> t.Iterator:
                             print('ddd')  # p4, p5 called
     """
     if inherit:
-        printers = printer_manager.printers + printers
+        printers = tuple(printer_manager.printers) + printers
     printer_manager.add_group(printers)
     yield
     printer_manager.pop_group()
