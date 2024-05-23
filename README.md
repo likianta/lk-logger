@@ -319,7 +319,7 @@ The projects use `lk-logger` to their colorful prints.
 
 ![image-20240517162243806](.assets/image-20240517162243806.png)
 
-![image-20240517185916468](.assets/image-20240517185916468.png)
+![image-20240524071958](.assets/image-20240524071958.png)
 
 ![image-20240517190059304](.assets/image-20240517190059304.png)
 
@@ -391,5 +391,3 @@ It prints weekdays with a numeric prefix.
   v4: error
   v5: critical
 ```
-
-
