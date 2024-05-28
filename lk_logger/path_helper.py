@@ -9,7 +9,7 @@ def normpath(path: str) -> str:
 
 class PathHelper:
     __project_root: str
-    __external_libs: t.Dict[str, str] | None
+    __external_libs: t.Optional[t.Dict[str, str]]
     
     def __init__(self) -> None:
         self._cwd = os.getcwd()

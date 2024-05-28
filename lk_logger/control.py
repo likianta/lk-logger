@@ -120,7 +120,7 @@ def start_ipython(
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
     
     app = TerminalIPythonApp.instance(
-        user_ns={'print': logger.log, **(user_ns or {})}
+        user_ns={'print': logger.log, '__USERNS__': user_ns, **(user_ns or {})}
     )
     app.initialize()
     

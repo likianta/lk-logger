@@ -19,19 +19,25 @@ from .printer import parallel_printing
 def __init() -> None:
     # import traceback
     # pipeline.add(traceback, bprint)
-    # setup(quiet=True)
+    setup(quiet=True)
     
-    # from .printer import dprint
-    # dprint(f'{__IPYTHON__=}')
-    try:
-        __IPYTHON__  # noqa
-    except NameError:
-        pass
-    else:
+    def has_ipython() -> bool:
+        try:
+            __IPYTHON__  # noqa
+            return True
+        except NameError:
+            pass
+        try:
+            import IPython  # noqa
+            return True
+        except ImportError:
+            return False
+    
+    if has_ipython():
         import IPython
         pipeline.add(IPython, bprint, scope=True)
         # pipeline.add('[ipython]', bprint)
 
 
 __init()
-__version__ = '5.7.4'
+__version__ = '5.7.5'
