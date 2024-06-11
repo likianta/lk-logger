@@ -17,8 +17,9 @@ from .printer import parallel_printing
 
 
 def __init() -> None:
-    # import traceback
-    # pipeline.add(traceback, bprint)
+    import traceback
+    pipeline.add(traceback, bprint)
+    
     setup(quiet=True)
     
     def has_ipython() -> bool:
