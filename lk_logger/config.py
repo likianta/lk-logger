@@ -103,7 +103,7 @@ class LoggingConfig:
                 # https://rich.readthedocs.io/en/stable/traceback.html
                 from rich.traceback import install
                 from .console import console
-                install(console=console, show_locals=False)
+                install(console=console, show_locals=False, word_wrap=True)
                 modified = sys.excepthook
                 sys.excepthook = partial(
                     self._wrap_system_excepthook,

@@ -2,6 +2,7 @@ import builtins
 import typing as t
 from inspect import currentframe
 from contextlib import contextmanager
+from functools import partial
 from os import name as os_name
 
 from .console import console
@@ -28,7 +29,7 @@ class NothingPrinter(BasePrinter):
 
 std_print = t.cast(BasePrinter, builtins.print)
 con_print = console.print
-con_error = console.print_exception
+con_error = partial(console.print_exception, word_wrap=True)
 dbg_print = DebugPrinter()
 non_print = NothingPrinter()
 

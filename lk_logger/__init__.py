@@ -16,7 +16,7 @@ from .printer import bprint
 from .printer import parallel_printing
 
 
-def __init() -> None:
+def _init() -> None:
     import traceback
     pipeline.add(traceback, bprint)
     
@@ -40,5 +40,5 @@ def __init() -> None:
         # pipeline.add('[ipython]', bprint)
 
 
-__init()
+_init()
 __version__ = '5.7.5'
