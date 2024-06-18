@@ -5,6 +5,7 @@ from sys import excepthook as _default_excepthook
 from rich.traceback import Traceback
 
 from .console import console
+from .printer import dprint  # noqa
 
 
 class LoggingConfig:
@@ -22,9 +23,6 @@ class LoggingConfig:
     #       example: '[lk_logger]'
     #   (note: available only 'show_external_lib' is True.)
     rich_traceback: bool
-    #   0: default traceback
-    #   1: rich traceback without locals
-    #   2: rich traceback with locals
     separator: str
     show_external_lib: bool
     #   whether to print messages from external libraries.
@@ -36,6 +34,7 @@ class LoggingConfig:
     #       'main.py:10  >>  hello world'
     #   False example:
     #       'hello world'
+    show_traceback_locals: bool
     show_varnames: bool
     #   show both variable names and values. (magic reflection)
     #   example:
@@ -51,11 +50,12 @@ class LoggingConfig:
         'clear_unfinished_stream'    : False,
         'console_width'              : None,
         'path_style_for_external_lib': 'pretty_relpath',
-        'rich_traceback'             : 1,
+        'rich_traceback'             : True,
         'separator'                  : ';   ',
         'show_external_lib'          : True,
         'show_funcname'              : False,
         'show_source'                : True,
+        'show_traceback_locals'      : False,
         'show_varnames'              : False,
         'sourcemap_alignment'        : 'left',
         'v2_meaning'                 : 'info',
@@ -88,7 +88,7 @@ class LoggingConfig:
                 console.width = val
         elif key == 'rich_traceback':
             if val:
-                setattr(sys, 'excepthook', self._custom_excepthook)
+                sys.excepthook = self._custom_excepthook
             else:
                 sys.excepthook = _default_excepthook
     
@@ -102,11 +102,11 @@ class LoggingConfig:
             sys.exit(0)
         else:
             # https://rich.readthedocs.io/en/stable/traceback.html
-            level = getattr(self, 'rich_traceback')
+            # dprint(getattr(self, 'show_traceback_locals'))
             console.print(
                 Traceback.from_exception(
                     type_, value, traceback,
-                    show_locals=level == 2,
+                    show_locals=getattr(self, 'show_traceback_locals'),
                     locals_hide_dunder=True,
                     locals_hide_sunder=True,
                     # word_wrap=True,

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.7.5a4"
+version = "5.7.5b3"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source and varnames."
 readme = "README.md"
@@ -12,6 +12,8 @@ python = "^3.8"
 rich = "^13.0"
 
 [tool.poetry.group.dev.dependencies]
+# argsense = "^0.5.8"
+argsense = { url = "http://likianta.pro:2006/argsense/argsense-0.5.8b1-py3-none-any.whl" }
 ipython = "*"  # examples/start_ipython.py
 
 [[tool.poetry.source]]

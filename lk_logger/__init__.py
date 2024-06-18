@@ -17,6 +17,9 @@ from .printer import parallel_printing
 
 
 def _init() -> None:
+    import os
+    os.environ['ARGSENSE_TRACEBACK'] = '0'  # see argsense v0.5.8+
+    
     import traceback
     pipeline.add(traceback, bprint)
     
