@@ -22,15 +22,25 @@ class Console(BaseConsole):
         #   split sourcemap and message into different lines.
         pass
     
-    def print(self, *objects: Any, **kwargs) -> None:
+    def print(
+        self,
+        *objects: Any,
+        crop: bool = False,
+        soft_wrap: bool = True,
+        **kwargs
+    ) -> None:
         from .message_builder import MessageStruct
         # pop incompatible arguments
         kwargs.pop('file', None)
         kwargs.pop('flush', None)
         if len(objects) == 1 and isinstance(objects[0], MessageStruct):
-            super().print(objects[0].text, crop=False, soft_wrap=True, **kwargs)
+            super().print(
+                objects[0].text, crop=crop, soft_wrap=soft_wrap, **kwargs
+            )
         else:
-            super().print(*objects, crop=False, soft_wrap=True, **kwargs)
+            super().print(
+                *objects, crop=crop, soft_wrap=soft_wrap, **kwargs
+            )
 
 
 console = Console()
