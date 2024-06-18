@@ -114,6 +114,7 @@ class MarkupAnalyser:
               p4: and so on...
             * r0: rich style
               r1: rich object (rich.table.Table, rich.panel.Panel, etc.)
+              r2: auto detect rich format (for a limit set of types)
             * s0: short / simple / single line
               s1: builtin-like print (remains markup features)
               s2: builtin print

@@ -2,7 +2,9 @@ import lk_logger
 
 lk_logger.setup()
 
-print(':r2', '''
+print(
+    ':r2',
+    '''
     This is a **markdown** document.
     
     - item 1
@@ -14,7 +16,8 @@ print(':r2', '''
     | Alice   | 18  | Shanghai  |
     | Bob     | 19  | Beijing   |
     | Charlie | 20  | Guangzhou |
-''')
+    '''
+)
 
 print(':r2', {
     'Name': ('Alice', 'Bob', 'Charlie'),

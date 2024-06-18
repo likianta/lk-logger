@@ -21,9 +21,9 @@ class PathHelper:
         """ find personal-like project root.
 
         proposals:
-            1. backtrack from current working dir to find a folder which has
+            1. backtrack from current working dir to find a folder which has -
                one of '.idea', '.git', etc. folders.
-            2. iterate paths in sys.path, to find a folder which is parent of
+            2. iterate paths in sys.path, to find a folder which is parent of -
                current working dir. (adopted)
                if there are more than one, choose which is shortest.
                if there is none, return current working dir.
