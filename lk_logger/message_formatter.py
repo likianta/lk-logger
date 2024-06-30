@@ -273,8 +273,11 @@ class MessageFormatter:
         return self.markup((sep, color))
     
     def fmt_source(
-        self, filepath: str, lineno: t.Union[int, str],
-        is_external_lib: bool = False, fmt_width=False
+        self,
+        filepath: str,
+        lineno: t.Union[int, str],
+        is_external_lib: bool = False,
+        fmt_width: bool = False,
     ) -> T.RichText:
         text = Text()
         

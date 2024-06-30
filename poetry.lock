@@ -18,12 +18,12 @@ reference = "tsinghua"
 
 [[package]]
 name = "argsense"
-version = "0.5.8b1"
+version = "0.5.8"
 description = "New command line interface based on Python Rich library."
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "argsense-0.5.8b1-py3-none-any.whl", hash = "sha256:e51f2f1dcbae16c3488fa4998fd3abaabdefd59b54c7390af73b61c7735fc94d"},
+    {file = "argsense-0.5.8-py3-none-any.whl", hash = "sha256:1bb91e706af89f13dde8b14a52b77dc0881fb96e5a3cd23e6ed9bf1628b6b539"},
 ]
 
 [package.dependencies]
@@ -33,8 +33,9 @@ rich = ">=13.0.0,<14.0.0"
 gui = ["pysimplegui (>=5.0.0,<6.0.0)"]
 
 [package.source]
-type = "url"
-url = "http://likianta.pro:2006/argsense/argsense-0.5.8b1-py3-none-any.whl"
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tsinghua"
 
 [[package]]
 name = "asttokens"
@@ -505,4 +506,4 @@ reference = "tsinghua"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "16f37dd6824c006cb8ee02a68234591cb78f0048ddb44fb60e694ac60a412c1c"
+content-hash = "d90d7ef9a4dccfad8628981b7a555ad7de1310f8d986866c3be29d21d84c47cf"

@@ -230,28 +230,13 @@ class MainThreadedLogger:
         
         if any((show_source, show_funcname, show_varnames)):
             if show_source:
-                def update_sourcemap():
-                    """
-                    this function updates follows:
-                        info['is_external_lib']
-                        info['file_path']
-                        info['line_number']
-                    """
+                def update_sourcemap() -> None:
                     path = frame_info.filepath
-                    info['is_external_lib'] = path_helper.is_external_lib(path)
-                    
-                    if info['is_external_lib']:
-                        if self._config.show_external_lib:
-                            style = self._config.path_style_for_external_lib
-                            info['file_path'] = \
-                                path_helper.reformat_external_lib_path(
-                                    path, style
-                                )
-                        else:
-                            info['file_path'] = ''
+                    info['is_external_lib'] = path_helper.is_external_path(path)
+                    if self._config.path_style == 'relpath':
+                        info['file_path'] = path_helper.get_relpath(path)
                     else:
-                        info['file_path'] = path_helper.relpath(path)
-                    
+                        info['file_path'] = path_helper.get_filename(path)
                     info['line_number'] = str(frame_info.lineno)
                 
                 update_sourcemap()

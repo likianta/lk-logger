@@ -1,123 +1,82 @@
 import os
 import sys
 import typing as t
+from os.path import abspath, basename
 
 
 def normpath(path: str) -> str:
-    return path.replace('\\', '/').rstrip('/')
+    return abspath(path).replace('\\', '/').rstrip('/')
 
 
 class PathHelper:
-    __project_root: str
-    __external_libs: t.Optional[t.Dict[str, str]]
+    _cwd: str
+    _cwdp: str
+    _external_libs: t.Dict[str, str]  # {libpath: libname, ...}
+    _external_libkeys: t.Tuple[str, ...]
     
     def __init__(self) -> None:
-        self._cwd = os.getcwd()
-        self.__project_root = self._find_project_root()
-        self.__external_libs = None
+        self._cwd = normpath(os.getcwd())
+        self._cwdp = self._cwd.rsplit('/', 1)[0]
     
-    @staticmethod
-    def _find_project_root() -> str:
-        """ find personal-like project root.
-
-        proposals:
-            1. backtrack from current working dir to find a folder which has -
-               one of '.idea', '.git', etc. folders.
-            2. iterate paths in sys.path, to find a folder which is parent of -
-               current working dir. (adopted)
-               if there are more than one, choose which is shortest.
-               if there is none, return current working dir.
+    def _index_external_libpaths(self) -> None:
         """
-        cwd = normpath(os.getcwd())
-        # noinspection PyTypeChecker
-        paths = tuple(
-            x for x in map(normpath, map(os.path.abspath, sys.path))
-            if cwd.startswith(x) and os.path.isdir(x)
+        suggest deferring this method til the first print is called.
+        """
+        self._external_libs = {}
+        for d in set(map(normpath, sys.path)):
+            self._external_libs[d] = basename(d)
+        self._external_libkeys = tuple(
+            sorted(self._external_libs.keys(), reverse=True)
         )
-        if len(paths) == 0:
-            return cwd
-        elif len(paths) == 1:
-            return paths[0]
+    
+    def _check_path_type(self, fpath: str) -> int:
+        """
+        returns:
+            0: path inside cwd
+            1: path inside cwd parent
+            2: external path
+        """
+        if fpath.startswith(self._cwd):
+            return 0
+        if fpath.startswith(self._cwdp):
+            return 1
+        return 2
+    
+    def is_external_path(self, fpath: str) -> bool:
+        return self._check_path_type(fpath) == 2
+    
+    def get_relpath(self, fpath: str) -> str:
+        path_type = self._check_path_type(fpath)
+        if path_type == 0:
+            return './{}'.format(fpath[len(self._cwd) + 1:])
+        elif path_type == 1:
+            return '../{}'.format(fpath[len(self._cwdp) + 1:])
         else:
-            return min(paths, key=lambda x: len(x))
+            if not hasattr(self, '_external_libs'):
+                self._index_external_libpaths()
+            for libpath in self._external_libkeys:
+                if fpath.startswith(libpath):
+                    return '[{}]/{}'.format(
+                        self._external_libs[libpath],
+                        fpath[len(libpath) + 1:]
+                    )
+            a, b, c = fpath.rsplit('/', 2)
+            return '[unknown]/{}/{}'.format(b, c)
     
-    # -------------------------------------------------------------------------
-    
-    @property
-    def external_libs(self) -> t.Dict[str, str]:
-        if self.__external_libs is None:
-            self.__external_libs = self._indexing_external_libs()
-        return self.__external_libs
-    
-    def is_external_lib(self, filepath: str) -> bool:
-        return not filepath.startswith(self.__project_root)
-    
-    @staticmethod
-    def _indexing_external_libs() -> t.Dict[str, str]:
-        """
-        return:
-            dict[str path, str lib_name]
-        """
-        out = {}
-        
-        for path in reversed(sys.path):
-            if not os.path.exists(path):
-                continue
-            for root, dirs, files in os.walk(path):
-                root = normpath(root)
-                out[root] = os.path.basename(root)
-                
-                for d in dirs:
-                    if d.startswith(('.', '__')):
-                        continue
-                    if '-' in d or '.' in d:
-                        continue
-                    out[f'{root}/{d}'] = d
-                
-                # for f in files:
-                #     name, ext = os.path.splitext(f)
-                #     if ext not in ('.py', '.pyc', '.pyd', '.pyo', '.pyw'):
-                #         continue
-                #     if '-' in name or '.' in name:
-                #         continue
-                #     out[f'{root}/{f}'] = name
-                break
-        
-        return out
-    
-    # -------------------------------------------------------------------------
-    
-    def relpath(self, abs_path: str) -> str:
-        out = normpath(os.path.relpath(abs_path, self._cwd))
-        if not out.startswith('../'):
-            out = './' + out
-        return out
-    
-    def reformat_external_lib_path(self, path: str, style: str) -> str:
-        """
-        args:
-            style:
-                'relpath'
-                'pretty_relpath'
-                'lib_name_only'
-        """
-        if style == 'relpath':
-            return self.relpath(path)
+    def get_filename(self, fpath: str) -> str:
+        path_type = self._check_path_type(fpath)
+        if path_type < 2:
+            return basename(fpath)
         else:
-            for lib_path in sorted(self.external_libs, reverse=True):
-                if path.startswith(lib_path):
-                    lib_name = self.external_libs[lib_path].lower()
-                    lib_relpath = path[len(lib_path):].lstrip('./') or \
-                                  os.path.basename(path)
-                    break
-            else:
-                lib_name = 'unknown'
-                lib_relpath = path.lstrip('./')
-            
-            if style == 'pretty_relpath':
-                return '[{}]/{}'.format(lib_name, lib_relpath)
-            elif style == 'lib_name_only':
-                return '[{}]'.format(lib_name)
+            if not hasattr(self, '_external_libs'):
+                self._index_external_libpaths()
+            for libpath in self._external_libkeys:
+                if fpath.startswith(libpath):
+                    return '[{}]/{}'.format(
+                        self._external_libs[libpath],
+                        basename(fpath)
+                    )
+            return '[unknown]/{}'.format(basename(fpath))
 
 
 path_helper = PathHelper()

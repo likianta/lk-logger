@@ -13,19 +13,13 @@ class LoggingConfig:
     #   run lk logger in separate thread.
     clear_unfinished_stream: bool
     console_width: t.Optional[int]
-    path_style_for_external_lib: str
-    #   'pretty_relpath': prettify external library path prefix.
-    #       example: '[lk_logger]/sourcemap.py'
-    #   'relpath': show external library path as relative path to current -
-    #       working directory.
-    #       example: './.venv/Lib/site-packages/lk_logger/sourcemap.py'
-    #   'lib_name_only': show only the library name (surrounded by brackets).
-    #       example: '[lk_logger]'
-    #   (note: available only 'show_external_lib' is True.)
+    path_style: t.Literal['filename', 'relpath']
+    #   'relpath' (default): show relative path.
+    #       for external libraries, will show `[lib_name]/relpath:lineno`
+    #   'filename': show only filename.
+    #       for external libraries, will show `[lib_name]/filename:lineno`
     rich_traceback: bool
     separator: str
-    show_external_lib: bool
-    #   whether to print messages from external libraries.
     show_funcname: bool
     show_source: bool
     #   attach source file path and line number info prefixed to the log -
@@ -46,19 +40,18 @@ class LoggingConfig:
     v2_meaning: t.Literal['info', 'success']  # TODO: not used.
     
     _preset_conf = {
-        'async_'                     : False,  # TODO
-        'clear_unfinished_stream'    : False,
-        'console_width'              : None,
-        'path_style_for_external_lib': 'pretty_relpath',
-        'rich_traceback'             : True,
-        'separator'                  : ';   ',
-        'show_external_lib'          : True,
-        'show_funcname'              : False,
-        'show_source'                : True,
-        'show_traceback_locals'      : False,
-        'show_varnames'              : False,
-        'sourcemap_alignment'        : 'left',
-        'v2_meaning'                 : 'info',
+        'async_'                 : False,  # TODO
+        'clear_unfinished_stream': False,
+        'console_width'          : None,
+        'path_style'             : 'relpath',
+        'rich_traceback'         : True,
+        'separator'              : ';   ',
+        'show_funcname'          : False,
+        'show_source'            : True,
+        'show_traceback_locals'  : False,
+        'show_varnames'          : False,
+        'sourcemap_alignment'    : 'left',
+        'v2_meaning'             : 'info',
     }
     
     def __init__(self, **kwargs) -> None:
@@ -66,10 +59,7 @@ class LoggingConfig:
             self._apply(k, kwargs.get(k, v))
     
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return {
-            k: getattr(self, k)
-            for k in self._preset_conf
-        }
+        return {k: getattr(self, k) for k in self._preset_conf}
     
     def update(self, **kwargs) -> None:
         for k, v in kwargs.items():

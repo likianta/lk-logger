@@ -2,11 +2,11 @@ import inspect
 import re
 import typing as t
 from dataclasses import dataclass
-from os.path import abspath
 from os.path import exists
 from textwrap import dedent
 from types import FrameType
 
+from .path_helper import normpath
 from .scanner import get_all_blocks
 from .scanner import get_variables
 from .scanner.const import SUBSCRIPTABLE
@@ -181,7 +181,7 @@ class FrameInfo:
         # from ._print import debug
         # debug(self._frame.f_code.co_filename,
         #       self._frame.f_globals.get('__file__'))
-        return abspath(self._frame.f_code.co_filename).replace('\\', '/')
+        return normpath(self._frame.f_code.co_filename)
     
     @property
     def lineno(self) -> int:
