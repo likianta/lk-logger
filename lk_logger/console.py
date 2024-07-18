@@ -8,10 +8,15 @@ class Console(BaseConsole):
     
     def __init__(self) -> None:
         # https://github.com/Textualize/rich/issues/2622
+        # print(os.getenv('LK_LOGGER_FORCE_COLOR'))
         super().__init__(
             color_system='standard' if os.name == 'nt' else 'auto',
-            # force_terminal=True,
-            legacy_windows=False if os.name == 'nt' else None,
+            legacy_windows=(
+                False if (
+                    os.name == 'nt' and
+                    os.getenv('LK_LOGGER_FORCE_COLOR', '0') == '1'
+                ) else None
+            ),
         )
         
         # TODO (width):
