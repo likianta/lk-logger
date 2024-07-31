@@ -1,3 +1,4 @@
+import re
 import typing as t
 from dataclasses import dataclass
 from functools import partial
@@ -60,11 +61,7 @@ class Color:  # TODO: not used yet (and not ready).
 class MessageFormatter:
     
     @staticmethod
-    def markup(*markups: t.Tuple[str, str]) -> T.RichText:
-        # text = Text()
-        # for t, m in markups:
-        #     text.append(t, m)
-        # return text
+    def assemble_markups(*markups: t.Tuple[str, str]) -> T.RichText:
         return Text.assemble(*markups)
     
     # -------------------------------------------------------------------------
@@ -85,11 +82,7 @@ class MessageFormatter:
                         # strip the last element and try again
                         length = con_width - sum(map(len, context[:-1]))
                         if length > 0:
-                            # return self.markup((
-                            #     pattern * length + '\n' + pattern * 3,
-                            #     'yellow'
-                            # ))
-                            return self.markup(
+                            return self.assemble_markups(
                                 (pattern * length, 'yellow'),
                                 ('\n', ''),
                                 (pattern * 3, 'yellow dim')
@@ -101,7 +94,7 @@ class MessageFormatter:
                         length = 80
             else:
                 length = 80
-        return self.markup((pattern * length, 'yellow'))
+        return self.assemble_markups((pattern * length, 'yellow'))
     
     @staticmethod
     def fmt_exception(e: BaseException, show_locals=False) -> T.Traceback:
@@ -176,13 +169,25 @@ class MessageFormatter:
         """
         if expand_rich:  # TODO: need a better design
             assert not rich  # rich and expand_rich are mutually exclusive
+            
             arguments = tuple(arguments)
             assert len(arguments) == 1 and isinstance(
                 arguments[0], (str, dict, list, tuple, GeneratorType)
             )
             arg = arguments[0]
+            
             if isinstance(arg, str):
-                out = Markdown(dedent(arg))
+                if '\n' not in arg and arg.count(' -> ') == 1:
+                    title, old, new = \
+                        re.match(r'(.+: )?(.+) -> (.+)', arg).groups()
+                    out = self.assemble_markups(
+                        (title or '', 'bold' if title else ''),
+                        (old, 'red'),
+                        (' -> ', ''),
+                        (new, 'green')
+                    )
+                else:
+                    out = Markdown(dedent(arg))
             elif isinstance(arg, dict):
                 table = Table(
                     *arg.keys(), header_style='yellow', box=BOX_ROUNDED
@@ -260,7 +265,7 @@ class MessageFormatter:
         uid: str,
         color: str = ''
     ) -> T.RichText:
-        return self.markup(
+        return self.assemble_markups(
             (f'[{uid}]', f'{color} dim'),
             (f'[{idx}]', f'{color}'),
         )
@@ -270,7 +275,7 @@ class MessageFormatter:
         sep: str = ' >> ',
         color='bright_black'
     ) -> T.RichText:
-        return self.markup((sep, color))
+        return self.assemble_markups((sep, color))
     
     def fmt_source(
         self,

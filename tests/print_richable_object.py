@@ -2,6 +2,10 @@ import lk_logger
 
 lk_logger.setup()
 
+print(':r2', 'old -> new')
+print(':r2', 'title: old -> new')
+print(':v2ir2', 'title: old -> new')
+
 print(
     ':r2',
     '''
