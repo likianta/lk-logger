@@ -122,7 +122,7 @@ class MessageFormatter:
     
     _level_2_color = {
         'trace': '',
-        'debug': 'grey50',
+        'debug': 'bright_black',
         'info' : 'blue',
         'warn' : 'yellow',
         'error': 'red',
