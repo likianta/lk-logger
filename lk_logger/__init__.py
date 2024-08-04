@@ -1,14 +1,13 @@
 from . import console
 from . import printer
 from .control import disable
-from .control import disable as mute
 from .control import enable
-from .control import enable as unmute
 from .control import setup
 from .control import start_ipython
 from .control import unload
 from .control import unload as restore_builtin_print
 from .control import update
+from .control2 import mute
 from .frame_info import FrameInfo
 from .logger import logger
 from .pipeline import pipeline
@@ -44,4 +43,4 @@ def _init() -> None:
 
 
 _init()
-__version__ = '5.7.7'
+__version__ = '6.0.0'

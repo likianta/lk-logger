@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "lk-logger"
-version = "5.7.7"
+version = "6.0.0a0"
 homepage = "https://github.com/likianta/lk-logger"
-description = "Python print with source and varnames."
+description = "Python print with source map and varnames."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
