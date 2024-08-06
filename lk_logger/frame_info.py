@@ -181,7 +181,11 @@ class FrameInfo:
         # from ._print import debug
         # debug(self._frame.f_code.co_filename,
         #       self._frame.f_globals.get('__file__'))
-        return normpath(self._frame.f_code.co_filename)
+        x = self._frame.f_code.co_filename
+        if x.startswith('<') and x.endswith('>'):
+            return '<{}@{}>'.format(x[1:-1], id(self._frame))
+        else:
+            return normpath(x)
     
     @property
     def lineno(self) -> int:

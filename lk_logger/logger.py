@@ -295,7 +295,7 @@ class MainThreadedLogger:
             return args, markup_pos, ''
         elif markup_pos == 1:
             return args[1:], markup_pos, args[0]
-        else:
+        else:  # -1
             return args[:-1], markup_pos, args[-1]
 
 
