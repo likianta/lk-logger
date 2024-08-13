@@ -1,6 +1,7 @@
 import atexit
 import typing as t
 from collections import deque
+from contextlib import contextmanager
 from inspect import currentframe
 from threading import Thread
 from time import sleep
@@ -53,12 +54,15 @@ class T:  # Typehint
     MarkupPos = int  # -1, 0, 1
 
 
-class MainThreadedLogger:
+class MainThreadLogger:
     
     def __init__(self) -> None:
         self._analyser = MarkupAnalyser()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
+        self._misc = {
+            'caller_layer_offset': 0
+        }
     
     def configure(self, clear_preset: bool = False, **kwargs) -> None:
         self._cache.clear_cache()
@@ -72,6 +76,12 @@ class MainThreadedLogger:
     @property
     def config(self) -> dict:
         return self._config.to_dict()
+    
+    @contextmanager
+    def elevate_caller_stack(self) -> t.Iterator:
+        self._misc['caller_layer_offset'] += 1
+        yield
+        self._misc['caller_layer_offset'] -= 1
     
     # -------------------------------------------------------------------------
     
@@ -139,6 +149,9 @@ class MainThreadedLogger:
         args, markup_pos, markup = \
             self._separate_markup_from_arguments(frame_info.id, args)
         marks = self._analyser.extract(markup)
+        if 'p' in marks:
+            if self._misc['caller_layer_offset']:
+                marks['p'] += self._misc['caller_layer_offset']
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
         if marks['p']: frame_info = frame_info.get_parent(marks['p'])
@@ -299,7 +312,7 @@ class MainThreadedLogger:
             return args[:-1], markup_pos, args[-1]
 
 
-class SubThreadedLogger(MainThreadedLogger):
+class SubThreadedLogger(MainThreadLogger):
     # TODO: not enabled in v5.7.0
     
     def __init__(self) -> None:
@@ -395,4 +408,4 @@ class SubThreadedLogger(MainThreadedLogger):
             raise ValueError(flush_scheme)
 
 
-logger = MainThreadedLogger()
+logger = MainThreadLogger()
