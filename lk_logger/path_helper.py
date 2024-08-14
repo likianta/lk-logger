@@ -2,6 +2,7 @@ import os
 import sys
 import typing as t
 from os.path import abspath, basename
+from .printer import dprint
 
 
 def normpath(path: str) -> str:
@@ -29,54 +30,63 @@ class PathHelper:
             sorted(self._external_libs.keys(), reverse=True)
         )
     
-    def _check_path_type(self, fpath: str) -> int:
+    def _check_path_type(self, xpath: str) -> int:
         """
         returns:
             0: path inside cwd
             1: path inside cwd parent
             2: external path
+            3: unknown path
         """
-        if fpath.startswith(self._cwd):
+        if xpath.startswith(self._cwd):
             return 0
-        if fpath.startswith(self._cwdp):
+        elif xpath.startswith(self._cwdp):
             return 1
-        return 2
+        elif xpath.startswith('<'):
+            assert xpath.endswith('>')
+            return 3
+        else:
+            return 2
     
-    def is_external_path(self, fpath: str) -> bool:
-        return self._check_path_type(fpath) == 2
+    def is_external_path(self, xpath: str) -> bool:
+        return self._check_path_type(xpath) >= 2
     
-    def get_relpath(self, fpath: str) -> str:
-        path_type = self._check_path_type(fpath)
+    def get_relpath(self, xpath: str) -> str:
+        path_type = self._check_path_type(xpath)
         if path_type == 0:
-            return './{}'.format(fpath[len(self._cwd) + 1:])
+            return './{}'.format(xpath[len(self._cwd) + 1:])
         elif path_type == 1:
-            return '../{}'.format(fpath[len(self._cwdp) + 1:])
-        else:
+            return '../{}'.format(xpath[len(self._cwdp) + 1:])
+        elif path_type == 2:
             if not hasattr(self, '_external_libs'):
                 self._index_external_libpaths()
             for libpath in self._external_libkeys:
-                if fpath.startswith(libpath):
+                if xpath.startswith(libpath):
                     return '[{}]/{}'.format(
                         self._external_libs[libpath],
-                        fpath[len(libpath) + 1:]
+                        xpath[len(libpath) + 1:]
                     )
-            a, b, c = fpath.rsplit('/', 2)
+            a, b, c = xpath.rsplit('/', 2)
             return '[unknown]/{}/{}'.format(b, c)
-    
-    def get_filename(self, fpath: str) -> str:
-        path_type = self._check_path_type(fpath)
-        if path_type < 2:
-            return basename(fpath)
         else:
+            return '[unknown {}]'.format(xpath)
+    
+    def get_filename(self, xpath: str) -> str:
+        path_type = self._check_path_type(xpath)
+        if path_type == 0 or path_type == 1:
+            return basename(xpath)
+        elif path_type == 2:
             if not hasattr(self, '_external_libs'):
                 self._index_external_libpaths()
             for libpath in self._external_libkeys:
-                if fpath.startswith(libpath):
+                if xpath.startswith(libpath):
                     return '[{}]/{}'.format(
                         self._external_libs[libpath],
-                        basename(fpath)
+                        basename(xpath)
                     )
-            return '[unknown]/{}'.format(basename(fpath))
+            return '[unknown]/{}'.format(basename(xpath))
+        else:
+            return '[unknown {}]'.format(xpath)
 
 
 path_helper = PathHelper()
