@@ -43,6 +43,7 @@ class T:  # Typehint
         RenderableType, T1.MessageStruct, Traceback,
         t.Type[_NoMessage], _RawArgs
     ]
+    Context = t.Iterator
     FlushScheme = int
     #   0: no flush
     #   1: instant flush
@@ -77,8 +78,18 @@ class MainThreadLogger:
     def config(self) -> dict:
         return self._config.to_dict()
     
+    # -------------------------------------------------------------------------
+    # context manager
+    
+    # noinspection PyProtectedMember
     @contextmanager
-    def elevate_caller_stack(self) -> t.Iterator:
+    def counting(self) -> T.Context:
+        self._analyser._counter.reset_simple_count()
+        yield
+        self._analyser._counter.reset_simple_count()
+    
+    @contextmanager
+    def elevate_caller_stack(self) -> T.Context:
         self._misc['caller_layer_offset'] += 1
         yield
         self._misc['caller_layer_offset'] -= 1
