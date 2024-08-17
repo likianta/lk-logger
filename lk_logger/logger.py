@@ -1,4 +1,5 @@
 import atexit
+import builtins
 import typing as t
 from collections import deque
 from contextlib import contextmanager
@@ -93,6 +94,13 @@ class MainThreadLogger:
         self._misc['caller_layer_offset'] += 1
         yield
         self._misc['caller_layer_offset'] -= 1
+    
+    @contextmanager
+    def mute(self) -> T.Context:
+        _backup = builtins.print
+        builtins.print = lambda *_, **__: None
+        yield
+        builtins.print = _backup
     
     # -------------------------------------------------------------------------
     
