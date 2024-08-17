@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from inspect import currentframe
 from threading import Thread
 from time import sleep
+from time import time
 
 from rich.console import RenderableType
 from rich.traceback import Traceback
@@ -59,9 +60,9 @@ class T:  # Typehint
 class MainThreadLogger:
     
     def __init__(self) -> None:
-        self._analyser = MarkupAnalyser()
         self._cache = LoggingCache()
         self._config = LoggingConfig()
+        self._markup_analyzer = MarkupAnalyser()
         self._misc = {
             'caller_layer_offset': 0
         }
@@ -85,9 +86,9 @@ class MainThreadLogger:
     # noinspection PyProtectedMember
     @contextmanager
     def counting(self) -> T.Context:
-        self._analyser._counter.reset_simple_count()
+        self._markup_analyzer._counter.reset_simple_count()
         yield
-        self._analyser._counter.reset_simple_count()
+        self._markup_analyzer._counter.reset_simple_count()
     
     @contextmanager
     def elevate_caller_stack(self) -> T.Context:
@@ -101,6 +102,11 @@ class MainThreadLogger:
         builtins.print = lambda *_, **__: None
         yield
         builtins.print = _backup
+    
+    @contextmanager
+    def timing(self) -> T.Context:
+        self._markup_analyzer._simple_time = time()
+        yield
     
     # -------------------------------------------------------------------------
     
@@ -167,14 +173,16 @@ class MainThreadLogger:
     ) -> t.Tuple[T.ComposedMessage, T.FlushScheme]:
         args, markup_pos, markup = \
             self._separate_markup_from_arguments(frame_info.id, args)
-        marks = self._analyser.extract(markup)
+        marks = self._markup_analyzer.extract(markup)
         if 'p' in marks:
             if self._misc['caller_layer_offset']:
                 marks['p'] += self._misc['caller_layer_offset']
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
         if marks['p']: frame_info = frame_info.get_parent(marks['p'])
-        marks_meaning = self._analyser.analyze(marks, frame_info=frame_info)
+        marks_meaning = self._markup_analyzer.analyze(
+            marks, frame_info=frame_info
+        )
         del marks
         
         flush_scheme: T.FlushScheme = 0
@@ -304,7 +312,7 @@ class MainThreadLogger:
                 0 not exists, 1 first place, -1 last place.
         """
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
-            is_markup = self._analyser.is_valid_markup
+            is_markup = self._markup_analyzer.is_valid_markup
             if (
                 len(args) > 0 and
                 isinstance(args[0], str) and

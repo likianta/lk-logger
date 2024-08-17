@@ -1,3 +1,6 @@
+from random import randint
+from time import sleep
+
 from argsense import cli
 
 from lk_logger import logger
@@ -23,6 +26,15 @@ def counting() -> None:
             print(':i', 'one')
             print(':i', 'two')
             print(':i', 'three')
+
+
+@cli.cmd()
+def timing() -> None:
+    for _ in range(2):
+        with logger.timing():
+            sleep(randint(100, 1000) / 1000)
+            print(':t', 'done')
+        sleep(1)
 
 
 if __name__ == '__main__':
