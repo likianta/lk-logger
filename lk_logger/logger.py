@@ -45,7 +45,6 @@ class T:  # Typehint
         RenderableType, T1.MessageStruct, Traceback,
         t.Type[_NoMessage], _RawArgs
     ]
-    Context = t.Iterator
     FlushScheme = int
     #   0: no flush
     #   1: instant flush
@@ -62,10 +61,12 @@ class MainThreadLogger:
     def __init__(self) -> None:
         self._cache = LoggingCache()
         self._config = LoggingConfig()
-        self._markup_analyzer = MarkupAnalyser()
-        self._misc = {
-            'caller_layer_offset': 0
+        self._control = {
+            'caller_layer_offset': 0,
+            'stash_outputs': False,
         }
+        self._markup_analyzer = MarkupAnalyser()
+        self._message_queue = deque()
     
     def configure(self, clear_preset: bool = False, **kwargs) -> None:
         self._cache.clear_cache()
@@ -85,26 +86,36 @@ class MainThreadLogger:
     
     # noinspection PyProtectedMember
     @contextmanager
-    def counting(self) -> T.Context:
+    def counting(self) -> t.ContextManager:
         self._markup_analyzer._counter.reset_simple_count()
         yield
         self._markup_analyzer._counter.reset_simple_count()
     
     @contextmanager
-    def elevate_caller_stack(self) -> T.Context:
-        self._misc['caller_layer_offset'] += 1
+    def delay(self) -> t.ContextManager:
+        self._control['stash_outputs'] = True
         yield
-        self._misc['caller_layer_offset'] -= 1
+        if self._message_queue:
+            for (msg, is_raw, kwargs) in self._message_queue:
+                self._print(msg, is_raw, **kwargs)
+        self._message_queue.clear()
+        self._control['stash_outputs'] = False
+
+    @contextmanager
+    def elevate_caller_stack(self) -> t.ContextManager:
+        self._control['caller_layer_offset'] += 1
+        yield
+        self._control['caller_layer_offset'] -= 1
     
     @contextmanager
-    def mute(self) -> T.Context:
+    def mute(self) -> t.ContextManager:
         _backup = builtins.print
         builtins.print = lambda *_, **__: None
         yield
         builtins.print = _backup
     
     @contextmanager
-    def timing(self) -> T.Context:
+    def timing(self) -> t.ContextManager:
         self._markup_analyzer._simple_time = time()
         yield
     
@@ -132,7 +143,10 @@ class MainThreadLogger:
         is_raw = isinstance(msg, _RawArgs)
         # dprint(msg)
         
-        self._print(msg, _is_raw=is_raw, **kwargs)
+        if self._control['stash_outputs']:
+            self._message_queue.append((msg, is_raw, kwargs))
+        else:
+            self._print(msg, _is_raw=is_raw, **kwargs)
     
     def _print(
         self, msg: T.ComposedMessage, _is_raw: bool = False, **kwargs
@@ -175,8 +189,8 @@ class MainThreadLogger:
             self._separate_markup_from_arguments(frame_info.id, args)
         marks = self._markup_analyzer.extract(markup)
         if 'p' in marks:
-            if self._misc['caller_layer_offset']:
-                marks['p'] += self._misc['caller_layer_offset']
+            if self._control['caller_layer_offset']:
+                marks['p'] += self._control['caller_layer_offset']
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
         if marks['p']: frame_info = frame_info.get_parent(marks['p'])
