@@ -14,6 +14,7 @@ from .printer import bprint
 from .printer import parallel_printing
 from .progress import spinner
 from .progress import track
+from .screenshot import save_error_to_image
 
 
 def _init() -> None:
