@@ -10,6 +10,33 @@ from .console import console
 from .message_builder import builder
 
 
+# ref: misc/compose_terminal_theme.py
+CATPPUCCIN_MACCHIATO_THEME = rich.terminal_theme.TerminalTheme(
+    (36, 39, 58),
+    (202, 211, 245),
+    [
+        (73, 77, 100),
+        (237, 135, 150),
+        (166, 218, 149),
+        (238, 212, 159),
+        (138, 173, 244),
+        (245, 189, 230),
+        (139, 213, 202),
+        (184, 192, 224),
+    ],
+    [
+        (91, 96, 120),
+        (237, 135, 150),
+        (166, 218, 149),
+        (238, 212, 159),
+        (138, 173, 244),
+        (245, 189, 230),
+        (139, 213, 202),
+        (165, 173, 203),
+    ],
+)
+
+
 def save_error_to_image(
     error: BaseException, path: str, show_locals: bool = True
 ) -> str:
@@ -25,23 +52,27 @@ def save_error_to_image(
     path_tmp = '__lk_logger_temp.html' if path.endswith('.png') else ''
     path_out = path_png or path_htm or path_svg or path_txt
     
-    traceback = builder.compose_exception(error, show_locals)
+    bak = console.width
+    console.width = 120
     console.record = True
     # temp redirect stdout to DEVNULL
     with redirect_stdout(open(os.devnull, 'w')):
+        traceback = builder.compose_exception(error, show_locals)
         console.print(traceback, soft_wrap=False)
         # console.print(rich.align.Align(traceback, align='center'))
     if path_htm:
-        console.save_html(path_htm, theme=rich.terminal_theme.MONOKAI)
+        # console.save_html(path_htm, theme=rich.terminal_theme.MONOKAI)
+        console.save_html(path_htm, theme=CATPPUCCIN_MACCHIATO_THEME)
         _fix_font_face(path_htm)
     elif path_svg:
         console.save_svg(path_svg, title='Error Stack Trace')
     elif path_txt:
         console.save_text(path_txt)
     else:
-        console.save_html(path_tmp, theme=rich.terminal_theme.MONOKAI)
+        console.save_html(path_tmp, theme=CATPPUCCIN_MACCHIATO_THEME)
         _fix_font_face(path_tmp)
     console.record = False
+    console.width = bak
     
     if not path_png:
         print('[green dim]the error stack image is saved to "{}"[/]'
@@ -64,7 +95,7 @@ def save_error_to_image(
     # workaround: html2image can only generate result in the current working
     # directory. we should move the result to the target path.
     size_ch = _get_dimension_info(traceback)  # character size
-    size_px = (round(size_ch[0] * 8.2), round(size_ch[1] * 17.5))
+    size_px = (round(size_ch[0] * 8.1), round(size_ch[1] * 17.4))
     #   character size in pixel
     print(size_ch, size_px, ':v')
     with redirect_stdout(open(os.devnull, 'w')):  # FIXME: mute doesn't work
@@ -99,11 +130,15 @@ def _fix_font_face(html_file: str) -> None:
 
 
 def _get_dimension_info(traceback: Traceback) -> t.Tuple[int, int]:
+    bak = console.width
+    console.width = 120
     console.record = True
     with redirect_stdout(open(os.devnull, 'w')):
         console.print(traceback, soft_wrap=False)
     console.save_text('__lk_logger_temp.txt')
     console.record = False
+    console.width = bak
+    
     with open('__lk_logger_temp.txt', 'r') as f:
         lines = f.readlines()
         width = max(len(line) for line in lines)
