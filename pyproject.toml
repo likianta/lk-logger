@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "6.0.0a16"
+version = "6.0.0a18"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source map and varnames."
 readme = "README.md"
@@ -12,18 +12,21 @@ python = "^3.8"
 rich = "^13.8"
 
 # --- svg util ---
-html2image = { version = "^2.0.4", optional = true }
+# html2image = { version = "^2.0.4", optional = true }
 # pycairo = { version = "*", python = "^3.9", optional = true }
+selenium = { version = "*", optional = true }
 # svg-ultralight = { version = "*", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 argsense = "^0.5.8"
-html2image = "*"
+# html2image = "*"
 ipython = "*"  # examples/start_ipython.py
 lk-utils = "*"  # misc/compose_terminal_theme.py
+selenium = "*"
 
 [tool.poetry.extras]
-svg = ["html2image"]
+screenshot = ["selenium"]
+# svg = ["html2image"]
 
 [[tool.poetry.source]]
 name = "tsinghua"

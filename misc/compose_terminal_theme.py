@@ -41,12 +41,12 @@ def main(file: str) -> None:
             # fs.barename(file),
             str(new_scheme['background']),
             str(new_scheme['foreground']),
-            '    [\n{}\n    ]'.format(join(
+            '[\n{}\n    ]'.format(join(
                 (f'{x},' for x in new_scheme['normal']),
                 indent_=8,
                 lstrip=False,
             )),
-            '    [\n{}\n    ]'.format(join(
+            '[\n{}\n    ]'.format(join(
                 (f'{x},' for x in new_scheme['bright']),
                 indent_=8,
                 lstrip=False,

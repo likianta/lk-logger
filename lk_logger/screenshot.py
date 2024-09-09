@@ -1,14 +1,15 @@
 import os
+import shutil
 import typing as t
 from contextlib import redirect_stdout
-from shutil import move
+from textwrap import dedent
 
 import rich.terminal_theme
 from rich.traceback import Traceback
 
 from .console import console
 from .message_builder import builder
-
+from .progress import spinner
 
 # ref: misc/compose_terminal_theme.py
 CATPPUCCIN_MACCHIATO_THEME = rich.terminal_theme.TerminalTheme(
@@ -74,40 +75,54 @@ def save_error_to_image(
     console.record = False
     console.width = bak
     
-    if not path_png:
+    if path_png:
+        with spinner('generating screenshot...'):
+            _convert_html_to_png(path_tmp, path_png)
+        os.remove(path_tmp)
+        print('[green dim]the error stack image is saved to "{}"[/]'
+              .format(path_png), ':rp')
+        return path_png
+    else:
         print('[green dim]the error stack image is saved to "{}"[/]'
               .format(path_out), ':rp')
         return path_out
+
+
+def _convert_html_to_png(file_i: str, file_o: str) -> None:
+    """
+    if you encounter ImportError, remember to install selenium.
+    FIXME: this is very slow (takes 7 ~ 30 seconds), we need to find a better
+        way.
+    """
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
     
-    # convert `path_tmp` to `path_png`
-    try:
-        from html2image import Html2Image
-    except ImportError:
-        path_out = '{}.{}'.format(path_out[:-4], path_tmp.rsplit('.', 1)[1])
-        print(
-            '"html2image" is not installed, cannot generate png file '
-            '(fallback to "{}")'.format(path_out),
-            ':pv4'
-        )
-        _move_and_overwrite(path_tmp, path_out)
-        return path_out
+    opt = Options()
+    opt.add_argument('--disable-dev-shm-usage')
+    opt.add_argument('--disable-extensions')
+    opt.add_argument('--disable-gpu')
+    opt.add_argument('--headless=new')
+    opt.add_argument('--hide-scrollbars')
+    opt.add_argument('--no-sandbox')
+    opt.add_argument('--log-level=3')
+    # opt.add_argument('--window-size=800,800')
+    opt.add_experimental_option('excludeSwitches', ['enable-logging'])
+    opt.set_capability('browserVersion', '117')
     
-    # workaround: html2image can only generate result in the current working
-    # directory. we should move the result to the target path.
-    size_ch = _get_dimension_info(traceback)  # character size
-    size_px = (round(size_ch[0] * 8.1), round(size_ch[1] * 17.4))
-    #   character size in pixel
-    print(size_ch, size_px, ':v')
-    with redirect_stdout(open(os.devnull, 'w')):  # FIXME: mute doesn't work
-        Html2Image().screenshot(
-            html_file=path_tmp, save_as='__lk_logger_temp.png', size=size_px
-        )
-    _move_and_overwrite('__lk_logger_temp.png', path_png)
-    os.remove(path_tmp)
+    driver = webdriver.Chrome(options=opt, keep_alive=False)
     
-    print('[green dim]the error stack image is saved to "{}"[/]'
-          .format(path_png), ':rp')
-    return path_png
+    driver.get('file:///{}'.format(os.path.abspath(file_i).replace('\\', '/')))
+    from time import sleep
+    sleep(0.5)
+    
+    element = driver.find_element(value='my-code')
+    print((element.size['width'], element.size['height']), ':vs')
+    driver.set_window_size(
+        element.size['width'] + 60, element.size['height'] + 100
+    )
+    element.screenshot(file_o)
+    driver.close()
+    driver.quit()
 
 
 def _fix_font_face(html_file: str) -> None:
@@ -118,10 +133,18 @@ def _fix_font_face(html_file: str) -> None:
     """
     with open(html_file, 'r') as f:
         content = f.read()
-    old = '''<pre style="font-family:Menlo,'DejaVu Sans Mono',consolas''' + \
-          ''','Courier New',monospace">'''
-    # new = '''<pre style="font-family:monospace">'''
-    new = '''<pre style="font-family: 'Agave Nerd Font Regular'">'''
+    old = dedent(
+        '''
+        <pre style="font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier \\
+        New',monospace">
+        '''
+    ).strip().replace(' \\\n', ' ')
+    new = dedent(
+        '''
+        <pre style="font-family: 'Cascadia Mono', 'Agave Nerd Font Regular', \\
+        monospace; padding: 12px;" id="my-code">
+        '''
+    ).strip().replace(' \\\n', ' ')
     assert old in content, \
         'please check the <pre> tag in this file: ' + html_file
     content = content.replace(old, new, 1)
@@ -150,4 +173,4 @@ def _get_dimension_info(traceback: Traceback) -> t.Tuple[int, int]:
 def _move_and_overwrite(src: str, dst: str) -> None:
     if os.path.exists(dst):
         os.remove(dst)
-    move(src, dst)
+    shutil.move(src, dst)

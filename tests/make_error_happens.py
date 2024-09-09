@@ -1,10 +1,8 @@
-import argsense
 from argsense import cli
 
 import lk_logger
 
 lk_logger.setup()
-print(argsense.__version__)
 
 
 @cli.cmd()

@@ -2,7 +2,7 @@ from rich.terminal_theme import TerminalTheme
 theme = TerminalTheme(
     (36, 39, 58),
     (202, 211, 245),
-        [
+    [
         (73, 77, 100),
         (237, 135, 150),
         (166, 218, 149),
@@ -12,7 +12,7 @@ theme = TerminalTheme(
         (139, 213, 202),
         (184, 192, 224),
     ],
-        [
+    [
         (91, 96, 120),
         (237, 135, 150),
         (166, 218, 149),
