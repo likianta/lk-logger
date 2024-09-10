@@ -9,7 +9,6 @@ from rich.traceback import Traceback
 
 from .console import console
 from .message_builder import builder
-from .progress import spinner
 
 # ref: misc/compose_terminal_theme.py
 CATPPUCCIN_MACCHIATO_THEME = rich.terminal_theme.TerminalTheme(
@@ -43,14 +42,18 @@ def save_error_to_image(
 ) -> str:
     """
     test case: tests/make_error_happens.py : save_error_to_image
+    params:
+        path:
+            support '.html', '.png', '.svg', '.txt'.
+            suggest '.html', it has the smallest size and color highlights.
     """
     assert path.endswith(('.html', '.png', '.svg', '.txt')), path
     path_htm = path if path.endswith('.html') else ''
     path_png = path if path.endswith('.png') else ''
     path_svg = path if path.endswith('.svg') else ''
     path_txt = path if path.endswith('.txt') else ''
-    # path_tmp = '' if path.endswith('.png') else '__lk_logger_temp.svg'
-    path_tmp = '__lk_logger_temp.html' if path.endswith('.png') else ''
+    path_tmp = '__lk_logger_temp.svg' if path.endswith('.png') else ''
+    # path_tmp = '__lk_logger_temp.html' if path.endswith('.png') else ''
     path_out = path_png or path_htm or path_svg or path_txt
     
     bak = console.width
@@ -70,14 +73,16 @@ def save_error_to_image(
     elif path_txt:
         console.save_text(path_txt)
     else:
-        console.save_html(path_tmp, theme=CATPPUCCIN_MACCHIATO_THEME)
-        _fix_font_face(path_tmp)
+        console.save_svg(path_tmp, title='Error Stack Trace')
+        # console.save_html(path_tmp, theme=CATPPUCCIN_MACCHIATO_THEME)
+        # _fix_font_face(path_tmp)
     console.record = False
     console.width = bak
     
     if path_png:
-        with spinner('generating screenshot...'):
-            _convert_html_to_png(path_tmp, path_png)
+        # with spinner('generating screenshot...'):
+        #     _convert_html_to_png(path_tmp, path_png)
+        _convert_svg_to_png(path_tmp, path_png)
         os.remove(path_tmp)
         print('[green dim]the error stack image is saved to "{}"[/]'
               .format(path_png), ':rp')
@@ -88,13 +93,17 @@ def save_error_to_image(
         return path_out
 
 
+# DELETE
 def _convert_html_to_png(file_i: str, file_o: str) -> None:
     """
+    this function requires selenium and chrome browser.
     if you encounter ImportError, remember to install selenium.
     FIXME: this is very slow (takes 7 ~ 30 seconds), we need to find a better
         way.
     """
+    # noinspection PyUnresolvedReferences
     from selenium import webdriver
+    # noinspection PyUnresolvedReferences
     from selenium.webdriver.chrome.options import Options
     
     opt = Options()
@@ -125,6 +134,18 @@ def _convert_html_to_png(file_i: str, file_o: str) -> None:
     driver.quit()
 
 
+def _convert_svg_to_png(file_i: str, file_o: str) -> None:
+    """
+    this function requires svg-ultralight and [inkspace](
+    https://inkscape.org/release/inkscape-1.3.2/windows/64-bit/).
+    the inkspace package is recommended 7z format.
+    add inkspace executable to "INKSPACE_EXE" environment.
+    """
+    import svg_ultralight
+    inkspace = os.environ['INKSPACE_EXE']
+    svg_ultralight.write_png_from_svg(inkspace, file_i, file_o)
+
+
 def _fix_font_face(html_file: str) -> None:
     """
     the default font-family in <pre> tag (<pre style="font-family:Menlo,'DejaVu
@@ -152,6 +173,7 @@ def _fix_font_face(html_file: str) -> None:
         f.write(content)
 
 
+# DELETE
 def _get_dimension_info(traceback: Traceback) -> t.Tuple[int, int]:
     bak = console.width
     console.width = 120
