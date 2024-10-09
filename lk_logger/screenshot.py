@@ -163,7 +163,8 @@ def _fix_font_face(html_file: str) -> None:
     new = dedent(
         '''
         <pre style="font-family: 'Cascadia Mono', 'Agave Nerd Font Regular', \\
-        monospace; padding: 12px;" id="my-code">
+        Menlo, 'DejaVu Sans Mono', consolas, 'Courier New', monospace; \\
+        padding: 12px;" id="my-code">
         '''
     ).strip().replace(' \\\n', ' ')
     assert old in content, \

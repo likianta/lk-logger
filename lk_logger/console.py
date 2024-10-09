@@ -14,6 +14,7 @@ class Console(BaseConsole):
             legacy_windows=(
                 False if (
                     os.name == 'nt' and
+                    os.getenv('LK_LOGGER_MODERN_WINDOW', '1') == '1' and
                     os.getenv('LK_LOGGER_FORCE_COLOR', '0') == '1'
                 ) else None
             ),
