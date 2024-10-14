@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "6.0.0a19"
+version = "6.0.0a22"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source map and varnames."
 readme = "README.md"
@@ -26,8 +26,7 @@ lk-utils = "*"  # misc/compose_terminal_theme.py
 svg-ultralight = "*"
 
 [tool.poetry.extras]
-# screenshot = ["selenium"]
-svg = ["svg-ultralight"]
+ext = ["svg-ultralight"]
 
 [[tool.poetry.source]]
 name = "tsinghua"
