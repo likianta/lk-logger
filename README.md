@@ -378,16 +378,21 @@ It prints weekdays with a numeric prefix.
   p4: and so on...
 * r0: rich style
   r1: rich object (rich.table.Table, rich.panel.Panel, etc.)
+  r2: auto detect rich format (for a limit set of types)
 * s0: short / simple / single line
   s1: builtin-like print (remains markup features)
   s2: builtin print
   t0: reset timer
 * t1: stop timer and show statistics
   t2: temporary timer
-  v0: no obvious verbosity
-* v1: debug
-  v2: info
-  v3: warning
-  v4: error
-  v5: critical
+* v0: trace / debug / hint (bright black)
+  v1: info (cyan)
+  v2: strong info (magenta)
+  v3: weak success (green dim)
+  v4: success (green)
+  v5: weak warning (yellow dim)
+  v6: warning (yellow)
+  v7: weak error / failure (red dim)
+  v8: error / failure (red)
+  v9: fatal error (white on red with blinking)
 ```

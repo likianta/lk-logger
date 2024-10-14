@@ -1,4 +1,5 @@
 import re
+import time
 import typing as t
 from dataclasses import dataclass
 from functools import partial
@@ -6,8 +7,8 @@ from io import StringIO
 from math import ceil
 from textwrap import dedent
 from textwrap import indent
-from time import localtime
-from time import strftime as _strftime
+# from time import localtime
+# from time import strftime as _strftime
 from traceback import format_exception
 from types import GeneratorType
 
@@ -25,7 +26,7 @@ from rich.traceback import Traceback
 
 from .console import console
 
-strftime = lambda t: (t and _strftime('%H:%M:%S', localtime(t))) or ''
+_strftime = lambda t: (t and time.strftime('%H:%M:%S', time.localtime(t))) or ''
 
 
 @dataclass
@@ -35,7 +36,7 @@ class MarkupText:
 
 
 class T:
-    Level = t.Literal['trace', 'debug', 'info', 'warning', 'error', 'fatal']
+    Level = int
     RichText = Text
     Traceback = Traceback
 
@@ -121,27 +122,34 @@ class MessageFormatter:
         return Text(f'[{idx}]', 'grey50' if idx == 0 else 'red')
     
     _level_2_color = {
-        'trace': '',
-        'debug': 'bright_black',
-        'info' : 'blue',
-        'warn' : 'yellow',
-        'error': 'red',
-        'fatal': 'bold #ffffff on red',
+        0: 'bright_black',
+        1: 'blue',
+        2: 'magenta',
+        3: 'green dim',
+        4: 'green',
+        5: 'yellow dim',
+        6: 'yellow',
+        7: 'red dim',
+        8: 'red',
+        9: 'bold #ffffff on red',
     }
-    _level_2_label = {
-        'trace': '',
-        'debug': '[DEBUG]',
-        'info' : '[ INFO]',
-        'warn' : '[ WARN]',
-        'error': '[ERROR]',
-        'fatal': '[FATAL]',
+    _level_2_tag = {
+        0: '[DEBUG]',
+        1: '[ INFO]',
+        2: '[ INFO]',
+        3: '[ INFO]',
+        4: '[ INFO]',
+        5: '[ WARN]',
+        6: '[ WARN]',
+        7: '[ERROR]',
+        8: '[ERROR]',
+        9: '[FATAL]',
     }
     
     def fmt_level(self, level: T.Level) -> t.Optional[T.RichText]:
-        if level == 'trace': return None
-        label = self._level_2_label[level]
         color = self._level_2_color[level]
-        return Text(label, color)
+        tag = self._level_2_tag[level]
+        return Text(tag, color)
     
     def fmt_message(
         self,
@@ -228,16 +236,13 @@ class MessageFormatter:
         
         # ---------------------------------------------------------------------
         
-        if overall_style:
+        if overall_style is None:
+            # parse_text = Text.from_markup
+            parse_text = partial(Text.from_markup, style='default')
+        else:
             parse_text = partial(
                 Text.from_markup,
                 style=self._level_2_color[overall_style]
-            )
-        else:
-            # parse_text = Text.from_markup
-            parse_text = partial(
-                Text.from_markup,
-                style='default'
             )
         
         if expand_level:
@@ -310,7 +315,7 @@ class MessageFormatter:
     @staticmethod
     def fmt_time(start: float, end: float = None, color_s='green') -> str:
         if end is None:
-            return '[{}]\\[{}][/]'.format(color_s, strftime(start))
+            return '[{}]\\[{}][/]'.format(color_s, _strftime(start))
         
         diff = end - start  # float >= 0
         
@@ -345,8 +350,8 @@ class MessageFormatter:
             '[grey50] -> [/]'
             '[{color_e}]\\[{end}][/] '
             '[{color_d}]({diff:>5})[/]'.format(
-                start=strftime(start),
-                end=strftime(end),
+                start=_strftime(start),
+                end=_strftime(end),
                 diff=diff,
                 color_s=color_s,
                 color_e=color_e,
@@ -373,7 +378,7 @@ class MessageFormatter:
             rich.print(rich_obj, file=s)
             s.seek(0)
             return s.read()
-    
+        
         return to_str(Inspect(obj))
     
     @staticmethod

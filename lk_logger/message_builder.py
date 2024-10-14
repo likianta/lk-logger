@@ -126,21 +126,9 @@ class MessageBuilder:
         show_source: bool = True,
         show_funcname: bool = True,
         show_varnames: bool = False,
+        show_verbosity_tag: bool = False,
         sourcemap_alignment: t.Literal['left', 'right'] = 'left',
     ) -> T.MessageStruct:
-        show_source = (
-            show_source and
-            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
-        )
-        show_funcname = (
-            show_funcname and
-            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
-        )
-        show_varnames = (
-            show_varnames and
-            MarkMeaning.MODERATE_PRUNE not in marks_meaning and
-            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
-        )
         has_any_prune_scheme = (
             MarkMeaning.MODERATE_PRUNE in marks_meaning or
             MarkMeaning.AGRESSIVE_PRUNE in marks_meaning
@@ -207,12 +195,11 @@ class MessageBuilder:
         
         # 3. verbosity
         if MarkMeaning.VERBOSITY in marks_meaning:
-            if not has_any_prune_scheme:
-                if x := formatter.fmt_level(
-                    marks_meaning[MarkMeaning.VERBOSITY],
-                ):
-                    body.append_text(x)
-                    body.append(' ')
+            if show_verbosity_tag:
+                body.append_text(formatter.fmt_level(
+                    marks_meaning[MarkMeaning.VERBOSITY]
+                ))
+                body.append(' ')
         
         # 4. index
         if MarkMeaning.RESET_INDEX in marks_meaning:

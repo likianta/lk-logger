@@ -271,14 +271,19 @@ class MainThreadLogger:
         
         show_source = (
             self._config.show_source and
-            (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         show_funcname = (
             self._config.show_funcname and
-            (MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning)
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
         show_varnames = (
             self._config.show_varnames and
+            MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+            MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+        )
+        show_verbosity_tag = (
+            self._config.show_verbosity_tag and
             MarkMeaning.MODERATE_PRUNE not in marks_meaning and
             MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
         )
@@ -311,10 +316,13 @@ class MainThreadLogger:
         self._cache.store_info(frame_info.id, markup, info)
         
         return msg_builder.compose(
-            args, marks_meaning, info,
+            args,
+            marks_meaning,
+            info,
             show_source=show_source,
             show_funcname=show_funcname,
             show_varnames=show_varnames,
+            show_verbosity_tag=show_verbosity_tag,
             sourcemap_alignment=self._config.sourcemap_alignment,
         ), flush_scheme
     

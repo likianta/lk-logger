@@ -121,12 +121,16 @@ class MarkupAnalyser:
               t0: reset timer
             * t1: stop timer and show statistics
               t2: temporary timer
-              v0: no obvious verbosity
-            * v1: debug
-              v2: info
-              v3: warning
-              v4: error
-              v5: critical
+            * v0: trace / debug / hint (bright black)
+              v1: info (cyan)
+              v2: strong info (magenta)
+              v3: weak success (green dim)
+              v4: success (green)
+              v5: weak warning (yellow dim)
+              v6: warning (yellow)
+              v7: weak error / failure (red dim)
+              v8: error / failure (red)
+              v9: fatal error (white on red with blinking)
         
         return:
             dict[literal mark, int level]
@@ -141,7 +145,7 @@ class MarkupAnalyser:
             'r': 0,
             's': 0,
             't': 1,  # `:t0` is 'reset timer'
-            'v': 1,  # `:v0` is 'no obvious verbosity'
+            'v': 0,
         }
         out = defaultdict(lambda: -1)
         for m in (self._mark_pattern_1.findall(markup) or ()):
@@ -244,9 +248,8 @@ class MarkupAnalyser:
             else:
                 raise E.UnsupportedMarkup(f':t{marks["t"]}')
         
-        if marks['v'] >= 1:
-            levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
-            out[MarkMeaning.VERBOSITY] = levels[marks['v']]
+        if marks['v'] >= 0:
+            out[MarkMeaning.VERBOSITY] = marks['v']
         
         return out
 

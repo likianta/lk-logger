@@ -36,8 +36,11 @@ class LoggingConfig:
     #       logger.log(a, b, a + b)
     #       # enabled: 'main.py:11  >>  a = 1; b = 2; a + b = 3'
     #       # disabled: 'main.py:11  >>  1, 2, 3'
+    show_verbosity_tag: bool
+    #   example: print(':v8', 'some error happens')
+    #   enabled: (red text) '[ERROR] some error happens'
+    #   disabled: (red text) 'some error happens'
     sourcemap_alignment: t.Literal['left', 'right']
-    v2_meaning: t.Literal['info', 'success']  # TODO: not used.
     
     _preset_conf = {
         'async_'                 : False,  # TODO
@@ -50,8 +53,8 @@ class LoggingConfig:
         'show_source'            : True,
         'show_traceback_locals'  : False,
         'show_varnames'          : False,
+        'show_verbosity_tag'     : False,
         'sourcemap_alignment'    : 'left',
-        'v2_meaning'             : 'info',
     }
     
     def __init__(self, **kwargs) -> None:
