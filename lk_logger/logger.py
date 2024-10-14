@@ -83,6 +83,7 @@ class MainThreadLogger:
     
     # -------------------------------------------------------------------------
     # context manager
+    # DELETE: turn to `./control2.py`.
     
     # noinspection PyProtectedMember
     @contextmanager
