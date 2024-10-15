@@ -122,8 +122,8 @@ class MarkupAnalyser:
             * t1: stop timer and show statistics
               t2: temporary timer
             * v0: trace / debug / hint (bright black)
-              v1: info (cyan)
-              v2: strong info (magenta)
+              v1: negative info (magenta)
+              v2: positive info (blue)
               v3: weak success (green dim)
               v4: success (green)
               v5: weak warning (yellow dim)
@@ -131,6 +131,12 @@ class MarkupAnalyser:
               v7: weak error / failure (red dim)
               v8: error / failure (red)
               v9: fatal error (white on red with blinking)
+        
+        trick to remember `v*`:
+            v2, v4, v6, v8 are for primary info, success, warning, error.
+            v1, v3, v5, v7 are for secondary use cases.
+            see also `./message_formatter.py : MessageFormatter
+            : _level_2_color`
         
         return:
             dict[literal mark, int level]

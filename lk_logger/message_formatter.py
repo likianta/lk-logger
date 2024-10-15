@@ -123,8 +123,8 @@ class MessageFormatter:
     
     _level_2_color = {
         0: 'bright_black',
-        1: 'blue',
-        2: 'magenta',
+        1: 'magenta',
+        2: 'blue',
         3: 'green dim',
         4: 'green',
         5: 'yellow dim',
