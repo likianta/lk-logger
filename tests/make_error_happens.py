@@ -29,8 +29,8 @@ def save_error_to_image(ext: str = 'png') -> None:
     try:
         raise_an_error()
     except ZeroDivisionError as e:
-        # lk_logger.save_error_to_image(e, f'tests/_error.{ext}')
-        lk_logger.save_error_to_image(e)
+        # lk_logger.save_error(e, f'tests/_error.{ext}')
+        lk_logger.save_error(e)
 
 
 @cli.cmd('raise-an-error-2')

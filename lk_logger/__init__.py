@@ -19,7 +19,7 @@ from .printer import bprint
 from .printer import parallel_printing
 from .progress import spinner
 from .progress import track
-from .screenshot import save_error_to_image
+from .screenshot import save_error
 
 
 def _init() -> None:
@@ -28,20 +28,12 @@ def _init() -> None:
     
     setup(quiet=True)
     
-    def has_ipython() -> bool:
-        try:
-            __IPYTHON__  # noqa
-            return True
-        except NameError:
-            pass
-        try:
-            import IPython  # noqa
-            return True
-        except ImportError:
-            return False
-    
-    if has_ipython():
-        import IPython
+    try:
+        __IPYTHON__  # noqa
+    except NameError:
+        pass
+    else:
+        import IPython  # noqa
         pipeline.add(IPython, bprint, scope=True)
         # pipeline.add('[ipython]', bprint)
 

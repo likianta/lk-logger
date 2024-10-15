@@ -46,11 +46,11 @@ _output_dir = os.getenv(
 )
 
 
-def save_error_to_image(
+def save_error(
     error: BaseException, path: str = None, show_locals: bool = True
 ) -> str:
     """
-    test case: tests/make_error_happens.py : save_error_to_image
+    test case: tests/make_error_happens.py : save_error
     params:
         path:
             support '.html', '.png', '.svg', '.txt'.
