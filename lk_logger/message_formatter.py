@@ -131,7 +131,7 @@ class MessageFormatter:
         6: 'yellow',
         7: 'red dim',
         8: 'red',
-        9: 'bold #ffffff on red',
+        9: 'bold white on red',
     }
     _level_2_tag = {
         0: '[DEBUG]',

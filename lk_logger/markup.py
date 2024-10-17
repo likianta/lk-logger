@@ -84,8 +84,6 @@ class MarkupAnalyser:
         self._counter = _Counter()
         self._simple_time = time()
         self._temp_time = time()
-        # TODO or DELETE: not used. see also `def extract : local_var levels`
-        self._levels = ('trace', 'debug', 'info', 'warn', 'error', 'fatal')
     
     def is_valid_markup(self, text: str) -> bool:
         return bool(self._mark_pattern_0.match(text))

@@ -97,12 +97,16 @@ print(':t', 'for now')
 # -----------------------------------------------------------------------------
 print(':dr', '`:v` is [yellow][u]V[/]erbosity[/]')
 
-print(':v0', 'this is a TRACE message')
-print(':v1', 'this is a DEBUG message')
-print(':v2', 'this is a INFO  message')
-print(':v3', 'this is a WARN  message')
-print(':v4', 'this is a ERROR message')
-print(':v5', 'this is a FATAL message')
+print(':v0', 'this is a  DEBUG            message')
+print(':v1', 'this is an INFO (negative)  message')
+print(':v2', 'this is an INFO (positive)  message')
+print(':v3', 'this is a  SUCCESS (dimmed) message')
+print(':v4', 'this is a  SUCCESS          message')
+print(':v5', 'this is a  WARNING (dimmed) message')
+print(':v6', 'this is a  WARNING          message')
+print(':v7', 'this is an ERROR (dimmed)   message')
+print(':v8', 'this is an ERROR            message')
+print(':v9', 'this is a  FATAL            message')
 
 a, b, c = 1, 2, 3
 print(':v', a, b, c)

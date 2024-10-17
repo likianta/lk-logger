@@ -213,10 +213,25 @@ class MainThreadLogger:
             cached_info = self._cache.get_cache(frame_info.id, markup)
             return msg_builder.compose(
                 args, marks_meaning, cached_info,
-                self._config.show_source,
-                self._config.show_funcname,
-                self._config.show_varnames,
-                self._config.sourcemap_alignment,
+                show_source=(
+                    self._config.show_source and
+                    MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+                ),
+                show_funcname=(
+                    self._config.show_funcname and
+                    MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+                ),
+                show_varnames=(
+                    self._config.show_varnames and
+                    MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+                    MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+                ),
+                show_verbosity_tag=(
+                    self._config.show_verbosity_tag and
+                    MarkMeaning.MODERATE_PRUNE not in marks_meaning and
+                    MarkMeaning.AGRESSIVE_PRUNE not in marks_meaning
+                ),
+                sourcemap_alignment=self._config.sourcemap_alignment,
             ), flush_scheme
         
         # ---------------------------------------------------------------------
