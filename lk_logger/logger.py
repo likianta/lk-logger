@@ -377,11 +377,10 @@ class MainThreadLogger:
             return args[:-1], markup_pos, args[-1]
 
 
-class SubThreadedLogger(MainThreadLogger):
-    # TODO: not enabled in v5.7.0
-    
+class SubThreadLogger(MainThreadLogger):
     def __init__(self) -> None:
         super().__init__()
+        self._config.async_ = True
         self._running = False
         self._message_queue = deque()
         atexit.register(self._stop_running)
@@ -390,14 +389,9 @@ class SubThreadedLogger(MainThreadLogger):
         self._thread.start()
     
     def _start_running(self) -> None:
-        
-        def consume() -> None:
-            msg: t.Union[str, tuple]
-            kwargs: dict
-            custom_print: t.Optional[t.Callable]
-            
-            for i in range(len(self._message_queue)):
-                if not self._message_queue: break
+        self._running = True
+        while self._running:
+            if self._message_queue:
                 msg, kwargs, custom_print = self._message_queue.popleft()
                 if custom_print:
                     # dprint(custom_print, msg, kwargs)
@@ -406,21 +400,30 @@ class SubThreadedLogger(MainThreadLogger):
                 else:
                     self._cprint(msg, **kwargs)
                     self._dprint(msg)
-        
-        self._running = True
-        while self._running:
-            if self._message_queue:
-                consume()
             else:
-                sleep(10E-3)
-        else:
-            consume()
+                sleep(1e-3)
     
     def _stop_running(self) -> None:
         if self._config.clear_unfinished_stream:
-            self._message_queue.clear()
+            skipped_count = len(self._message_queue)
+            if skipped_count:
+                self._message_queue.clear()
+        else:
+            while self._message_queue:
+                sleep(1e-3)
+            skipped_count = 0
+            
         self._running = False
         self._thread.join()
+        
+        # dbg_print(skipped_count)
+        if skipped_count:
+            self._config.async_ = False
+            print(
+                ':frs1',
+                f'[dim]lk-logger: process exit '
+                f'[red](... skipped {skipped_count} messages)[/][/]'
+            )
     
     # -------------------------------------------------------------------------
     
@@ -445,7 +448,7 @@ class SubThreadedLogger(MainThreadLogger):
                     self._dprint(msg)
         elif flush_scheme == 1:
             while self._message_queue:
-                sleep(10E-3)
+                sleep(1e-3)
             if _is_raw:
                 self._bprint(msg, **kwargs)
             else:
@@ -454,10 +457,7 @@ class SubThreadedLogger(MainThreadLogger):
         elif flush_scheme == 2:
             if skipped_count := len(self._message_queue):
                 self._message_queue.clear()
-                print(
-                    ':frp2',
-                    f'[red dim](... skipped {skipped_count} messages)[/]'
-                )
+                print(':fv7p2', f'(... skipped {skipped_count} messages)')
             if _is_raw:
                 self._bprint(msg, **kwargs)
             else:
@@ -473,4 +473,5 @@ class SubThreadedLogger(MainThreadLogger):
             raise ValueError(flush_scheme)
 
 
-logger = MainThreadLogger()
+# logger = MainThreadLogger()
+logger = SubThreadLogger()

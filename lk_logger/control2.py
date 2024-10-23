@@ -44,8 +44,10 @@ def mute() -> t.ContextManager:
 
 # noinspection PyProtectedMember
 @contextmanager
-def timing(left_message: str = None, /) -> t.ContextManager:
+def timing(sum_up: bool = False, exit_msg: str = None) -> t.ContextManager:
     logger._markup_analyzer._simple_time = time()
     yield
-    if left_message is not None:
-        print(':p2ts', left_message)
+    if exit_msg:
+        print(':p2ts', exit_msg)
+    elif sum_up:
+        print(':p2tsv', 'over')
