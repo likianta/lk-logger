@@ -8,10 +8,10 @@ from .util import pickle_dump
 from .util import pickle_load
 from ..frame_info import FrameInfo
 from ..markup import MarkMeaning
-from ..markup import MarkupAnalyser
+from ..markup import MarkupAnalyzer
 
 _CACHE_DIR = os.path.abspath(f'{__file__}/../__cachemap__')
-_markup_analyser = MarkupAnalyser()
+_markup_analyser = MarkupAnalyzer()
 _is_markup = _markup_analyser.is_valid_markup
 
 

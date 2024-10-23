@@ -8,7 +8,7 @@ from string import ascii_lowercase
 from time import time
 
 from .frame_info import FrameInfo
-from .printer import dbg_print
+from .printer import dbg_print  # noqa
 
 
 # noinspection PyArgumentList
@@ -70,7 +70,7 @@ class E:
         pass
 
 
-class MarkupAnalyser:
+class MarkupAnalyzer:
     """
     readme: prj:/docs/markup.zh.md
     """
@@ -313,3 +313,6 @@ class _Counter:
     def reset_simple_count(self) -> T.Counter.Index:
         self._simple_count = 0
         return 0
+
+
+markup_analyzer = MarkupAnalyzer()

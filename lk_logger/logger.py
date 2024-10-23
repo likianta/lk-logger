@@ -1,12 +1,9 @@
 import atexit
-import builtins
 import typing as t
 from collections import deque
-from contextlib import contextmanager
 from inspect import currentframe
 from threading import Thread
 from time import sleep
-from time import time
 
 from rich.console import RenderableType
 from rich.traceback import Traceback
@@ -16,7 +13,7 @@ from .config import LoggingConfig
 from .frame_info import FrameInfo
 from .frame_info import FrozenFrameInfo
 from .markup import MarkMeaning
-from .markup import MarkupAnalyser
+from .markup import markup_analyzer
 from .markup import T as T0
 from .message_builder import MessageStruct
 from .message_builder import T as T1
@@ -61,11 +58,7 @@ class MainThreadLogger:
     def __init__(self) -> None:
         self._cache = LoggingCache()
         self._config = LoggingConfig()
-        self._control = {
-            'caller_layer_offset': 0,
-            'stash_outputs': False,
-        }
-        self._markup_analyzer = MarkupAnalyser()
+        self._control = {'caller_layer_offset': 0, 'stash_outputs': False}
         self._message_queue = deque()
     
     def configure(self, clear_preset: bool = False, **kwargs) -> None:
@@ -82,51 +75,9 @@ class MainThreadLogger:
         return self._config.to_dict()
     
     # -------------------------------------------------------------------------
-    # context manager
-    # DELETE: turn to `./control2.py`.
-    
-    # noinspection PyProtectedMember
-    @contextmanager
-    def counting(self) -> t.ContextManager:
-        self._markup_analyzer._counter.reset_simple_count()
-        yield
-        self._markup_analyzer._counter.reset_simple_count()
-    
-    @contextmanager
-    def delay(self) -> t.ContextManager:
-        self._control['stash_outputs'] = True
-        yield
-        if self._message_queue:
-            for (msg, is_raw, kwargs) in self._message_queue:
-                self._print(msg, is_raw, **kwargs)
-        self._message_queue.clear()
-        self._control['stash_outputs'] = False
-
-    @contextmanager
-    def elevate_caller_stack(self) -> t.ContextManager:
-        self._control['caller_layer_offset'] += 1
-        yield
-        self._control['caller_layer_offset'] -= 1
-    
-    @contextmanager
-    def mute(self) -> t.ContextManager:
-        _backup = builtins.print
-        builtins.print = lambda *_, **__: None
-        yield
-        builtins.print = _backup
-    
-    @contextmanager
-    def timing(self) -> t.ContextManager:
-        self._markup_analyzer._simple_time = time()
-        yield
-    
-    # -------------------------------------------------------------------------
     
     def log(
-        self,
-        *args: t.Any,
-        _frame_info: T.FrameInfo = None,
-        **kwargs
+        self, *args: t.Any, _frame_info: T.FrameInfo = None, **kwargs
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
@@ -187,16 +138,14 @@ class MainThreadLogger:
     ) -> t.Tuple[T.ComposedMessage, T.FlushScheme]:
         args, markup_pos, markup = \
             self._separate_markup_from_arguments(frame_info.id, args)
-        marks = self._markup_analyzer.extract(markup)
+        marks = markup_analyzer.extract(markup)
         if 'p' in marks:
             if self._control['caller_layer_offset']:
                 marks['p'] += self._control['caller_layer_offset']
         
         get_varnames = frame_info.collect_varnames  # backup method pointer
         if marks['p']: frame_info = frame_info.get_parent(marks['p'])
-        marks_meaning = self._markup_analyzer.analyze(
-            marks, frame_info=frame_info
-        )
+        marks_meaning = markup_analyzer.analyze(marks, frame_info=frame_info)
         del marks
         
         flush_scheme: T.FlushScheme = 0
@@ -349,19 +298,18 @@ class MainThreadLogger:
                 0 not exists, 1 first place, -1 last place.
         """
         if (markup_pos := self._cache.get_markup_pos(frame_id)) is None:
-            is_markup = self._markup_analyzer.is_valid_markup
             if (
                 len(args) > 0 and
                 isinstance(args[0], str) and
                 args[0].startswith(':') and
-                is_markup(args[0])
+                markup_analyzer.is_valid_markup(args[0])
             ):
                 markup_pos = 1
             elif (
                 len(args) > 1 and
                 isinstance(args[-1], str) and
                 args[-1].startswith(':') and
-                is_markup(args[-1])
+                markup_analyzer.is_valid_markup(args[-1])
             ):
                 markup_pos = -1
             else:
