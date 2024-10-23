@@ -1,11 +1,13 @@
 import lk_logger
 from lk_logger import bprint
 
-lk_logger.setup(quiet=True,
-                show_source=True,
-                show_funcname=True,
-                show_varnames=True,
-                async_=False)
+lk_logger.setup(
+    quiet=True,
+    show_source=True,
+    show_funcname=True,
+    show_varnames=True,
+    async_=False
+)
 
 
 def hide_source() -> None:

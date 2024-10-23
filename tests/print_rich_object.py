@@ -20,6 +20,18 @@ print(
     | Alice   | 18  | Shanghai  |
     | Bob     | 19  | Beijing   |
     | Charlie | 20  | Guangzhou |
+    
+    ```javascript
+    console.log('hello world')
+    ```
+    
+    ```html
+    <div>hello world</div>
+    ```
+    
+    ```python
+    print('hello world')
+    ```
     '''
 )
 
@@ -36,10 +48,4 @@ print(':r2', (
     ('Charlie', 20, 'Guangzhou'),
 ))
 
-print(':t3', {
-    'Name': ('Alice', 'Bob', 'Charlie'),
-    'Age' : (18, 19, 20),
-    'City': ('Shanghai', 'Beijing', 'Guangzhou'),
-})
-
-# pox tests/print_richable_object.py
+# pox tests/print_rich_object.py

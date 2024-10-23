@@ -394,5 +394,4 @@ It prints weekdays with a numeric prefix.
   v6: warning (yellow)
   v7: weak error / failure (red dim)
   v8: error / failure (red)
-  v9: fatal error (white on red with blinking)
 ```
