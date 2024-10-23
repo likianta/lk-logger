@@ -1,11 +1,13 @@
 import builtins
 import typing as t
 
+from . import control2
 from .logger import logger
 from .printer import bprint
 
-STATUS = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
-_HAS_WELCOME_MESSAGE_SHOWN = False
+status = 'unloaded'  # literal['enabled', 'disabled', 'unloaded']
+_has_welcome_message_shown = False
+_binput = builtins.input
 
 
 def setup(
@@ -29,34 +31,17 @@ def setup(
         clear_preset:
         kwargs: see `./logger.py > LoggingConfig`.
     """
-    global _HAS_WELCOME_MESSAGE_SHOWN, STATUS
+    global _has_welcome_message_shown, status
     
     logger.configure(clear_preset, **kwargs)
     setattr(builtins, 'print', _stdout or logger.log)
+    setattr(builtins, 'input', control2.input)
     
-    if not quiet and not _HAS_WELCOME_MESSAGE_SHOWN:
-        _HAS_WELCOME_MESSAGE_SHOWN = True
-        
-        from .markup import _Counter
-        random_color = _Counter._get_random_bright_color  # noqa
-        color_pair = (random_color(), random_color())
-        slogan = _blend_text('lk-logger is ready', color_pair)
-
-        # from random import choice
-        # color_pairs_group = (
-        #     ('#0a87ee', '#9294f0'),  # calm blue -> light blue
-        #     ('#2d34f1', '#9294f0'),  # ocean blue -> light blue
-        #     ('#ed3b3b', '#d08bf3'),  # rose red -> violet
-        #     ('#f38cfd', '#d08bf3'),  # light magenta -> violet
-        #     ('#f47fa4', '#f49364'),  # cold sandy -> camel tan
-        # )
-        # color_pair = choice(color_pairs_group)
-        # slogan = _blend_text('lk-logger is ready', color_pair)
-        
-        # dprint(slogan)
-        print(slogan, ':rsp')
+    if not quiet and not _has_welcome_message_shown:
+        _has_welcome_message_shown = True
+        print('lk-logger is ready', ':v3sp')
     
-    STATUS = 'enabled'
+    status = 'enabled'
 
 
 def update(clear_preset=False, **kwargs) -> None:
@@ -65,26 +50,24 @@ def update(clear_preset=False, **kwargs) -> None:
 
 def unload() -> None:
     setattr(builtins, 'print', bprint)
-    global STATUS
-    STATUS = 'unloaded'
+    setattr(builtins, 'input', _binput)
+    global status
+    status = 'unloaded'
 
 
 def enable() -> None:
     setattr(builtins, 'print', logger.log)
-    global STATUS
-    STATUS = 'enabled'
+    global status
+    status = 'enabled'
+
+
+reload = enable
 
 
 def disable() -> None:
     setattr(builtins, 'print', lambda *_, **__: None)
-    global STATUS
-    STATUS = 'disabled'
-
-
-# aliases
-mute = disable
-unmute = enable
-reload = enable
+    global status
+    status = 'disabled'
 
 
 # -----------------------------------------------------------------------------
@@ -134,39 +117,6 @@ def start_ipython(
     logger.configure(**backups['lklogger_config'])
     sys.argv = backups['sys.argv']
     del backups
-
-
-# -----------------------------------------------------------------------------
-# neutral functions
-
-# DELETE
-def _blend_text(message: str, color_pair: t.Tuple[str, str]) -> str:
-    """ blend text from one color to another.
-    
-    source: [lib:rich_cli/__main__.py : blend_text()]
-    """
-    from rich.color import Color
-    from rich.text import Text
-    
-    color1, color2 = (Color.parse(x).triplet for x in color_pair)
-    r1, g1, b1 = color1
-    r2, g2, b2 = color2
-    dr = r2 - r1
-    dg = g2 - g1
-    db = b2 - b1
-    
-    text = Text(message)
-    size = len(text)
-    
-    for index in range(size):
-        blend = index / size
-        color = '#{}{}{}'.format(
-            f'{int(r1 + dr * blend):02X}',
-            f'{int(g1 + dg * blend):02X}',
-            f'{int(b1 + db * blend):02X}'
-        )
-        text.stylize(color, index, index + 1)
-    return text.markup
 
 
 def _is_ipython_mode() -> bool:

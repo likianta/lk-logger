@@ -34,6 +34,14 @@ def elevate_caller_stack() -> t.ContextManager:
     logger._control['caller_layer_offset'] -= 1
 
 
+_builtin_input = builtins.input
+
+
+def input(prompt: str = '', flush_scheme: int = 0) -> str:
+    print(f':f{flush_scheme}s')
+    return _builtin_input(prompt)
+
+
 @contextmanager
 def mute() -> t.ContextManager:
     _backup = builtins.print

@@ -1,4 +1,5 @@
 /.idea/
+/build/
 /dist/
 /lk_logger/_screenshots/*
 /tests/_error.*

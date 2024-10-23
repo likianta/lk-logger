@@ -10,6 +10,7 @@ from .control import update
 from .control2 import counting
 from .control2 import delay
 from .control2 import elevate_caller_stack
+from .control2 import input
 from .control2 import mute
 from .control2 import timing
 from .frame_info import FrameInfo

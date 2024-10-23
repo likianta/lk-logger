@@ -142,7 +142,6 @@ class MainThreadLogger:
         msg, flush_scheme = self._build_message(_frame_info, *args)
         if msg is _NoMessage: return
         is_raw = isinstance(msg, _RawArgs)
-        # dprint(msg)
         
         if self._control['stash_outputs']:
             self._message_queue.append((msg, is_raw, kwargs))
@@ -426,6 +425,49 @@ class SubThreadLogger(MainThreadLogger):
             )
     
     # -------------------------------------------------------------------------
+    
+    def log(
+        self, *args: t.Any, _frame_info: T.FrameInfo = None, **kwargs
+    ) -> None:
+        if _frame_info is None:
+            _frame_info = FrameInfo(currentframe().f_back)
+            # dprint(_frame_info.info)
+        
+        if (
+            (path := _frame_info.filepath) and
+            (custom_print := pipeline.get(path))
+        ):
+            custom_print(*args, **kwargs)
+            return
+        
+        msg, flush_scheme = self._build_message(_frame_info, *args)
+        # dbg_print(flush_scheme)
+        
+        if msg is _NoMessage:
+            if flush_scheme == 1:
+                while self._message_queue:
+                    sleep(1e-3)
+            elif flush_scheme == 2:
+                if skipped_count := len(self._message_queue):
+                    self._message_queue.clear()
+                    print(':fv7p2', f'(... skipped {skipped_count} messages)')
+            return
+        
+        is_raw = isinstance(msg, _RawArgs)
+        if self._control['stash_outputs']:
+            self._message_queue.append((msg, is_raw, kwargs))
+        else:
+            self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
+    
+    # def _flush(self, scheme: int) -> None:
+    #     if scheme == 1:
+    #         while self._message_queue:
+    #             sleep(1e-3)
+    #     elif scheme == 2:
+    #         if skipped_count := len(self._message_queue):
+    #             self._message_queue.clear()
+    #             print(':fv7p2', f'(... skipped {skipped_count} messages)')
+    #     # else: 0 or 3, not handled here, just return.
     
     def _print(
         self,

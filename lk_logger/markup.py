@@ -8,6 +8,7 @@ from string import ascii_lowercase
 from time import time
 
 from .frame_info import FrameInfo
+from .printer import dbg_print
 
 
 # noinspection PyArgumentList
@@ -157,6 +158,8 @@ class MarkupAnalyser:
                 out[m[0]] = defaults[m[0]]
             else:
                 out[m[0]] = int(m[1:])
+        # if out:
+        #     dbg_print(dict(out))
         return out
     
     def analyze(self, marks: T.Marks, **kwargs) -> T.MarksMeaning:
