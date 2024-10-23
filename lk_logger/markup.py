@@ -7,7 +7,6 @@ from re import compile as re_compile
 from string import ascii_lowercase
 from time import time
 
-from .frame_info import FrameInfo
 from .printer import dbg_print  # noqa
 
 
@@ -129,7 +128,6 @@ class MarkupAnalyzer:
               v6: warning (yellow)
               v7: weak error / failure (red dim)
               v8: error / failure (red)
-              v9: fatal error (white on red with blinking)
         
         trick to remember `v*`:
             v2, v4, v6, v8 are for primary info, success, warning, error.
@@ -199,11 +197,9 @@ class MarkupAnalyzer:
                 out[MarkMeaning.SIMPLE_COUNTER] = \
                     self._counter.update_simple_count()
             elif marks['i'] == 2:
-                info: FrameInfo = kwargs['frame_info']
+                info = kwargs['frame_info']
                 out[MarkMeaning.SCOPED_COUNTER] = \
-                    self._counter.update_scoped_count(
-                        info.id, info.indentation
-                    )
+                    self._counter.update_scoped_count(info.id, info.indentation)
             else:
                 raise E.UnsupportedMarkup(f':i{marks["i"]}')
         

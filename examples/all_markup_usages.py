@@ -1,5 +1,4 @@
 import lk_logger
-from rich.markdown import Markdown
 
 lk_logger.setup(show_varnames=True)
 
@@ -62,17 +61,21 @@ print(':dr', '`:r` is [yellow][u]R[/]ich[/] format')
 print(':r', '[cyan]hello[/] [yellow]world[/]')
 
 # print a rich renderable object
-print(':r1', Markdown('''
-# Hello World
-
-This is a markdown document.
-
-- item 1
-- item 2
-- item 3
-
-Find more usages at [rich](https://github.com/textualize/rich) documentation.
-'''))
+print(
+    ':r2',
+    '''
+    # Hello World
+    
+    This is a markdown document.
+    
+    - item 1
+    - item 2
+    - item 3
+    
+    Find more usages at [rich](https://github.com/textualize/rich)
+    documentation.
+    '''
+)
 
 # automatically convert a dict to a table
 print(':r2', {
@@ -106,7 +109,6 @@ print(':v5', 'this is a  WARNING (dimmed) message')
 print(':v6', 'this is a  WARNING          message')
 print(':v7', 'this is an ERROR (dimmed)   message')
 print(':v8', 'this is an ERROR            message')
-print(':v9', 'this is a  FATAL            message')
 
 a, b, c = 1, 2, 3
 print(':v', a, b, c)

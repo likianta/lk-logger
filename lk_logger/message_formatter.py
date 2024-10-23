@@ -56,7 +56,6 @@ class Color:  # TODO: not used yet (and not ready).
     V_INFO = 'blue'
     V_WARNING = 'yellow'
     V_ERROR = 'red'
-    V_FATAL = 'bold #ffffff on red'
 
 
 class MessageFormatter:
@@ -131,7 +130,6 @@ class MessageFormatter:
         6: 'yellow',
         7: 'red dim',
         8: 'red',
-        9: 'bold white on red',
     }
     _level_2_tag = {
         0: '[DEBUG]',
@@ -143,7 +141,6 @@ class MessageFormatter:
         6: '[ WARN]',
         7: '[ERROR]',
         8: '[ERROR]',
-        9: '[FATAL]',
     }
     
     def fmt_level(self, level: T.Level) -> t.Optional[T.RichText]:
