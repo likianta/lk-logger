@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from time import time
 
 from .logger import logger
+from .markup import markup_analyzer
 from .printer import bprint
 
 # -----------------------------------------------------------------------------
@@ -63,9 +64,9 @@ def disable() -> None:
 # noinspection PyProtectedMember
 @contextmanager
 def counting() -> t.ContextManager:
-    logger._markup_analyzer._counter.reset_simple_count()
+    markup_analyzer._counter.reset_simple_count()
     yield
-    logger._markup_analyzer._counter.reset_simple_count()
+    markup_analyzer._counter.reset_simple_count()
 
 
 # noinspection PyProtectedMember
@@ -96,10 +97,9 @@ def mute() -> t.ContextManager:
     builtins.print = _backup
 
 
-# noinspection PyProtectedMember
 @contextmanager
 def timing(sum_up: bool = False, exit_msg: str = None) -> t.ContextManager:
-    logger._markup_analyzer._simple_time = time()
+    markup_analyzer._simple_time = time()
     yield
     if exit_msg:
         print(':p2ts', exit_msg)
