@@ -11,3 +11,5 @@ with spinner('working...'):
 for i in track(range(10)):
     print('B', i)
     sleep(0.1)
+
+# pox tests/delay_prints.py

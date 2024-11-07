@@ -74,11 +74,8 @@ def counting() -> t.ContextManager:
 def delay() -> t.ContextManager:
     logger._control['stash_outputs'] = True
     yield
-    if logger._message_queue:
-        for (msg, is_raw, kwargs) in logger._message_queue:
-            logger._print(msg, is_raw, **kwargs)
-    logger._message_queue.clear()
     logger._control['stash_outputs'] = False
+    print(':fs')
 
 
 # noinspection PyProtectedMember

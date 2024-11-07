@@ -338,6 +338,9 @@ class SubThreadLogger(MainThreadLogger):
     def _start_running(self) -> None:
         self._running = True
         while self._running:
+            if self._control['stash_outputs']:
+                sleep(1e-3)
+                continue
             if self._message_queue:
                 msg, kwargs, custom_print = self._message_queue.popleft()
                 if custom_print:
@@ -402,10 +405,7 @@ class SubThreadLogger(MainThreadLogger):
             return
         
         is_raw = isinstance(msg, _RawArgs)
-        if self._control['stash_outputs']:
-            self._message_queue.append((msg, is_raw, kwargs))
-        else:
-            self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
+        self._print(msg, flush_scheme, _is_raw=is_raw, **kwargs)
     
     # def _flush(self, scheme: int) -> None:
     #     if scheme == 1:
