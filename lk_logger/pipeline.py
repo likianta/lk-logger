@@ -62,6 +62,10 @@ class Pipeline:
         """
         get proper print function for the given path.
         """
+        # exclusive for ipython.
+        if path.startswith('<ipython-input'):
+            return std_print
+        
         # the path is an absolute path.
         path = _normpath(path)
         # dprint(path)

@@ -22,7 +22,7 @@ An alternative to Python built-in `print` function with rich features.
 pip install lk-logger
 ```
 
-Requires Python 3.8 and above. The latest version is 5.7.0 or higher.
+Requires Python 3.8 and above. The latest version is 6.0.0 or higher.
 
 ## Show Me The Code
 
@@ -313,7 +313,7 @@ print(':v', a, b, c)
 
 ## Gallery / Code Screenshots
 
-The projects use `lk-logger` to their colorful prints.
+Projects using `lk-logger` for their prints:
 
 ![image-20240517155028545](.assets/image-20240517155028545.png)
 
@@ -385,9 +385,9 @@ It prints weekdays with a numeric prefix.
   t0: reset timer
 * t1: stop timer and show statistics
   t2: temporary timer
-* v0: trace / debug / hint (bright black)
-  v1: info (cyan)
-  v2: strong info (magenta)
+* v0: trace / debug / hint (gray)
+  v1: negative info (magenta)
+  v2: positive info (blue)
   v3: weak success (green dim)
   v4: success (green)
   v5: weak warning (yellow dim)

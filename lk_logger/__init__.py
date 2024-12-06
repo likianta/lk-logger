@@ -32,6 +32,8 @@ def _init() -> None:
     
     try:
         __IPYTHON__  # noqa
+        # from .printer import dprint
+        # dprint('running in ipython environment')
     except NameError:
         pass
     else:
@@ -41,4 +43,4 @@ def _init() -> None:
 
 
 _init()
-__version__ = '6.0.2'
+__version__ = '6.0.3'

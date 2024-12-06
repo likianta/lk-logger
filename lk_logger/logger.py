@@ -81,7 +81,6 @@ class MainThreadLogger:
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
-            # dprint(_frame_info.info)
         
         if (
             (path := _frame_info.filepath) and
@@ -382,7 +381,7 @@ class SubThreadLogger(MainThreadLogger):
     ) -> None:
         if _frame_info is None:
             _frame_info = FrameInfo(currentframe().f_back)
-            # dprint(_frame_info.info)
+        # dbg_print(_frame_info, bool(pipeline.get(_frame_info.filepath)))
         
         if (
             (path := _frame_info.filepath) and

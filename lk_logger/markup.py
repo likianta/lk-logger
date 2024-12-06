@@ -119,7 +119,7 @@ class MarkupAnalyzer:
               t0: reset timer
             * t1: stop timer and show statistics
               t2: temporary timer
-            * v0: trace / debug / hint (bright black)
+            * v0: trace / debug / hint (gray)
               v1: negative info (magenta)
               v2: positive info (blue)
               v3: weak success (green dim)

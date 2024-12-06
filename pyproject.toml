@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-logger"
-version = "6.0.2"
+version = "6.0.3b0"
 homepage = "https://github.com/likianta/lk-logger"
 description = "Python print with source map and varnames."
 readme = "README.md"
@@ -13,8 +13,11 @@ rich = "^13.8"
 
 # --- svg util ---
 # html2image = { version = "^2.0.4", optional = true }
-# pycairo = { version = "*", python = "^3.9", optional = true }
-# selenium = { version = "*", optional = true }
+# pycairo = { version = "^1.27.0", python = "^3.9", optional = true }
+# selenium = { version = "^4.27.1", optional = true }
+# TODO: change svg-ultralight version to "^0.34.0", requires python >= 3.9, -
+#   check if there are API changes between 0.34.0+ and 0.9.0 (currently used), -
+#   since the version numbers are significantly different.
 svg-ultralight = { version = "*", optional = true }
 
 [tool.poetry.extras]
@@ -22,10 +25,10 @@ ext = ["svg-ultralight"]
 
 [tool.poetry.group.dev.dependencies]
 argsense = "^0.5.8"
-# html2image = "*"
-ipython = "*"  # examples/start_ipython.py
-lk-utils = "*"  # misc/compose_terminal_theme.py
-nuitka = { version = "^2.4.10", python = "==3.12" }
+# html2image = "^2.0.4"
+ipython = { version = "^8.30.0", python = ">=3.10" }
+lk-utils = "^3.1.1"  # misc/compose_terminal_theme.py
+nuitka = { version = "^2.5.6", python = "==3.12" }
 svg-ultralight = "*"
 
 [[tool.poetry.source]]
