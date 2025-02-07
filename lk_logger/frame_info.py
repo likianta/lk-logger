@@ -48,11 +48,6 @@ class FrameInfo:
         """
         notice:
             - the returned value may be '<string>', '<unknown>' etc.
-            - (2023-05-22):
-                we do not use `__file__` anymore, because it may cause markup
-                analyser broken when the `__file__` is not real (for example
-                when caller passes `globals()` to `exec` function).
-                see also `examples/start_ipython.py : line 11`.
             - in python 3.8, `co_filename` may be a relative path, so we need
                 to convert it to absolute.
             - (2023-06-30):
@@ -62,7 +57,10 @@ class FrameInfo:
         # from ._print import debug
         # debug(self._frame.f_code.co_filename,
         #       self._frame.f_globals.get('__file__'))
-        x = self._frame.f_code.co_filename
+        # # x = self._frame.f_code.co_filename
+        x = self._frame.f_globals.get(
+            '__file__', self._frame.f_code.co_filename
+        )
         if x.startswith('<') and x.endswith('>'):
             return '<{}@{}>'.format(x[1:-1], id(self._frame))
         else:
