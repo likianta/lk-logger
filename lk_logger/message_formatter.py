@@ -25,6 +25,7 @@ from rich.text import Text
 from rich.traceback import Traceback
 
 from .console import console
+from .printer import dbg_print  # noqa
 
 _strftime = lambda t: (t and time.strftime('%H:%M:%S', time.localtime(t))) or ''
 
@@ -265,17 +266,24 @@ class MessageFormatter:
         self,
         idx: int,
         uid: str,
-        color: str = ''
+        color: str = '',
+        show_uid: bool = True,
     ) -> T.RichText:
-        return self.assemble_markups(
-            (f'[{uid}]', f'{color} dim'),
-            (f'[{idx}]', f'{color}'),
-        )
+        # dbg_print(color)
+        if show_uid:
+            return self.assemble_markups(
+                (f'[{uid}]', f'{color} dim'),
+                (f'[{idx}]', f'{color}'),
+            )
+        else:
+            return self.assemble_markups(
+                (f'[{idx}]', f'{color}')
+            )
     
     def fmt_separator(
         self,
         sep: str = ' >> ',
-        color='bright_black'
+        color: str = 'bright_black'
     ) -> T.RichText:
         return self.assemble_markups((sep, color))
     
@@ -310,7 +318,9 @@ class MessageFormatter:
         return text
     
     @staticmethod
-    def fmt_time(start: float, end: float = None, color_s='green') -> str:
+    def fmt_time(
+        start: float, end: float = None, color_s: str = 'green'
+    ) -> str:
         if end is None:
             return '[{}]\\[{}][/]'.format(color_s, _strftime(start))
         

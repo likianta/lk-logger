@@ -24,7 +24,8 @@ svg-ultralight = { version = "*", optional = true }
 ext = ["svg-ultralight"]
 
 [tool.poetry.group.dev.dependencies]
-argsense = "^0.5.8"
+# argsense = "^0.5.8"
+argsense = { version = "^0.7.0b12", source = "likianta" }
 # html2image = "^2.0.4"
 ipython = { version = "^8.30.0", python = ">=3.10" }
 lk-utils = "^3.1.1"  # misc/compose_terminal_theme.py
@@ -35,6 +36,11 @@ svg-ultralight = "*"
 name = "tsinghua"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 priority = "primary"
+
+[[tool.poetry.source]]
+name = "likianta"
+url = "http://likianta.pro:2131/"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry"]

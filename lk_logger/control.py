@@ -61,12 +61,13 @@ def disable() -> None:
 # -----------------------------------------------------------------------------
 # local controls
 
+# DELETE
 # noinspection PyProtectedMember
 @contextmanager
 def counting() -> t.ContextManager:
-    markup_analyzer._counter.reset_simple_count()
+    markup_analyzer._counter.reset_all_indexes()
     yield
-    markup_analyzer._counter.reset_simple_count()
+    markup_analyzer._counter.reset_all_indexes()
 
 
 # noinspection PyProtectedMember

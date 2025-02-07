@@ -208,15 +208,25 @@ class MessageBuilder:
                 body.append(' ')
                 if not args:
                     args = ('[grey50]reset index[/]',)
-        elif MarkMeaning.SIMPLE_COUNTER in marks_meaning:
-            body.append_text(
-                formatter.fmt_index(marks_meaning[MarkMeaning.SIMPLE_COUNTER])
-            )
-            body.append(' ')
-        elif MarkMeaning.SCOPED_COUNTER in marks_meaning:
+        elif MarkMeaning.SWIFT_INDEX in marks_meaning:
             body.append_text(
                 formatter.fmt_scoped_index(
-                    *marks_meaning[MarkMeaning.SCOPED_COUNTER]
+                    *marks_meaning[MarkMeaning.SWIFT_INDEX],
+                    show_uid=False
+                )
+            )
+            body.append(' ')
+        elif MarkMeaning.LINE_INDEX in marks_meaning:
+            body.append_text(
+                formatter.fmt_scoped_index(
+                    *marks_meaning[MarkMeaning.LINE_INDEX]
+                )
+            )
+            body.append(' ')
+        elif MarkMeaning.GLOBAL_INDEX in marks_meaning:
+            body.append_text(
+                formatter.fmt_index(
+                    marks_meaning[MarkMeaning.GLOBAL_INDEX]
                 )
             )
             body.append(' ')

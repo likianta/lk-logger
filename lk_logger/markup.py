@@ -9,6 +9,9 @@ from time import time
 
 from .printer import dbg_print  # noqa
 
+if __name__ == '__main__':
+    from .frame_info import FrameInfo
+
 
 # noinspection PyArgumentList
 class MarkMeaning(Enum):
@@ -19,6 +22,8 @@ class MarkMeaning(Enum):
     FLUSH = auto()
     FLUSH_CUTOFF = auto()
     FLUSH_EDDY = auto()
+    GLOBAL_INDEX = auto()
+    LINE_INDEX = auto()
     MODERATE_PRUNE = auto()
     PARENT_POINTER = auto()
     RESET_INDEX = auto()
@@ -26,9 +31,8 @@ class MarkMeaning(Enum):
     RICH_FORMAT = auto()
     RICH_OBJECT = auto()
     RICHABLE_DATA = auto()
-    SCOPED_COUNTER = auto()
-    SIMPLE_COUNTER = auto()
     STOP_TIMER = auto()
+    SWIFT_INDEX = auto()
     TABULAR_DATA = auto()
     TEMP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
@@ -54,14 +58,14 @@ class T:
     
     class Counter:
         ColorHex = str
-        Fid = str
+        FrameId = str
         Indent = int
         Index = int
-        Uid = str
+        UniqueId = str
         
-        Fid2Uid = t.DefaultDict[Indent, t.DefaultDict[Fid, Uid]]
-        ScopedCounts = t.DefaultDict[Uid, Index]
-        Uid2ColorHex = t.DefaultDict[Uid, ColorHex]
+        ScopedIndexes = t.DefaultDict[UniqueId, Index]
+        Uid2ColorHex = t.DefaultDict[UniqueId, ColorHex]
+        UidGenerator = t.DefaultDict[str, UniqueId]
 
 
 class E:
@@ -90,7 +94,7 @@ class MarkupAnalyzer:
     
     def extract(self, markup: T.Markup) -> T.Marks:
         """
-        description: (the asterisk * means default value)
+        description: (the asterisk symbol on the left means default entry)
             * d0: divider line
               d1: divider block                               *(not supported)*
             * e0: exception trace back
@@ -100,9 +104,9 @@ class MarkupAnalyzer:
               f1: flush cutoff
               f2: flush eddy               *(not a good option, maybe removed)*
               i0: reset index
-            * i1: update index
-              i2: scoped counter
-              i3: progress                                    *(not supported)*
+            * i1: intelligent index
+              i2: line-level index
+              i3: global index
             * l0: long / loose / expanded (multiple lines)
               l1: inspect object
               p0: self layer
@@ -190,16 +194,18 @@ class MarkupAnalyzer:
         
         if marks['i'] >= 0:
             if marks['i'] == 0:
+                self._counter.reset_all_indexes()
                 out[MarkMeaning.RICH_FORMAT] = True
-                out[MarkMeaning.RESET_INDEX] = \
-                    self._counter.reset_simple_count()
+                out[MarkMeaning.RESET_INDEX] = 0
             elif marks['i'] == 1:
-                out[MarkMeaning.SIMPLE_COUNTER] = \
-                    self._counter.update_simple_count()
+                out[MarkMeaning.SWIFT_INDEX] = \
+                    self._counter.update_scoped_index(kwargs['frame_info'])
             elif marks['i'] == 2:
-                info = kwargs['frame_info']
-                out[MarkMeaning.SCOPED_COUNTER] = \
-                    self._counter.update_scoped_count(info.id, info.indentation)
+                out[MarkMeaning.LINE_INDEX] = \
+                    self._counter.update_line_index(kwargs['frame_info'])
+            elif marks['i'] == 3:
+                out[MarkMeaning.GLOBAL_INDEX] = \
+                    self._counter.update_global_index()
             else:
                 raise E.UnsupportedMarkup(f':i{marks["i"]}')
         
@@ -258,23 +264,25 @@ class MarkupAnalyzer:
 
 
 class _Counter:
-    _fid_2_uid: T.Counter.Fid2Uid
+    _global_index: T.Counter.Index
     _last_indent: T.Counter.Indent
-    _last_uid: T.Counter.Uid
-    _scoped_counts: T.Counter.ScopedCounts
-    _simple_count: T.Counter.Index
+    _last_uid: T.Counter.UniqueId
+    _line_indexes: T.Counter.ScopedIndexes
+    _scoped_indexes: T.Counter.ScopedIndexes
     _uid_2_color: T.Counter.Uid2ColorHex
+    _uid_gen: T.Counter.UidGenerator
     
     def __init__(self) -> None:
-        self._simple_count = 0
-        self._scoped_counts = defaultdict(lambda: 0)
-        self._fid_2_uid = defaultdict(lambda: defaultdict(self._generate_uid))
-        self._uid_2_color = defaultdict(self._get_random_bright_color)
+        self._global_index = 0
+        self._line_indexes = defaultdict(lambda: 0)
+        self._scoped_indexes = defaultdict(lambda: 0)
         self._last_indent = 0
         self._last_uid = ''
+        self._uid_2_color = defaultdict(self._get_random_bright_color)
+        self._uid_gen = defaultdict(self._generate_uid)
     
     @staticmethod
-    def _generate_uid() -> T.Counter.Uid:
+    def _generate_uid() -> T.Counter.UniqueId:
         """
         randomly generate a four-character uid.
         """
@@ -285,30 +293,48 @@ class _Counter:
         # https://stackoverflow.com/questions/43437309
         return '#' + ''.join(choices('89ABCDEF', k=6))
     
-    def update_simple_count(self) -> T.Counter.Index:
-        self._simple_count += 1
-        return self._simple_count
+    def update_global_index(self) -> T.Counter.Index:
+        self._global_index += 1
+        return self._global_index
     
-    def update_scoped_count(
-            self,
-            fid: T.Counter.Fid,
-            indent: T.Counter.Indent
-    ) -> t.Tuple[T.Counter.Index, T.Counter.Uid, T.Counter.ColorHex]:
+    def update_line_index(self, frame_info: 'FrameInfo') -> t.Tuple[
+        T.Counter.Index, T.Counter.UniqueId, T.Counter.ColorHex
+    ]:
+        uid = self._uid_gen[frame_info.id]
+        self._line_indexes[uid] += 1
+        return self._line_indexes[uid], uid, self._uid_2_color[uid]
+    
+    def update_scoped_index(self, frame_info: 'FrameInfo') -> t.Tuple[
+        T.Counter.Index, T.Counter.UniqueId, T.Counter.ColorHex
+    ]:
+        indent = frame_info.indentation
         if self._last_indent > indent:
             # reset all counts in higher indented levels
-            for indent_j in sorted(self._fid_2_uid.keys(), reverse=True):
-                if indent_j <= indent: break
-                for uid in self._fid_2_uid[indent_j].values():
-                    self._scoped_counts[uid] = 0
+            prefix = '{}:{}:{}:'.format(
+                frame_info.parent and frame_info.parent.id,
+                frame_info.filepath,
+                frame_info.funcname,
+            )
+            for some_uid in self._uid_gen.keys():
+                if some_uid.startswith(prefix):
+                    some_indent = int(some_uid.rsplit(':', 1)[1])
+                    if some_indent > indent:
+                        self._scoped_indexes[some_uid] = 0
         self._last_indent = indent
         
-        uid = self._fid_2_uid[indent][fid]
-        self._scoped_counts[uid] += 1
-        return self._scoped_counts[uid], uid, self._uid_2_color[uid]
+        uid = self._uid_gen['{}:{}:{}:{}'.format(
+            frame_info.parent and frame_info.parent.id,
+            frame_info.filepath,
+            frame_info.funcname,
+            frame_info.indentation,
+        )]
+        self._scoped_indexes[uid] += 1
+        return self._scoped_indexes[uid], uid, self._uid_2_color[uid]
     
-    def reset_simple_count(self) -> T.Counter.Index:
-        self._simple_count = 0
-        return 0
+    def reset_all_indexes(self) -> None:
+        self._scoped_indexes.clear()
+        self._line_indexes.clear()
+        self._global_index = 0
 
 
 markup_analyzer = MarkupAnalyzer()

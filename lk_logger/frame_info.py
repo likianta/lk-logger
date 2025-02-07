@@ -1,6 +1,8 @@
 import inspect
 import typing as t
 from dataclasses import dataclass
+from functools import cache
+from functools import cached_property
 from textwrap import dedent
 from types import FrameType
 
@@ -30,23 +32,10 @@ class FrameInfo:
     def __str__(self) -> str:
         return self.info
     
-    @property
-    def info(self) -> str:
-        return dedent(f'''
-            <FrameInfo object>
-                filepath: {self.filepath}
-                lineno: {self.lineno}
-                funcname: {self.funcname}
-        ''').rstrip()
-    
-    @property
-    def id(self) -> str:
-        return f'{self.filepath}:{self.lineno}'
-    
-    @property
+    @cached_property
     def filepath(self) -> str:
         """
-        notice:
+        note:
             - the returned value may be '<string>', '<unknown>' etc.
             - in python 3.8, `co_filename` may be a relative path, so we need
                 to convert it to absolute.
@@ -66,11 +55,15 @@ class FrameInfo:
         else:
             return normpath(x)
     
-    @property
-    def lineno(self) -> int:
-        return self._frame.f_lineno
+    @cached_property
+    def funcname(self) -> str:
+        return self._frame.f_code.co_name
     
-    @property
+    @cached_property
+    def id(self) -> str:
+        return f'{self.filepath}:{self.lineno}'
+    
+    @cached_property
     def indentation(self) -> int:
         # https://stackoverflow.com/a/39172552
         if x := inspect.getframeinfo(self._frame).code_context:
@@ -78,15 +71,35 @@ class FrameInfo:
             return len(ctx) - len(ctx.lstrip())
         return 0
     
-    @property
-    def funcname(self) -> str:
-        return self._frame.f_code.co_name
+    @cached_property
+    def info(self) -> str:
+        return dedent(
+            f'''
+            <FrameInfo object
+                filepath: {self.filepath}
+                lineno: {self.lineno}
+                funcname: {self.funcname}
+            >
+            '''
+        ).rstrip()
     
+    @cached_property
+    def lineno(self) -> int:
+        return self._frame.f_lineno
+    
+    @cached_property
+    def parent(self) -> t.Optional['FrameInfo']:
+        return self.get_parent(1)
+    
+    @cache
     def collect_varnames(self) -> T.VarNames:
         return sourcemap.get_varnames(self.filepath, self.lineno)
     
-    def get_parent(self, traceback_level: int = 1) -> 'FrameInfo':
-        return FrameInfo(_get_parent_frame(self._frame, traceback_level))
+    @cache
+    def get_parent(self, traceback_level: int = 1) -> t.Optional['FrameInfo']:
+        if x := _get_parent_frame(self._frame, traceback_level):
+            return FrameInfo(x)
+        return None
 
 
 # -----------------------------------------------------------------------------
