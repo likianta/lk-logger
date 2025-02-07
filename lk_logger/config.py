@@ -9,8 +9,6 @@ from .printer import dprint  # noqa
 
 
 class LoggingConfig:
-    async_: bool
-    #   run lk logger in separate thread.
     clear_unfinished_stream: bool
     console_width: t.Optional[int]
     path_style: t.Literal['filename', 'relpath']
@@ -41,9 +39,10 @@ class LoggingConfig:
     #   enabled: (red text) '[ERROR] some error happens'
     #   disabled: (red text) 'some error happens'
     sourcemap_alignment: t.Literal['left', 'right']
+    subthreaded: bool
+    #   run lk logger in separate thread.
     
     _preset_conf = {
-        'async_'                 : False,  # TODO
         'clear_unfinished_stream': False,
         'console_width'          : None,
         'path_style'             : 'relpath',
@@ -55,6 +54,7 @@ class LoggingConfig:
         'show_varnames'          : False,
         'show_verbosity_tag'     : False,
         'sourcemap_alignment'    : 'left',
+        'subthreaded'            : False,  # TODO
     }
     
     def __init__(self, **kwargs) -> None:

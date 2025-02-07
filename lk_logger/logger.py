@@ -326,7 +326,7 @@ class MainThreadLogger:
 class SubThreadLogger(MainThreadLogger):
     def __init__(self) -> None:
         super().__init__()
-        self._config.async_ = True
+        self._config.subthreaded = True
         self._running = False
         self._message_queue = deque()
         atexit.register(self._stop_running)
@@ -367,7 +367,7 @@ class SubThreadLogger(MainThreadLogger):
         
         # dbg_print(skipped_count)
         if skipped_count:
-            self._config.async_ = False
+            self._config.subthreaded = False
             print(
                 ':frs1',
                 f'[dim]lk-logger: process exit '
@@ -424,7 +424,7 @@ class SubThreadLogger(MainThreadLogger):
         **kwargs
     ) -> None:
         if flush_scheme == 0:
-            if self._config.async_:
+            if self._config.subthreaded:
                 if _is_raw:
                     self._message_queue.append((msg.args, kwargs, std_print))
                 else:
