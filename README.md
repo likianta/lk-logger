@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/lk-logger.svg)](https://badge.fury.io/py/lk-logger) [![Downloads](https://static.pepy.tech/badge/lk-logger)](https://pepy.tech/project/lk-logger) [![Downloads](https://static.pepy.tech/badge/lk-logger/month)](https://pepy.tech/project/lk-logger)
 
-[中文版](https://blog.csdn.net/Likianta/article/details/124358443)
+[中文版](https://blog.csdn.net/Likianta/article/details/145509829)
 
 An alternative to Python built-in `print` function with rich features.
 

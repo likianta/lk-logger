@@ -45,8 +45,8 @@ class T:
     Marks = t.TypedDict('Marks', {
         'd': int,  # divider line
         'e': int,  # exception trace back
-        'i': int,  # index
         'f': int,  # flush
+        'i': int,  # index
         'l': int,  # long / loose / expanded (multiple lines)
         'p': int,  # parent layer
         'r': int,  # rich style
