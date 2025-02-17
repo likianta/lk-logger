@@ -1,9 +1,10 @@
 import builtins
+import os
 import typing as t
 from inspect import currentframe
 from contextlib import contextmanager
 from functools import partial
-from os import name as os_name
+from pprint import pformat
 
 from .console import console
 
@@ -14,12 +15,22 @@ class BasePrinter:
 
 
 class DebugPrinter(BasePrinter):
+    
+    def __init__(self) -> None:
+        self._root = os.path.normpath('{}/../../'.format(__file__))
+        # std_print('[LKDEBUG]', self._root)
+    
     def __call__(self, *msg: t.Any) -> None:
         frame = currentframe().f_back
-        filepath = _normpath(frame.f_globals["__file__"])
+        path = (
+            os.path.relpath(frame.f_globals['__file__'], start=self._root)
+            .replace('\\', '/').rstrip('/')
+        )
         lineno = frame.f_lineno
-        source = '{}:{}'.format(filepath, lineno)
-        std_print(source, '[LKDEBUG]', *msg)
+        std_print(
+            '[LKDEBUG] {}:{} >'.format(path, lineno),
+            '\n  ' + pformat(msg, indent=2)
+        )
 
 
 class NothingPrinter(BasePrinter):
@@ -61,7 +72,7 @@ class PrinterManager:
         # prevent recursive call
         if self._is_under_iterating:
             # dprint('under iteration')
-            return ()
+            return
         self._is_under_iterating = True
         yield from self._group[-1]
         self._is_under_iterating = False
@@ -96,15 +107,3 @@ def parallel_printing(*printers: T.Printer, inherit: bool = True) -> t.Iterator:
     printer_manager.add_group(printers)
     yield
     printer_manager.pop_group()
-
-
-# -----------------------------------------------------------------------------
-# general
-
-_IS_WIN = os_name == 'nt'
-
-
-def _normpath(path: str) -> str:
-    if _IS_WIN:
-        return path.replace('\\', '/').rstrip('/')
-    return path.rstrip('/')

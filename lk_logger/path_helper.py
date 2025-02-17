@@ -1,8 +1,11 @@
 import os
 import sys
 import typing as t
-from os.path import abspath, basename
-from .printer import dprint
+from functools import cached_property
+from os.path import abspath
+from os.path import basename
+
+from .printer import dbg_print  # noqa
 
 
 def normpath(path: str) -> str:
@@ -12,23 +15,28 @@ def normpath(path: str) -> str:
 class PathHelper:
     _cwd: str
     _cwdp: str
-    _external_libs: t.Dict[str, str]  # {libpath: libname, ...}
-    _external_libkeys: t.Tuple[str, ...]
+    
+    @cached_property
+    def _external_libs(self) -> t.Dict[str, str]:  # {libpath: libname, ...}
+        """
+        suggest deferring this method til the first print is called.
+        """
+        out = {}
+        for d in set(map(normpath, sys.path)):
+            if os.path.exists(d):
+                out[d] = basename(d)
+        return out
+    
+    @cached_property
+    def _external_libkeys(self) -> t.Tuple[str, ...]:
+        # dbg_print(sorted(self._external_libs.keys(), reverse=True))
+        return tuple(
+            sorted(self._external_libs.keys(), reverse=True)
+        )
     
     def __init__(self) -> None:
         self._cwd = normpath(os.getcwd())
         self._cwdp = self._cwd.rsplit('/', 1)[0]
-    
-    def _index_external_libpaths(self) -> None:
-        """
-        suggest deferring this method til the first print is called.
-        """
-        self._external_libs = {}
-        for d in set(map(normpath, sys.path)):
-            self._external_libs[d] = basename(d)
-        self._external_libkeys = tuple(
-            sorted(self._external_libs.keys(), reverse=True)
-        )
     
     def _check_path_type(self, xpath: str) -> int:
         """
@@ -48,36 +56,31 @@ class PathHelper:
         else:
             return 2
     
-    def is_external_path(self, xpath: str) -> bool:
-        return self._check_path_type(xpath) >= 2
+    def is_external_path(self, path: str) -> bool:
+        return self._check_path_type(path) >= 2
     
-    def get_relpath(self, xpath: str) -> str:
-        path_type = self._check_path_type(xpath)
+    def get_relpath(self, path: str) -> str:
+        path_type = self._check_path_type(path)
         if path_type == 0:
-            return './{}'.format(xpath[len(self._cwd) + 1:])
+            return './{}'.format(path[len(self._cwd) + 1:])
         elif path_type == 1:
-            return '../{}'.format(xpath[len(self._cwdp) + 1:])
+            return '../{}'.format(path[len(self._cwdp) + 1:])
         elif path_type == 2:
-            if not hasattr(self, '_external_libs'):
-                self._index_external_libpaths()
             for libpath in self._external_libkeys:
-                if xpath.startswith(libpath):
+                if path.startswith(libpath):
                     return '[{}]/{}'.format(
-                        self._external_libs[libpath],
-                        xpath[len(libpath) + 1:]
+                        *path[len(libpath) + 1:].split('/', 1)
                     )
-            a, b, c = xpath.rsplit('/', 2)
+            a, b, c = path.rsplit('/', 2)
             return '[unknown]/{}/{}'.format(b, c)
         else:
-            return '[unknown {}]'.format(xpath)
+            return '[unknown {}]'.format(path)
     
     def get_filename(self, xpath: str) -> str:
         path_type = self._check_path_type(xpath)
         if path_type == 0 or path_type == 1:
             return basename(xpath)
         elif path_type == 2:
-            if not hasattr(self, '_external_libs'):
-                self._index_external_libpaths()
             for libpath in self._external_libkeys:
                 if xpath.startswith(libpath):
                     return '[{}]/{}'.format(

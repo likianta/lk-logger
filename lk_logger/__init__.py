@@ -14,9 +14,9 @@ from .control import timing
 from .control import unload
 from .control import unload as restore_builtin_print
 from .control import update
+from .deflector import deflector
 from .frame_info import FrameInfo
 from .logger import logger
-from .pipeline import pipeline
 from .printer import bprint
 from .printer import parallel_printing
 from .progress import spinner
@@ -26,7 +26,7 @@ from .screenshot import save_error
 
 def _init() -> None:
     import traceback
-    pipeline.add(traceback, bprint)
+    deflector.add(traceback, bprint)
     
     setup(quiet=True)
     
@@ -38,9 +38,9 @@ def _init() -> None:
         pass
     else:
         import IPython  # noqa
-        pipeline.add(IPython, bprint, scope=True)
+        deflector.add(IPython, bprint, scope=True)
         # pipeline.add('[ipython]', bprint)
 
 
 _init()
-__version__ = '6.0.4'
+__version__ = '6.0.5'

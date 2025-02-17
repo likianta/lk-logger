@@ -10,6 +10,7 @@ from rich.traceback import Traceback
 
 from .cache import LoggingCache
 from .config import LoggingConfig
+from .deflector import deflector
 from .frame_info import FrameInfo
 from .frame_info import FrozenFrameInfo
 from .markup import MarkMeaning
@@ -20,7 +21,6 @@ from .message_builder import T as T1
 from .message_builder import builder as msg_builder
 from .message_formatter import formatter as msg_formatter
 from .path_helper import path_helper
-from .pipeline import pipeline
 from .printer import con_print
 from .printer import dbg_print  # noqa
 from .printer import printer_manager
@@ -84,7 +84,7 @@ class MainThreadLogger:
         
         if (
             (path := _frame_info.filepath) and
-            (custom_print := pipeline.get(path))
+            (custom_print := deflector.check_path(path))
         ):
             custom_print(*args, **kwargs)
             return
@@ -147,13 +147,15 @@ class MainThreadLogger:
         marks_meaning = markup_analyzer.analyze(marks, frame_info=frame_info)
         del marks
         
-        flush_scheme: T.FlushScheme = 0
+        flush_scheme: T.FlushScheme
         if MarkMeaning.FLUSH in marks_meaning:
             flush_scheme = 1
         elif MarkMeaning.FLUSH_CUTOFF in marks_meaning:
             flush_scheme = 2
         elif MarkMeaning.FLUSH_EDDY in marks_meaning:
             flush_scheme = 3
+        else:
+            flush_scheme = 0
         
         # check cache
         if self._cache.is_cached(frame_info.id, markup):
@@ -257,6 +259,7 @@ class MainThreadLogger:
                     info['is_external_lib'] = path_helper.is_external_path(path)
                     if self._config.path_style == 'relpath':
                         info['file_path'] = path_helper.get_relpath(path)
+                        # dbg_print(info['file_path'])
                     else:
                         info['file_path'] = path_helper.get_filename(path)
                     info['line_number'] = str(frame_info.lineno)
@@ -385,7 +388,7 @@ class SubThreadLogger(MainThreadLogger):
         
         if (
             (path := _frame_info.filepath) and
-            (custom_print := pipeline.get(path))
+            (custom_print := deflector.check_path(path))
         ):
             custom_print(*args, **kwargs)
             return

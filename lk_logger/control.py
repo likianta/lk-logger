@@ -3,6 +3,7 @@ import typing as t
 from contextlib import contextmanager
 from time import time
 
+from .deflector import deflector
 from .logger import logger
 from .markup import markup_analyzer
 from .printer import bprint
@@ -64,7 +65,7 @@ def disable() -> None:
 # DELETE
 # noinspection PyProtectedMember
 @contextmanager
-def counting() -> t.ContextManager:
+def counting() -> t.Iterator[None]:
     markup_analyzer._counter.reset_all_indexes()
     yield
     markup_analyzer._counter.reset_all_indexes()
@@ -72,7 +73,7 @@ def counting() -> t.ContextManager:
 
 # noinspection PyProtectedMember
 @contextmanager
-def delay() -> t.ContextManager:
+def delay() -> t.Iterator[None]:
     logger._control['stash_outputs'] = True
     yield
     logger._control['stash_outputs'] = False
@@ -81,22 +82,36 @@ def delay() -> t.ContextManager:
 
 # noinspection PyProtectedMember
 @contextmanager
-def elevate_caller_stack() -> t.ContextManager:
+def elevate_caller_stack() -> t.Iterator[None]:
     logger._control['caller_layer_offset'] += 1
     yield
     logger._control['caller_layer_offset'] -= 1
 
 
-@contextmanager
-def mute() -> t.ContextManager:
-    _backup = builtins.print
-    builtins.print = lambda *_, **__: None
-    yield
-    builtins.print = _backup
+class _Mute:
+    _backup = None
+    _mute_on = False
+    
+    def __call__(self, source: t.Union[str, object]) -> None :
+        deflector.mute(source)
+    
+    def __enter__(self) -> None:
+        if not self._mute_on:
+            self._backup = builtins.print
+            builtins.print = lambda *_, **__: None
+            self._mute_on = True
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if self._mute_on:
+            builtins.print = self._backup
+            self._mute_on = False
+
+
+mute = _Mute()
 
 
 @contextmanager
-def timing(sum_up: bool = False, exit_msg: str = None) -> t.ContextManager:
+def timing(sum_up: bool = False, exit_msg: str = None) -> t.Iterator[None]:
     markup_analyzer._simple_time = time()
     yield
     if exit_msg:
@@ -113,6 +128,7 @@ def input(prompt: str = '', flush_scheme: int = 0) -> str:
     return _builtin_input(prompt)
 
 
+# DELETE
 def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
     if getattr(builtins, '__IPYTHON__', False):
         # we are already in ipython environment.
@@ -128,9 +144,9 @@ def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
         from IPython.terminal.ipapp import TerminalIPythonApp  # noqa
         from rich.traceback import install
         from .console import console
-        from .pipeline import pipeline
+        from .deflector import deflector
     
-    pipeline.add(IPython, bprint, scope=True)
+    deflector.add(IPython, bprint, scope=True)
     
     backup = {
         'lklogger_config': logger.config.copy(),
