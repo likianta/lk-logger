@@ -34,7 +34,7 @@ class DebugPrinter(BasePrinter):
 
 
 class NothingPrinter(BasePrinter):
-    def __call__(self, *msg: t.Any) -> None:
+    def __call__(self, *msg: t.Any, **_) -> None:
         pass  # do nothing
 
 
