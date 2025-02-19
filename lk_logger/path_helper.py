@@ -68,9 +68,14 @@ class PathHelper:
         elif path_type == 2:
             for libpath in self._external_libkeys:
                 if path.startswith(libpath):
-                    return '[{}]/{}'.format(
-                        *path[len(libpath) + 1:].split('/', 1)
-                    )
+                    relpath = path[len(libpath) + 1:]
+                    # dbg_print(libpath, path, relpath)
+                    if '/' in relpath:
+                        return '[{}]/{}'.format(*relpath.split('/', 1))
+                    else:
+                        return '[{}]/{}'.format(
+                            libpath.rsplit('/', 1)[-1], relpath
+                        )
             a, b, c = path.rsplit('/', 2)
             return '[unknown]/{}/{}'.format(b, c)
         else:
