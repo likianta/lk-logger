@@ -9,7 +9,6 @@ from .control import input
 from .control import mute
 from .control import reload
 from .control import setup
-from .control import start_ipython
 from .control import timing
 from .control import unload
 from .control import unload as restore_builtin_print
@@ -43,4 +42,4 @@ def _init() -> None:
 
 
 _init()
-__version__ = '6.0.5'
+__version__ = '6.0.6'

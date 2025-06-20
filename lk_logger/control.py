@@ -92,7 +92,7 @@ class _Mute:
     _backup = None
     _mute_on = False
     
-    def __call__(self, source: t.Union[str, object]) -> None :
+    def __call__(self, source: t.Union[str, object]) -> None:
         deflector.mute(source)
     
     def __enter__(self) -> None:
@@ -126,58 +126,3 @@ def timing(sum_up: bool = False, exit_msg: str = None) -> t.Iterator[None]:
 def input(prompt: str = '', flush_scheme: int = 0) -> str:
     print(f':f{flush_scheme}s')
     return _builtin_input(prompt)
-
-
-# DELETE
-def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
-    if getattr(builtins, '__IPYTHON__', False):
-        # we are already in ipython environment.
-        return
-    try:
-        import IPython  # noqa
-    except (ImportError, ModuleNotFoundError) as e:
-        print('ipython is not installed!', ':pv8')
-        raise e
-    else:
-        import sys
-        from IPython.core.getipython import get_ipython  # noqa
-        from IPython.terminal.ipapp import TerminalIPythonApp  # noqa
-        from rich.traceback import install
-        from .console import console
-        from .deflector import deflector
-    
-    deflector.add(IPython, bprint, scope=True)
-    
-    backup = {
-        'lklogger_config': logger.config.copy(),
-        'sys.argv'       : sys.argv.copy(),
-    }
-    
-    setup(
-        quiet=True,
-        clear_preset=True,
-        show_source=False,
-        show_funcname=False,
-        show_varnames=False,
-    )
-    sys.argv = ['']  # avoid ipython to parse `sys.argv`.
-    
-    app = TerminalIPythonApp.instance(
-        user_ns={
-            'print'     : logger.log,
-            '__USERNS__': user_ns,
-            **(user_ns or {})
-        }
-    )
-    app.initialize()
-    
-    # setup except hook for ipython
-    setattr(builtins, 'get_ipython', get_ipython)
-    install(console=console)
-    
-    app.start()
-    
-    # afterwards
-    logger.configure(**backup['lklogger_config'])
-    sys.argv = backup['sys.argv']
-    del backup
