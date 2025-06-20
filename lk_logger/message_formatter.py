@@ -194,12 +194,19 @@ class MessageFormatter:
                     )
                 else:
                     out = Markdown(dedent(arg))
+            # elif isinstance(arg, dict):
+            #     table = Table(
+            #         *arg.keys(), header_style='yellow', box=BOX_ROUNDED
+            #     )
+            #     for row in zip(*arg.values()):
+            #         table.add_row(*map(str, row))
+            #     out = table
             elif isinstance(arg, dict):
                 table = Table(
-                    *arg.keys(), header_style='yellow', box=BOX_ROUNDED
+                    'KEY', 'VALUE', header_style='yellow', box=BOX_ROUNDED
                 )
-                for row in zip(*arg.values()):
-                    table.add_row(*map(str, row))
+                for k, v in arg.items():
+                    table.add_row(str(k), str(v))
                 out = table
             else:
                 table = None
