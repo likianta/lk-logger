@@ -22,6 +22,8 @@ from .progress import spinner
 from .progress import track
 from .screenshot import save_error
 
+fmt = logger.fmt
+
 
 def _init() -> None:
     import traceback
@@ -42,4 +44,4 @@ def _init() -> None:
 
 
 _init()
-__version__ = '6.0.6'
+__version__ = '6.0.7'

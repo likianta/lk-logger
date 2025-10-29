@@ -70,8 +70,7 @@ class SourceMap:
                         varnames.append('')
             except UnresolvedCase:
                 varnames.clear()
-            finally:
-                return varnames
+            return varnames
         
         _quotes_pattern_1 = re.compile(r'\'\'\'[\w\W]*\'\'\'|"""[\w\W]*"""')
         _quotes_pattern_2 = re.compile(r'\'[^\']*\'|"[^"]*"')

@@ -22,8 +22,10 @@ class MarkMeaning(Enum):
     FLUSH = auto()
     FLUSH_CUTOFF = auto()
     FLUSH_EDDY = auto()
+    FUNCTION_LEVEL_INDEX = auto()
     GLOBAL_INDEX = auto()
-    LINE_INDEX = auto()
+    INTELLIGENT_INDEX = auto()
+    LINE_LEVEL_INDEX = auto()
     MODERATE_PRUNE = auto()
     PARENT_POINTER = auto()
     RESET_INDEX = auto()
@@ -32,7 +34,6 @@ class MarkMeaning(Enum):
     RICH_OBJECT = auto()
     RICHABLE_DATA = auto()
     STOP_TIMER = auto()
-    SWIFT_INDEX = auto()
     TABULAR_DATA = auto()
     TEMP_TIMER = auto()
     TRACEBACK_EXCEPTION = auto()
@@ -53,7 +54,7 @@ class T:
         's': int,  # short / simple / single line
         't': int,  # timer / timestamp / tabular
         'v': int,  # verbosity / log level
-    })
+    }, total=False)
     MarksMeaning = t.Dict[MarkMeaning, t.Any]
     
     class Counter:
@@ -106,7 +107,8 @@ class MarkupAnalyzer:
               i0: reset index
             * i1: intelligent index
               i2: line-level index
-              i3: global index
+              i3: function-level index
+              i4: global index
             * l0: long / loose / expanded (multiple lines)
               l1: inspect object
               p0: self layer
@@ -162,7 +164,7 @@ class MarkupAnalyzer:
                 out[m[0]] = int(m[1:])
         # if out:
         #     dbg_print(dict(out))
-        return out
+        return t.cast(T.Marks, out)
     
     def analyze(self, marks: T.Marks, **kwargs) -> T.MarksMeaning:
         out = {}
@@ -198,12 +200,17 @@ class MarkupAnalyzer:
                 out[MarkMeaning.RICH_FORMAT] = True
                 out[MarkMeaning.RESET_INDEX] = 0
             elif marks['i'] == 1:
-                out[MarkMeaning.SWIFT_INDEX] = \
+                out[MarkMeaning.INTELLIGENT_INDEX] = \
                     self._counter.update_scoped_index(kwargs['frame_info'])
             elif marks['i'] == 2:
-                out[MarkMeaning.LINE_INDEX] = \
-                    self._counter.update_line_index(kwargs['frame_info'])
+                out[MarkMeaning.LINE_LEVEL_INDEX] = \
+                    self._counter.update_line_level_index(kwargs['frame_info'])
             elif marks['i'] == 3:
+                out[MarkMeaning.FUNCTION_LEVEL_INDEX] = \
+                    self._counter.update_function_level_index(
+                        kwargs['frame_info']
+                    )
+            elif marks['i'] == 4:
                 out[MarkMeaning.GLOBAL_INDEX] = \
                     self._counter.update_global_index()
             else:
@@ -293,11 +300,22 @@ class _Counter:
         # https://stackoverflow.com/questions/43437309
         return '#' + ''.join(choices('89ABCDEF', k=6))
     
+    def update_function_level_index(self, frame_info: 'FrameInfo') -> t.Tuple[
+        T.Counter.Index, T.Counter.UniqueId, T.Counter.ColorHex
+    ]:
+        uid = self._uid_gen['{}:{}:{}'.format(
+            frame_info.parent and frame_info.parent.id,  # noqa
+            frame_info.filepath,
+            frame_info.funcname,
+        )]
+        self._scoped_indexes[uid] += 1
+        return self._scoped_indexes[uid], uid, self._uid_2_color[uid]
+    
     def update_global_index(self) -> T.Counter.Index:
         self._global_index += 1
         return self._global_index
     
-    def update_line_index(self, frame_info: 'FrameInfo') -> t.Tuple[
+    def update_line_level_index(self, frame_info: 'FrameInfo') -> t.Tuple[
         T.Counter.Index, T.Counter.UniqueId, T.Counter.ColorHex
     ]:
         uid = self._uid_gen[frame_info.id]
@@ -311,7 +329,7 @@ class _Counter:
         if self._last_indent > indent:
             # reset all counts in higher indented levels
             prefix = '{}:{}:{}:'.format(
-                frame_info.parent and frame_info.parent.id,
+                frame_info.parent and frame_info.parent.id,  # noqa
                 frame_info.filepath,
                 frame_info.funcname,
             )
@@ -323,7 +341,7 @@ class _Counter:
         self._last_indent = indent
         
         uid = self._uid_gen['{}:{}:{}:{}'.format(
-            frame_info.parent and frame_info.parent.id,
+            frame_info.parent and frame_info.parent.id,  # noqa
             frame_info.filepath,
             frame_info.funcname,
             frame_info.indentation,
