@@ -223,7 +223,7 @@ def _get_local_ip_address() -> str:
 
 
 def _is_serving_url() -> t.Optional[str]:
-    host, port = _get_local_ip_address(), 2002
+    host, port = _get_local_ip_address(), 2034
     with contextlib.closing(
         socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ) as s:

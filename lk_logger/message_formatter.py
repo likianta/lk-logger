@@ -428,7 +428,7 @@ class MessageFormatter:
     #         yield from zip(varnames, arguments)
     
     @staticmethod
-    def _fmt_width(text: str, min_width: int = None, step_space=4) -> str:
+    def _fmt_width(text: str, min_width: int = 0, step_space: int = 4) -> str:
         if len(text) <= min_width:
             return text.ljust(min_width)
         else:

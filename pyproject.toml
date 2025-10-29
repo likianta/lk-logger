@@ -1,6 +1,6 @@
 [project]
 name = "lk-logger"
-version = "6.0.7b0"
+version = "6.0.7"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 description = "Python print with source map and varnames."
 dynamic = ["dependencies"]
