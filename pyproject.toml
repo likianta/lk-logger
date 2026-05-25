@@ -1,50 +1,74 @@
 [project]
 name = "lk-logger"
-version = "6.0.7"
-authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
+version = "6.1.0a3"
 description = "Python print with source map and varnames."
-dynamic = ["dependencies"]
+authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "rich>=14.0.0",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=1.29.0"]
+
+[dependency-groups]
+dev = [
+    "ipython>=9.15.0; python_version >= '3.12'",
+    "lk-utils>=3.7.0a6; python_version >= '3.9'",
+    "rich>=15.0.0; python_version >= '3.9'",
+    "svg-ultralight>=0.34.0; python_version >= '3.12'",
+]
+
+[project.optional-dependencies]
+ext = [
+    # "html2image>=2.0.4",
+    # "pycairo>=1.27.0",
+    # "selenium>=4.27.1",
+    "svg-ultralight>=0.34.0; python_version >= '3.9'",
+]
+
+# [project.scripts]
+# ...
 
 [project.urls]
 homepage = "https://github.com/likianta/lk-logger"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-rich = ">=13.9.0"
-# rich = "^14.0.0"
+[tool.hatch.build.targets.wheel]
+packages = ["lk_logger"]
 
-# --- svg util ---
-# html2image = { version = "^2.0.4", optional = true }
-# pycairo = { version = "^1.27.0", python = "^3.9", optional = true }
-# selenium = { version = "^4.27.1", optional = true }
-svg-ultralight = { version = "^0.34.0", python = "^3.9", optional = true }
+[tool.ruff]
+ignore = ["E701"]
+line-length = 80
 
-[project.optional-dependencies]
-ext = ["svg-ultralight"]
+[tool.ruff.format]
+quote-style = "single"
 
-[tool.poetry.group.dev.dependencies]
-airmise = { version = "^1.0.0", source = "likianta" }
-argsense = { version = "^1.1.1a0", source = "likianta" }
-# html2image = "^2.0.4"
-ipython = { version = "^9.4.0", python = "^3.12" }
-lk-utils = { version = "^3.3.0", source = "likianta" }  # misc/compose_terminal_theme.py
-# nuitka = { version = "^2.5.6", python = "==3.12" }
-rich = "^14.0.0"
-svg-ultralight = { version = "^0.34.0", python = "^3.12" }
+[tool.ruff.lint.isort]
+force-single-line = true
+no-sections = true
 
-[[tool.poetry.source]]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+# [tool.ty.rules]
+# invalid-type-form = "ignore"
+# unresolved-attribute = "ignore"
+
+[tool.uv]
+prerelease = "allow"
+
+[[tool.uv.index]]
 name = "tsinghua"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "primary"
+default = true
 
-[[tool.poetry.source]]
+[[tool.uv.index]]
 name = "likianta"
-url = "http://localhost:2131/"
-priority = "supplemental"
+url = "http://localhost:2191/"
+# explicit = true
 
-[build-system]
-requires = ["poetry"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.sources]
+lk-utils = { index = "likianta" }

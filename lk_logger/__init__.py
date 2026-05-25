@@ -29,7 +29,7 @@ def _init() -> None:
     import traceback
     deflector.add(traceback, bprint)
     
-    setup(quiet=True)
+    # setup(quiet=True)
     
     try:
         __IPYTHON__  # noqa
